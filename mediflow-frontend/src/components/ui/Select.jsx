@@ -29,12 +29,16 @@ const Select = forwardRef(({
         <select
           ref={ref}
           id={id}
-          className={`w-full px-4 py-2.5 bg-white border rounded-xl text-slate-800 transition-all focus:outline-none text-sm font-medium ${
+          className={`w-full px-4 py-2.5 border rounded-xl transition-all focus:outline-none text-sm font-medium ${
+            className.includes('bg-') ? '' : 'bg-white'
+          } ${
+            className.includes('text-') ? '' : 'text-slate-800'
+          } ${
             Icon ? 'pl-10' : ''
           } ${
             error 
               ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10' 
-              : 'border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 hover:border-slate-300'
+              : `${className.includes('border-') ? '' : 'border-slate-200'} focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 hover:border-slate-300`
           } ${className}`}
           {...props}
         >

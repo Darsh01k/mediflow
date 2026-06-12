@@ -1,27 +1,108 @@
 import React from 'react';
 import { User, Check } from 'lucide-react';
 
-// Definitions for the 10 avatars with descriptive labels and premium background gradients
+// Separate Avatar Collections (5 items each)
+export const PATIENT_AVATARS = [
+  { id: 'patient_1', gradient: 'from-sky-400 to-blue-600', text: 'P1' },
+  { id: 'patient_2', gradient: 'from-emerald-400 to-teal-500', text: 'P2' },
+  { id: 'patient_3', gradient: 'from-purple-400 to-indigo-650', text: 'P3' },
+  { id: 'patient_4', gradient: 'from-pink-400 to-rose-500', text: 'P4' },
+  { id: 'patient_5', gradient: 'from-amber-400 to-orange-500', text: 'P5' },
+];
+
+export const DOCTOR_AVATARS = [
+  { id: 'doctor_1', gradient: 'from-blue-500 to-indigo-700', text: 'D1' },
+  { id: 'doctor_2', gradient: 'from-teal-500 to-emerald-600', text: 'D2' },
+  { id: 'doctor_3', gradient: 'from-emerald-500 to-teal-700', text: 'D3' },
+  { id: 'doctor_4', gradient: 'from-indigo-500 to-violet-700', text: 'D4' },
+  { id: 'doctor_5', gradient: 'from-red-500 to-rose-600', text: 'D5' },
+];
+
+export const HOSPITAL_AVATARS = [
+  { id: 'hospital_1', gradient: 'from-blue-600 to-sky-800', text: 'H1' },
+  { id: 'hospital_2', gradient: 'from-emerald-600 to-teal-800', text: 'H2' },
+  { id: 'hospital_3', gradient: 'from-violet-600 to-indigo-800', text: 'H3' },
+  { id: 'hospital_4', gradient: 'from-amber-500 to-yellow-600', text: 'H4' },
+  { id: 'hospital_5', gradient: 'from-rose-600 to-red-800', text: 'H5' },
+];
+
+// Unified list containing active and legacy aliases for 100% backward database compatibility
 export const AVATARS = [
-  { id: 'avatar_1', name: 'Dr. Alex (Cardiology)', gradient: 'from-blue-500 to-indigo-700', text: 'AC', desc: 'Male Doctor, Blue theme' },
-  { id: 'avatar_2', name: 'Dr. Sarah (Pediatrics)', gradient: 'from-teal-400 to-emerald-600', text: 'SP', desc: 'Female Doctor, Teal theme' },
-  { id: 'avatar_3', name: 'Nurse Michael (ER)', gradient: 'from-purple-500 to-indigo-700', text: 'MN', desc: 'Male Nurse, Purple theme' },
-  { id: 'avatar_4', name: 'Nurse Emily (Outpatient)', gradient: 'from-pink-500 to-rose-600', text: 'EN', desc: 'Female Nurse, Pink theme' },
-  { id: 'avatar_5', name: 'Dr. James (Surgeon)', gradient: 'from-emerald-500 to-teal-700', text: 'JS', desc: 'Male Surgeon, Emerald theme' },
-  { id: 'avatar_6', name: 'Dr. Sophia (Ophthalmology)', gradient: 'from-indigo-500 to-violet-700', text: 'SO', desc: 'Female Surgeon, Indigo theme' },
-  { id: 'avatar_7', name: 'Dr. Robert (Orthopedics)', gradient: 'from-amber-500 to-orange-600', text: 'RO', desc: 'Pediatrician, Amber theme' },
-  { id: 'avatar_8', name: 'Dr. Lisa (Dentistry)', gradient: 'from-cyan-400 to-blue-600', text: 'LD', desc: 'Therapist, Cyan theme' },
-  { id: 'avatar_9', name: 'Dr. David (Psychiatry)', gradient: 'from-fuchsia-500 to-pink-700', text: 'DD', desc: 'Pharmacist, Fuchsia theme' },
-  { id: 'avatar_10', name: 'Dr. Chloe (Emergency Care)', gradient: 'from-red-500 to-rose-600', text: 'CC', desc: 'GP Practitioner, Red theme' }
+  ...PATIENT_AVATARS.map(a => ({ ...a, category: 'PATIENT' })),
+  ...DOCTOR_AVATARS.map(a => ({ ...a, category: 'DOCTOR' })),
+  ...HOSPITAL_AVATARS.map(a => ({ ...a, category: 'HOSPITAL' })),
+
+  // Legacy mappings
+  { id: 'avatar_1', category: 'DOCTOR', gradient: 'from-blue-500 to-indigo-700', text: 'AC' },
+  { id: 'avatar_2', category: 'DOCTOR', gradient: 'from-teal-400 to-emerald-600', text: 'SP' },
+  { id: 'avatar_3', category: 'PATIENT', gradient: 'from-purple-500 to-indigo-700', text: 'MN' },
+  { id: 'avatar_4', category: 'PATIENT', gradient: 'from-pink-500 to-rose-600', text: 'EN' },
+  { id: 'avatar_5', category: 'DOCTOR', gradient: 'from-emerald-500 to-teal-700', text: 'JS' },
+  { id: 'avatar_6', category: 'DOCTOR', gradient: 'from-indigo-500 to-violet-700', text: 'SO' },
+  { id: 'avatar_7', category: 'PATIENT', gradient: 'from-amber-500 to-orange-600', text: 'RO' },
+  { id: 'avatar_8', category: 'PATIENT', gradient: 'from-cyan-400 to-blue-600', text: 'LD' },
+  { id: 'avatar_9', category: 'PATIENT', gradient: 'from-fuchsia-500 to-pink-700', text: 'DD' },
+  { id: 'avatar_10', category: 'DOCTOR', gradient: 'from-red-500 to-rose-600', text: 'CC' },
 ];
 
 export const HealthAvatar = ({ avatarId, className = "w-10 h-10", initials = "" }) => {
   const avatar = AVATARS.find(a => a.id === avatarId) || AVATARS[0];
 
-  // Map avatar ID to a specific healthcare icon SVG overlay
+  // Map avatar ID to a specific SVG overlay graphic
   const renderAvatarContent = () => {
     switch (avatarId) {
-      case 'avatar_1': // Stethoscope & Doctor
+      // Patient 1 / Legacy avatar_3
+      case 'patient_1':
+      case 'avatar_3':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M50 45a12 12 0 100-24 12 12 0 000 24zM22 80c0-10 10-18 28-18s28 8 28 18" />
+          </svg>
+        );
+      
+      // Patient 2 / Legacy avatar_4
+      case 'patient_2':
+      case 'avatar_4':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M50 42a11 11 0 100-22 11 11 0 000 22zM25 78c0-8 8-15 25-15s25 7 25 15" />
+            <path d="M39 30c0 4 3.5 7 7 7h8c3.5 0 7-3 7-7" stroke="white" strokeWidth="2" />
+          </svg>
+        );
+
+      // Patient 3 / Legacy avatar_7
+      case 'patient_3':
+      case 'avatar_7':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M50 45a12 12 0 100-24 12 12 0 000 24zM22 80c0-10 10-18 28-18s28 8 28 18" />
+            <path d="M42 33h16M44 35a2 2 0 11-4 0 2 2 0 014 0zm16 0a2 2 0 11-4 0 2 2 0 014 0z" stroke="white" strokeWidth="2" />
+          </svg>
+        );
+
+      // Patient 4 / Legacy avatar_8
+      case 'patient_4':
+      case 'avatar_8':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M50 42a11 11 0 100-22 11 11 0 000 22zM25 78c0-8 8-15 25-15s25 7 25 15" />
+            <path d="M36 28s4-8 14-8 14 8 14 8" stroke="white" strokeWidth="2" />
+          </svg>
+        );
+
+      // Patient 5 / Legacy avatar_9
+      case 'patient_5':
+      case 'avatar_9':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M50 45a12 12 0 100-24 12 12 0 000 24zM22 80c0-10 10-18 28-18s28 8 28 18" />
+            <path d="M45 68h10M50 63v10" stroke="white" strokeWidth="2" />
+          </svg>
+        );
+
+      // Doctor 1 / Legacy avatar_1
+      case 'doctor_1':
+      case 'avatar_1':
         return (
           <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M50 45a12 12 0 100-24 12 12 0 000 24zM22 80c0-10 10-18 28-18s28 8 28 18" />
@@ -29,7 +110,10 @@ export const HealthAvatar = ({ avatarId, className = "w-10 h-10", initials = "" 
             <circle cx="62" cy="74" r="5" stroke="white" strokeWidth="2" fill="#3b82f6" />
           </svg>
         );
-      case 'avatar_2': // Pediatrics / Family care
+
+      // Doctor 2 / Legacy avatar_2
+      case 'doctor_2':
+      case 'avatar_2':
         return (
           <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M50 42a10 10 0 100-20 10 10 0 000 20zM25 78c0-8 8-15 25-15s25 7 25 15" />
@@ -38,24 +122,10 @@ export const HealthAvatar = ({ avatarId, className = "w-10 h-10", initials = "" 
             <path d="M35 78s3-10 8-10 8 10 8 10" stroke="white" strokeWidth="2" />
           </svg>
         );
-      case 'avatar_3': // ER Staff / Mask
-        return (
-          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="50" cy="35" r="12" />
-            <rect x="42" y="38" width="16" height="10" rx="2" fill="white" stroke="white" strokeWidth="1" />
-            <path d="M42 41l-5-2M58 41l5-2" />
-            <path d="M22 80c0-12 11-20 28-20s28 8 28 20" />
-          </svg>
-        );
-      case 'avatar_4': // Cap / Nurse
-        return (
-          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M50 45a12 12 0 100-24 12 12 0 000 24zM22 80c0-10 10-18 28-18s28 8 28 18" />
-            <path d="M40 18h20l4 6H36l4-6z" fill="white" stroke="white" />
-            <path d="M50 20v4M48 22h4" stroke="red" strokeWidth="1.5" />
-          </svg>
-        );
-      case 'avatar_5': // Surgeon
+
+      // Doctor 3 / Legacy avatar_5
+      case 'doctor_3':
+      case 'avatar_5':
         return (
           <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="50" cy="35" r="12" fill="white" fillOpacity="0.2" />
@@ -64,7 +134,10 @@ export const HealthAvatar = ({ avatarId, className = "w-10 h-10", initials = "" 
             <path d="M22 80c0-10 10-18 28-18s28 8 28 18" />
           </svg>
         );
-      case 'avatar_6': // Eyewear Surgeon
+
+      // Doctor 4 / Legacy avatar_6
+      case 'doctor_4':
+      case 'avatar_6':
         return (
           <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="50" cy="35" r="12" />
@@ -72,34 +145,64 @@ export const HealthAvatar = ({ avatarId, className = "w-10 h-10", initials = "" 
             <path d="M22 80c0-10 10-18 28-18s28 8 28 18" />
           </svg>
         );
-      case 'avatar_7': // Heart / Care
-        return (
-          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M50 42a12 12 0 100-24 12 12 0 000 24zM22 80c0-10 10-18 28-18s28 8 28 18" />
-            <path d="M50 64l-4 4c-1.5-1.5-3-3-3-4.5 0-1.5 1-2.5 2.5-2.5 1 0 1.5.5 2 1 .5-.5 1-1 2-1 1.5 0 2.5 1 2.5 2.5 0 1.5-1.5 3-3 4.5l-4-4z" fill="red" stroke="red" strokeWidth="1" />
-          </svg>
-        );
-      case 'avatar_8': // Brain / Therapy
-        return (
-          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M50 42a12 12 0 100-24 12 12 0 000 24zM22 80c0-10 10-18 28-18s28 8 28 18" />
-            <path d="M47 25c-2 0-3 1.5-3 3s1 2.5 3 2.5h6c2 0 3-1 3-2.5s-1-3-3-3h-3z" stroke="white" strokeWidth="1.5" />
-          </svg>
-        );
-      case 'avatar_9': // Pharmacy / Lab coat
-        return (
-          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M50 42a12 12 0 100-24 12 12 0 000 24zM22 80c0-10 10-18 28-18s28 8 28 18" />
-            <rect x="46" y="66" width="8" height="12" rx="4" fill="white" stroke="white" strokeWidth="1.5" />
-          </svg>
-        );
-      case 'avatar_10': // GP shield
+
+      // Doctor 5 / Legacy avatar_10
+      case 'doctor_5':
+      case 'avatar_10':
         return (
           <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M50 42a12 12 0 100-24 12 12 0 000 24zM22 80c0-10 10-18 28-18s28 8 28 18" />
             <path d="M50 63s6 2 6 6-6 6-6 6-6-2-6-6 6-6 6-6z" stroke="white" strokeWidth="1.5" />
           </svg>
         );
+
+      // Hospital Building 1
+      case 'hospital_1':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="25" y="30" width="50" height="50" rx="4" fill="currentColor" fillOpacity="0.1" />
+            <path d="M25 50h50M50 30v50" strokeWidth="1.5" opacity="0.3" />
+            <path d="M50 42v16M42 50h16" stroke="red" strokeWidth="4" />
+          </svg>
+        );
+
+      // Hospital Pulse 2
+      case 'hospital_2':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="25" y="35" width="50" height="45" rx="4" fill="currentColor" fillOpacity="0.1" />
+            <path d="M30 57.5h10l5-12 5 24 5-18 5 6h10" strokeWidth="3.5" />
+          </svg>
+        );
+
+      // Hospital Tower 3
+      case 'hospital_3':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="35" y="20" width="30" height="60" rx="2" fill="currentColor" fillOpacity="0.1" />
+            <rect x="20" y="45" width="60" height="35" rx="2" fill="currentColor" fillOpacity="0.1" />
+            <path d="M50 28v8M46 32h8" stroke="red" strokeWidth="2.5" />
+          </svg>
+        );
+
+      // Hospital Shield 4
+      case 'hospital_4':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M50 18c15 0 25 10 25 25C75 60 50 78 50 78S25 60 25 43c0-15 10-25 25-25z" fill="currentColor" fillOpacity="0.15" />
+            <path d="M50 32v22M39 43h22" strokeWidth="4.5" />
+          </svg>
+        );
+
+      // Hospital Heart 5
+      case 'hospital_5':
+        return (
+          <svg viewBox="0 0 100 100" className="w-full h-full text-white/95" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 35a18 18 0 0134-9 18 18 0 0134 9c0 24-34 46-34 46S12 59 12 35z" fill="currentColor" fillOpacity="0.15" />
+            <path d="M46 32v18M37 41h18" strokeWidth="4" />
+          </svg>
+        );
+
       default:
         return <User className="w-5 h-5 text-white" />;
     }
@@ -119,21 +222,25 @@ export const HealthAvatar = ({ avatarId, className = "w-10 h-10", initials = "" 
   );
 };
 
-export const AvatarPicker = ({ selectedId, onSelect }) => {
+export const AvatarPicker = ({ selectedId, onSelect, category }) => {
+  const targetCategory = category || 'PATIENT';
+  // Filter avatars based on category, excluding legacy 'avatar_#' prefixes for selection list
+  const filteredAvatars = AVATARS.filter(a => a.category === targetCategory && !a.id.startsWith('avatar_'));
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-750">
         <HealthAvatar avatarId={selectedId} className="w-16 h-16" />
         <div>
-          <h4 className="text-sm font-bold text-white">Avatar Preview</h4>
+          <h4 className="text-sm font-bold text-white">Selected Avatar</h4>
           <p className="text-xs text-slate-400 font-semibold mt-0.5">
-            {AVATARS.find(a => a.id === selectedId)?.name || 'Default Avatar'}
+            This image will represent the profile across the application.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-5 gap-3">
-        {AVATARS.map((avatar) => {
+        {filteredAvatars.map((avatar) => {
           const isSelected = selectedId === avatar.id;
           return (
             <button
@@ -143,7 +250,6 @@ export const AvatarPicker = ({ selectedId, onSelect }) => {
               className={`relative p-1 rounded-full cursor-pointer hover:scale-105 hover:rotate-2 transition-all duration-200 border-2 ${
                 isSelected ? 'border-emerald-500 scale-105 bg-slate-800' : 'border-transparent'
               }`}
-              title={avatar.name}
             >
               <HealthAvatar avatarId={avatar.id} className="w-12 h-12" />
               {isSelected && (

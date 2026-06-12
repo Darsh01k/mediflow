@@ -571,7 +571,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                   {/* Avatar Picker Section */}
                   <div className="space-y-3">
                     <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Healthcare Avatar</span>
-                    <AvatarPicker selectedId={avId} onSelect={setAvId} />
+                    <AvatarPicker selectedId={avId} onSelect={setAvId} category="DOCTOR" />
                   </div>
 
                   {/* Basic Form Attributes */}
@@ -650,25 +650,25 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                       onChange={(e) => setLang(e.target.value)}
                     />
                     
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
                       <label className="block font-bold text-slate-500 uppercase tracking-wide">Availability Schedule</label>
                       <textarea
                         rows="2"
                         placeholder="Mon-Fri: 9:00 AM - 5:00 PM, Sat: 10:00 AM - 2:00 PM"
                         value={avail}
                         onChange={(e) => setAvail(e.target.value)}
-                        className="w-full text-xs font-semibold text-slate-805 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
+                        className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
                       />
                     </div>
 
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
                       <label className="block font-bold text-slate-500 uppercase tracking-wide">Professional Biography</label>
                       <textarea
                         rows="3"
                         placeholder="Doctor's credentials and clinical history details..."
                         value={bio}
                         onChange={(e) => setBio(e.target.value)}
-                        className="w-full text-xs font-semibold text-slate-805 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
+                        className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
                       />
                     </div>
                   </div>

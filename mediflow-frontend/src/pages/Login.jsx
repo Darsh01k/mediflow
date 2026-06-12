@@ -79,7 +79,7 @@ const Login = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={loading}
-              className="bg-slate-800/40 hover:bg-slate-800/60 focus:bg-slate-805 border-slate-800 focus:border-emerald-500/50 text-white placeholder-slate-500"
+              className="bg-slate-800/40 hover:bg-slate-800/60 focus:bg-slate-800 border-slate-800 focus:border-emerald-500/50 text-white placeholder-slate-500"
             />
 
             <Input
@@ -91,7 +91,7 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              className="bg-slate-800/40 hover:bg-slate-800/60 focus:bg-slate-805 border-slate-800 focus:border-emerald-500/50 text-white placeholder-slate-500"
+              className="bg-slate-800/40 hover:bg-slate-800/60 focus:bg-slate-800 border-slate-800 focus:border-emerald-500/50 text-white placeholder-slate-500"
             />
 
             <Button

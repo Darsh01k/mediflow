@@ -26,7 +26,8 @@ import Input from '../components/ui/Input';
 import Alert from '../components/ui/Alert';
 import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
-import { HealthAvatar } from '../components/ui/Avatar';
+import { HealthAvatar, AvatarPicker } from '../components/ui/Avatar';
+import AddressAutocomplete from '../components/ui/AddressAutocomplete';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title as ChartTitle } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 
@@ -216,9 +217,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
         <div className="relative bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 overflow-hidden shadow-2xl flex flex-col md:flex-row items-center gap-6">
           <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
           
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-            <Building className="w-8 h-8 text-emerald-400" />
-          </div>
+          <HealthAvatar avatarId={hospital.logoAvatar || 'hospital_1'} className="w-16 h-16 rounded-2xl" />
 
           <div className="text-center md:text-left space-y-1 z-10 flex-1">
             <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -580,6 +579,12 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                 </div>
               ) : (
                 <form onSubmit={handleUpdateHospital} className="space-y-6 max-w-4xl">
+                  {/* Avatar Picker Section */}
+                  <div className="space-y-3">
+                    <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Hospital Logo Avatar</span>
+                    <AvatarPicker selectedId={hospLogo} onSelect={setHospLogo} category="HOSPITAL" />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
                       label="Hospital Name"
@@ -607,15 +612,21 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                       value={hospPhone}
                       onChange={(e) => setHospPhone(e.target.value)}
                     />
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
                       <label className="block font-bold text-slate-500 uppercase tracking-wide">Street Address (Mandatory)</label>
-                      <textarea
-                        required
-                        rows="2"
-                        placeholder="777 Health Blvd, Sector 4"
+                      <AddressAutocomplete
                         value={hospAddress}
-                        onChange={(e) => setHospAddress(e.target.value)}
-                        className="w-full text-xs font-semibold text-slate-805 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
+                        onChange={setHospAddress}
+                        onSelect={(res) => {
+                          setHospAddress(res.address);
+                          setHospCity(res.city);
+                          setHospState(res.state);
+                          setHospPincode(res.pincode);
+                          setHospLat(res.latitude ? res.latitude.toString() : '');
+                          setHospLng(res.longitude ? res.longitude.toString() : '');
+                        }}
+                        required
+                        className="bg-white border border-slate-200"
                       />
                     </div>
                     <Input
@@ -636,33 +647,15 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                       value={hospPincode}
                       onChange={(e) => setHospPincode(e.target.value)}
                     />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        label="Latitude"
-                        type="number"
-                        step="any"
-                        placeholder="34.0522"
-                        value={hospLat}
-                        onChange={(e) => setHospLat(e.target.value)}
-                      />
-                      <Input
-                        label="Longitude"
-                        type="number"
-                        step="any"
-                        placeholder="-118.2437"
-                        value={hospLng}
-                        onChange={(e) => setHospLng(e.target.value)}
-                      />
-                    </div>
                     
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
                       <label className="block font-bold text-slate-500 uppercase tracking-wide">Facility Description</label>
                       <textarea
                         rows="3"
                         placeholder="Saint Grace Medical Center is a premier multi-speciality hospital..."
                         value={hospDesc}
                         onChange={(e) => setHospDesc(e.target.value)}
-                        className="w-full text-xs font-semibold text-slate-805 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
+                        className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
                       />
                     </div>
                   </div>

@@ -312,7 +312,7 @@ const AdminDashboard = ({ stats, refreshStats }) => {
                     <textarea
                       placeholder="Doctor Professional Biography" rows="2" value={bio}
                       onChange={(e) => setBio(e.target.value)}
-                      className="w-full text-xs font-semibold text-slate-805 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
+                      className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
                     />
                   </div>
                 </div>

@@ -9,6 +9,7 @@ import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
 import API from '../services/api';
 import { AvatarPicker } from '../components/ui/Avatar';
+import AddressAutocomplete from '../components/ui/AddressAutocomplete';
 import { 
   HeartPulse, 
   User, 
@@ -39,7 +40,7 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [avatarId, setAvatarId] = useState('avatar_1');
+  const [avatarId, setAvatarId] = useState('patient_1');
 
   // Patient fields
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -211,7 +212,7 @@ const Register = () => {
           <div className="grid grid-cols-3 bg-slate-800/50 p-1 rounded-xl mb-6 border border-slate-850">
             <button
               type="button"
-              onClick={() => setRole('PATIENT')}
+              onClick={() => { setRole('PATIENT'); setAvatarId('patient_1'); }}
               disabled={loading}
               className={`py-2 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer ${
                 role === 'PATIENT'
@@ -223,7 +224,7 @@ const Register = () => {
             </button>
             <button
               type="button"
-              onClick={() => setRole('DOCTOR')}
+              onClick={() => { setRole('DOCTOR'); setAvatarId('doctor_1'); }}
               disabled={loading}
               className={`py-2 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer ${
                 role === 'DOCTOR'
@@ -235,7 +236,7 @@ const Register = () => {
             </button>
             <button
               type="button"
-              onClick={() => setRole('HOSPITAL_ADMIN')}
+              onClick={() => { setRole('HOSPITAL_ADMIN'); setAvatarId('hospital_1'); }}
               disabled={loading}
               className={`py-2 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer ${
                 role === 'HOSPITAL_ADMIN'
@@ -255,7 +256,7 @@ const Register = () => {
               <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider pb-1.5 border-b border-slate-800">
                 Choose Profile Avatar
               </h3>
-              <AvatarPicker selectedId={avatarId} onSelect={setAvatarId} />
+              <AvatarPicker selectedId={avatarId} onSelect={setAvatarId} category={role === 'HOSPITAL_ADMIN' ? 'HOSPITAL' : role} />
             </div>
 
             {/* Section 2: Basic Credentials */}
@@ -393,7 +394,7 @@ const Register = () => {
                     className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
                   />
 
-                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
                     <label htmlFor="address" className="block font-bold text-slate-500 uppercase tracking-wide">Residential Address (Optional)</label>
                     <div className="relative">
                       <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
@@ -420,7 +421,7 @@ const Register = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
                   {/* Hospital Selection */}
-                  <div className="space-y-1.5 text-xs font-semibold text-slate-605">
+                  <div className="space-y-1.5 text-xs font-semibold text-slate-600">
                     <label htmlFor="hospitalSelect" className="block font-bold text-slate-500 uppercase tracking-wide">Select Practicing Hospital</label>
                     <div className="relative">
                       <Building className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
@@ -533,7 +534,7 @@ const Register = () => {
                     className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
                   />
 
-                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
                     <label htmlFor="bio" className="block font-bold text-slate-500 uppercase tracking-wide">Professional Bio</label>
                     <textarea
                       id="bio"
@@ -590,21 +591,23 @@ const Register = () => {
                     className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
                   />
 
-                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
                     <label htmlFor="hospAddress" className="block font-bold text-slate-500 uppercase tracking-wide">Street Address (Mandatory)</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                      <textarea
-                        id="hospAddress"
-                        required
-                        rows="2"
-                        placeholder="777 Health Blvd, Sector 4"
-                        value={hospitalAddress}
-                        onChange={(e) => setHospitalAddress(e.target.value)}
-                        disabled={loading}
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-800/40 border border-slate-800 hover:border-slate-700 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white placeholder-slate-500 text-sm font-medium resize-none"
-                      />
-                    </div>
+                    <AddressAutocomplete
+                      value={hospitalAddress}
+                      onChange={setHospitalAddress}
+                      onSelect={(res) => {
+                        setHospitalAddress(res.address);
+                        setHospitalCity(res.city);
+                        setHospitalState(res.state);
+                        setHospitalPincode(res.pincode);
+                        setHospitalLat(res.latitude ? res.latitude.toString() : '');
+                        setHospitalLng(res.longitude ? res.longitude.toString() : '');
+                      }}
+                      required
+                      disabled={loading}
+                      className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                    />
                   </div>
 
                   <Input
@@ -648,32 +651,7 @@ const Register = () => {
                     className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
                   />
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      label="Latitude"
-                      id="hospLat"
-                      type="number"
-                      step="any"
-                      placeholder="34.0522"
-                      value={hospitalLat}
-                      onChange={(e) => setHospitalLat(e.target.value)}
-                      disabled={loading}
-                      className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
-                    />
-                    <Input
-                      label="Longitude"
-                      id="hospLng"
-                      type="number"
-                      step="any"
-                      placeholder="-118.2437"
-                      value={hospitalLng}
-                      onChange={(e) => setHospitalLng(e.target.value)}
-                      disabled={loading}
-                      className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
                     <label htmlFor="hospDesc" className="block font-bold text-slate-500 uppercase tracking-wide">Facility Description</label>
                     <textarea
                       id="hospDesc"
