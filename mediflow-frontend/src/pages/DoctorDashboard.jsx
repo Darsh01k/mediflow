@@ -16,7 +16,8 @@ import {
   DollarSign,
   Settings,
   Activity,
-  Heart
+  Heart,
+  Clock
 } from 'lucide-react';
 import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -76,7 +77,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
       setBio(res.data.bio || '');
       setPhone(res.data.phone || '');
       setQual(res.data.qualification || '');
-      setExp(res.data.experience !== undefined ? res.data.experience.toString() : '');
+      setExp(res.data.experience != null ? res.data.experience.toString() : '');
       setLang(res.data.languages || '');
       setAvail(res.data.availability || '');
       setAvId(res.data.user?.avatarId || 'avatar_1');
@@ -119,8 +120,8 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
       setError('');
       
       const payload = {
-        patientId: activeAppointment.patient.id,
-        doctorId: activeAppointment.doctor.id,
+        patientId: activeAppointment?.patient?.id,
+        doctorId: activeAppointment?.doctor?.id,
         diagnosis,
         prescription,
         treatmentNotes
@@ -130,7 +131,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
       await API.post('/medical-records', payload);
 
       // 2. Mark Appointment as Completed
-      await API.put(`/appointments/${activeAppointment.id}/status?status=COMPLETED&notes=Record saved`);
+      await API.put(`/appointments/${activeAppointment?.id}/status?status=COMPLETED&notes=Record saved`);
 
       toast.success('Clinical chart and prescription registered!');
       
@@ -221,11 +222,13 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
   // Derive unique patients list from stats appointments
   const getUniquePatients = () => {
     const map = new Map();
-    stats.recentAppointments.forEach(appt => {
-      if (appt.patient) {
-        map.set(appt.patient.id, appt.patient);
-      }
-    });
+    if (stats && stats.recentAppointments) {
+      stats.recentAppointments.forEach(appt => {
+        if (appt?.patient?.id) {
+          map.set(appt.patient.id, appt.patient);
+        }
+      });
+    }
     return Array.from(map.values());
   };
 
@@ -242,7 +245,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
             </div>
             <div>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Patients Served</p>
-              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalPatients}</h3>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.totalPatients ?? 0}</h3>
             </div>
           </CardContent>
         </Card>
@@ -254,7 +257,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
             </div>
             <div>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Today's Visits</p>
-              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.todayAppointments}</h3>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.todayAppointments ?? 0}</h3>
             </div>
           </CardContent>
         </Card>
@@ -266,7 +269,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
             </div>
             <div>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Prescriptions Issued</p>
-              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalPrescriptions}</h3>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.totalPrescriptions ?? 0}</h3>
             </div>
           </CardContent>
         </Card>
@@ -278,7 +281,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
             </div>
             <div>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Pending Visits</p>
-              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.upcomingAppointments}</h3>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.upcomingAppointments ?? 0}</h3>
             </div>
           </CardContent>
         </Card>
@@ -290,7 +293,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
             </div>
             <div>
               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">My Total Consults</p>
-              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalAppointments}</h3>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.totalAppointments ?? 0}</h3>
             </div>
           </CardContent>
         </Card>
@@ -351,7 +354,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
               <CardDescription>Review upcoming and past visits assigned to you</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              {stats.recentAppointments.length === 0 ? (
+              {!stats?.recentAppointments || stats.recentAppointments.length === 0 ? (
                 <EmptyState
                   title="No Scheduled Consultations"
                   description="You do not have any patient visits currently booked."
@@ -369,38 +372,38 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                     </TR>
                   </THead>
                   <TBody>
-                    {stats.recentAppointments.map((appt) => (
-                      <TR key={appt.id}>
+                    {(stats?.recentAppointments || []).map((appt) => (
+                      <TR key={appt?.id}>
                         <TD>
                           <div className="flex items-center gap-3">
-                            <HealthAvatar avatarId={appt.patient?.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
+                            <HealthAvatar avatarId={appt?.patient?.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
                             <div>
                               <div className="font-bold text-slate-800">
-                                {appt.patient?.user?.firstName} {appt.patient?.user?.lastName}
+                                {appt?.patient?.user?.firstName || ''} {appt?.patient?.user?.lastName || ''}
                               </div>
                               <div className="text-[10px] font-semibold text-slate-400">
-                                Gender: {appt.patient?.gender} • Blood: {appt.patient?.bloodType || 'N/A'}
+                                Gender: {appt?.patient?.gender || 'N/A'} • Blood: {appt?.patient?.bloodType || 'N/A'}
                               </div>
                             </div>
                           </div>
                         </TD>
                         <TD className="text-xs font-semibold text-slate-600">
-                          {new Date(appt.appointmentDate).toLocaleString('en-US', {
+                          {appt?.appointmentDate ? new Date(appt.appointmentDate).toLocaleString('en-US', {
                             weekday: 'short',
                             month: 'short',
                             day: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit'
-                          })}
+                          }) : 'N/A'}
                         </TD>
-                        <TD className="max-w-xs text-xs text-slate-500 font-medium truncate" title={appt.reason}>
-                          {appt.reason}
+                        <TD className="max-w-xs text-xs text-slate-500 font-medium truncate" title={appt?.reason || ''}>
+                          {appt?.reason || 'N/A'}
                         </TD>
                         <TD className="text-center">
-                          {getStatusBadge(appt.status)}
+                          {getStatusBadge(appt?.status)}
                         </TD>
                         <TD className="text-right">
-                          {appt.status === 'SCHEDULED' && (
+                          {appt?.status === 'SCHEDULED' && (
                             <div className="flex justify-end gap-2">
                               <Button
                                 size="xs"
@@ -412,7 +415,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                               <Button
                                 variant="outline"
                                 size="xs"
-                                onClick={() => handleCancelAppointment(appt.id)}
+                                onClick={() => handleCancelAppointment(appt?.id)}
                                 className="text-rose-500 border-rose-100 hover:bg-rose-50 hover:text-rose-700"
                               >
                                 Cancel
@@ -437,7 +440,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
               <CardDescription>Review past diagnosis logs and drugs prescriptions.</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              {stats.recentRecords.length === 0 ? (
+              {!stats?.recentRecords || stats.recentRecords.length === 0 ? (
                 <EmptyState
                   title="No Medical Entries"
                   description="You have not logged any diagnostics chart summaries yet."
@@ -445,40 +448,40 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {stats.recentRecords.map((rec) => (
-                    <Card key={rec.id} className="border border-slate-200/60 shadow-sm">
+                  {(stats?.recentRecords || []).map((rec) => (
+                    <Card key={rec?.id} className="border border-slate-200/60 shadow-sm">
                       <CardHeader className="flex flex-row justify-between items-center bg-slate-50/50 pb-3 border-b">
                         <div className="flex items-center gap-3">
-                          <HealthAvatar avatarId={rec.patient?.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
+                          <HealthAvatar avatarId={rec?.patient?.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
                           <div>
                             <CardTitle className="text-xs font-bold text-slate-800">
-                              {rec.patient?.user?.firstName} {rec.patient?.user?.lastName}
+                              {rec?.patient?.user?.firstName || ''} {rec?.patient?.user?.lastName || ''}
                             </CardTitle>
-                            <CardDescription className="text-[10px]">Patient ID: #{rec.patient?.id}</CardDescription>
+                            <CardDescription className="text-[10px]">Patient ID: #{rec?.patient?.id || 'N/A'}</CardDescription>
                           </div>
                         </div>
                         <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 border border-slate-200/50 rounded-full">
-                          {rec.visitDate}
+                          {rec?.visitDate || 'N/A'}
                         </span>
                       </CardHeader>
                       <CardContent className="p-4 text-xs space-y-3 font-semibold text-slate-600">
                         <div>
                           <span className="block font-bold text-slate-400 uppercase tracking-wide text-[9px] mb-1">Diagnosis</span>
                           <p className="bg-slate-50 p-2.5 border border-slate-100 rounded-lg text-slate-800 font-medium">
-                            {rec.diagnosis}
+                            {rec?.diagnosis || 'N/A'}
                           </p>
                         </div>
                         <div>
                           <span className="block font-bold text-slate-400 uppercase tracking-wide text-[9px] mb-1">Prescribed Treatment</span>
                           <p className="bg-emerald-50/10 p-2.5 border border-emerald-100/30 rounded-lg text-emerald-800 font-medium">
-                            {rec.prescription}
+                            {rec?.prescription || 'N/A'}
                           </p>
                         </div>
-                        {rec.treatmentNotes && (
+                        {rec?.treatmentNotes && (
                           <div>
                             <span className="block font-bold text-slate-400 uppercase tracking-wide text-[9px] mb-1">Clinical Notes</span>
                             <p className="text-slate-500 font-medium italic">
-                              {rec.treatmentNotes}
+                              {rec?.treatmentNotes}
                             </p>
                           </div>
                         )}
@@ -518,31 +521,31 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                     </TR>
                   </THead>
                   <TBody>
-                    {patientsList.map((pat) => (
-                      <TR key={pat.id}>
+                    {(patientsList || []).map((pat) => (
+                      <TR key={pat?.id}>
                         <TD>
                           <div className="flex items-center gap-3">
-                            <HealthAvatar avatarId={pat.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
+                            <HealthAvatar avatarId={pat?.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
                             <div>
                               <div className="font-bold text-slate-800">
-                                {pat.user?.firstName} {pat.user?.lastName}
+                                {pat?.user?.firstName || ''} {pat?.user?.lastName || ''}
                               </div>
                               <div className="text-[10px] font-semibold text-slate-400">
-                                {pat.user?.email}
+                                {pat?.user?.email || ''}
                               </div>
                             </div>
                           </div>
                         </TD>
-                        <TD className="text-xs font-semibold text-slate-600">{pat.dateOfBirth}</TD>
+                        <TD className="text-xs font-semibold text-slate-600">{pat?.dateOfBirth || 'N/A'}</TD>
                         <TD className="text-xs font-semibold text-slate-600">
-                          {pat.gender} • <Badge variant="neutral">{pat.bloodType || 'N/A'}</Badge>
+                          {pat?.gender || 'N/A'} • <Badge variant="neutral">{pat?.bloodType || 'N/A'}</Badge>
                         </TD>
-                        <TD className="text-xs font-semibold text-slate-655">{pat.phone}</TD>
-                        <TD className="text-xs font-semibold text-slate-400 max-w-[150px] truncate" title={pat.emergencyContact}>
-                          {pat.emergencyContact}
+                        <TD className="text-xs font-semibold text-slate-655">{pat?.phone || 'N/A'}</TD>
+                        <TD className="text-xs font-semibold text-slate-400 max-w-[150px] truncate" title={pat?.emergencyContact || ''}>
+                          {pat?.emergencyContact || 'N/A'}
                         </TD>
-                        <TD className="max-w-xs text-xs text-slate-500 font-medium italic truncate" title={pat.medicalNotes || 'No notes'}>
-                          {pat.medicalNotes || 'None logged'}
+                        <TD className="max-w-xs text-xs text-slate-500 font-medium italic truncate" title={pat?.medicalNotes || 'No notes'}>
+                          {pat?.medicalNotes || 'None logged'}
                         </TD>
                       </TR>
                     ))}
@@ -714,8 +717,8 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
               )}
 
               <div className="text-xs text-slate-500 bg-slate-50 p-4 rounded-xl flex flex-col gap-1.5 border border-slate-200/50 font-semibold">
-                <p><span className="font-bold text-slate-400">Patient Name:</span> {activeAppointment.patient.user.firstName} {activeAppointment.patient.user.lastName}</p>
-                <p><span className="font-bold text-slate-400">Consultation Reason:</span> {activeAppointment.reason}</p>
+                <p><span className="font-bold text-slate-400">Patient Name:</span> {activeAppointment?.patient?.user?.firstName || ''} {activeAppointment?.patient?.user?.lastName || ''}</p>
+                <p><span className="font-bold text-slate-400">Consultation Reason:</span> {activeAppointment?.reason || 'N/A'}</p>
               </div>
 
               <form onSubmit={handleRecordSubmit} className="space-y-4 text-xs font-semibold text-slate-600">

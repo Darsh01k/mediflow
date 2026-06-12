@@ -84,12 +84,14 @@ const Register = () => {
     const loadHospitals = async () => {
       try {
         const res = await API.get('/hospitals');
-        setHospitalsList(res.data);
-        if (res.data.length > 0) {
-          setHospitalId(res.data[0].id.toString());
+        const data = res.data || [];
+        setHospitalsList(data);
+        if (data.length > 0 && data[0]?.id) {
+          setHospitalId(data[0].id.toString());
         }
       } catch (err) {
         console.error('Failed to load hospitals', err);
+        toast.error('Failed to load hospitals list');
       }
     };
     loadHospitals();
@@ -433,12 +435,12 @@ const Register = () => {
                         disabled={loading}
                         className="w-full pl-10 pr-4 py-2.5 bg-slate-800/40 border border-slate-800 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white text-sm font-medium"
                       >
-                        {hospitalsList.length === 0 ? (
+                        {(!hospitalsList || hospitalsList.length === 0) ? (
                           <option value="">No hospitals registered yet</option>
                         ) : (
                           hospitalsList.map((hosp) => (
-                            <option key={hosp.id} value={hosp.id} className="bg-slate-900 text-white">
-                              {hosp.name} ({hosp.city || hosp.address})
+                            <option key={hosp?.id} value={hosp?.id} className="bg-slate-900 text-white">
+                              {hosp?.name || 'Unnamed Hospital'} ({hosp?.city || hosp?.address || 'N/A'})
                             </option>
                           ))
                         )}

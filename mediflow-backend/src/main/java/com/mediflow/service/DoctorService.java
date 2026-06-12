@@ -15,9 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class DoctorService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DoctorService.class);
 
     @Autowired
     private DoctorRepository doctorRepository;
@@ -26,27 +30,42 @@ public class DoctorService {
     private UserRepository userRepository;
 
     public List<DoctorDto> getAllDoctors() {
-        return doctorRepository.findByStatus(DoctorStatus.APPROVED).stream()
+        logger.info("Fetching all approved doctors list");
+        List<DoctorDto> doctors = doctorRepository.findByStatus(DoctorStatus.APPROVED).stream()
                 .map(DtoMapper::toDto)
                 .collect(Collectors.toList());
+        logger.info("Retrieved {} approved doctors", doctors.size());
+        return doctors;
     }
 
     public DoctorDto getDoctorById(Long id) {
+        logger.info("Fetching doctor details for doctor ID: {}", id);
         Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + id));
+                .orElseThrow(() -> {
+                    logger.error("Doctor profile not found with ID: {}", id);
+                    return new ResourceNotFoundException("Doctor not found with id: " + id);
+                });
         return DtoMapper.toDto(doctor);
     }
 
     public DoctorDto getDoctorByUserId(Long userId) {
+        logger.info("Fetching doctor details for user ID: {}", userId);
         Doctor doctor = doctorRepository.findByUserId(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found for user id: " + userId));
+                .orElseThrow(() -> {
+                    logger.error("Doctor profile not found for user ID: {}", userId);
+                    return new ResourceNotFoundException("Doctor not found for user id: " + userId);
+                });
         return DtoMapper.toDto(doctor);
     }
 
     @Transactional
     public DoctorDto updateDoctor(Long id, DoctorDto doctorDto) {
+        logger.info("Updating doctor details for doctor ID: {}", id);
         Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + id));
+                .orElseThrow(() -> {
+                    logger.error("Failed to update: Doctor not found with ID: {}", id);
+                    return new ResourceNotFoundException("Doctor not found with id: " + id);
+                });
 
         doctor.setSpecialization(doctorDto.getSpecialization());
         doctor.setLicenseNumber(doctorDto.getLicenseNumber());
@@ -71,24 +90,35 @@ public class DoctorService {
         }
 
         Doctor updatedDoctor = doctorRepository.save(doctor);
+        logger.info("Doctor profile with ID: {} successfully updated", id);
         return DtoMapper.toDto(updatedDoctor);
     }
 
     public List<DoctorDto> searchDoctors(String name, String specialization, String hospital, String city, Integer experience) {
-        return doctorRepository.searchDoctors(name, specialization, hospital, city, experience).stream()
+        logger.info("Searching doctors by name: {}, specialization: {}, hospital: {}, city: {}, experience: {}", 
+                name, specialization, hospital, city, experience);
+        List<DoctorDto> doctors = doctorRepository.searchDoctors(name, specialization, hospital, city, experience).stream()
                 .map(DtoMapper::toDto)
                 .collect(Collectors.toList());
+        logger.info("Doctor search returned {} results", doctors.size());
+        return doctors;
     }
 
     @Transactional
     public void deleteDoctor(Long id) {
+        logger.info("Attempting to delete doctor with ID: {}", id);
         Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + id));
+                .orElseThrow(() -> {
+                    logger.error("Delete failed: Doctor not found with ID: {}", id);
+                    return new ResourceNotFoundException("Doctor not found with id: " + id);
+                });
         
         doctorRepository.delete(doctor);
+        logger.info("Successfully deleted doctor with ID: {}", id);
     }
 
     public List<String> getSpecializations() {
+        logger.info("Fetching distinct specializations of approved doctors");
         return doctorRepository.findByStatus(DoctorStatus.APPROVED).stream()
                 .map(Doctor::getSpecialization)
                 .distinct()

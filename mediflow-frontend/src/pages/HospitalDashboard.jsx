@@ -177,9 +177,9 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
     datasets: [
       {
         data: [
-          stats.upcomingAppointments,
-          stats.completedAppointments,
-          stats.cancelledAppointments
+          stats?.upcomingAppointments ?? 0,
+          stats?.completedAppointments ?? 0,
+          stats?.cancelledAppointments ?? 0
         ],
         backgroundColor: ['#6366f1', '#10b981', '#f43f5e'],
         borderColor: ['#ffffff', '#ffffff', '#ffffff'],
@@ -193,7 +193,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
     datasets: [
       {
         label: 'Hospital Performance Metrics',
-        data: [stats.totalPatients, stats.totalDoctors, stats.totalAppointments],
+        data: [stats?.totalPatients ?? 0, stats?.totalDoctors ?? 0, stats?.totalAppointments ?? 0],
         backgroundColor: '#10b981',
         borderRadius: 8,
       },
@@ -295,7 +295,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                   </div>
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Total Patients</p>
-                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalPatients}</h3>
+                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.totalPatients ?? 0}</h3>
                   </div>
                 </CardContent>
               </Card>
@@ -307,7 +307,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                   </div>
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Active Doctors</p>
-                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalDoctors}</h3>
+                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.totalDoctors ?? 0}</h3>
                   </div>
                 </CardContent>
               </Card>
@@ -319,7 +319,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                   </div>
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Total Bookings</p>
-                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalAppointments}</h3>
+                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.totalAppointments ?? 0}</h3>
                   </div>
                 </CardContent>
               </Card>
@@ -331,7 +331,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                   </div>
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Active Scheduled</p>
-                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.upcomingAppointments}</h3>
+                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.upcomingAppointments ?? 0}</h3>
                   </div>
                 </CardContent>
               </Card>
@@ -343,7 +343,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                   </div>
                   <div>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Total Prescriptions</p>
-                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalPrescriptions}</h3>
+                    <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats?.totalPrescriptions ?? 0}</h3>
                   </div>
                 </CardContent>
               </Card>

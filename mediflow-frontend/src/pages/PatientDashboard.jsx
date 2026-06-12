@@ -204,7 +204,7 @@ const PatientDashboard = ({ stats, refreshStats }) => {
                   </div>
                   <div className="mt-4">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Scheduled Visits</p>
-                    <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats.upcomingAppointments}</h3>
+                    <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats?.upcomingAppointments ?? 0}</h3>
                   </div>
                 </CardContent>
               </Card>
@@ -217,7 +217,7 @@ const PatientDashboard = ({ stats, refreshStats }) => {
                   </div>
                   <div className="mt-4">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">My Total Consults</p>
-                    <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats.totalAppointments}</h3>
+                    <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats?.totalAppointments ?? 0}</h3>
                   </div>
                 </CardContent>
               </Card>
@@ -230,7 +230,7 @@ const PatientDashboard = ({ stats, refreshStats }) => {
                   </div>
                   <div className="mt-4">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">My Prescriptions</p>
-                    <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats.totalPrescriptions}</h3>
+                    <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats?.totalPrescriptions ?? 0}</h3>
                   </div>
                 </CardContent>
               </Card>
@@ -256,34 +256,34 @@ const PatientDashboard = ({ stats, refreshStats }) => {
                 </CardHeader>
                 
                 <CardContent className="p-6 space-y-4">
-                  {stats.recentAppointments.length === 0 ? (
+                  {!stats?.recentAppointments || stats.recentAppointments.length === 0 ? (
                     <p className="text-xs text-slate-400 py-6 text-center">No upcoming consultations booked.</p>
                   ) : (
                     <div className="divide-y divide-slate-100 max-h-[400px] overflow-y-auto pr-2">
-                      {stats.recentAppointments.map((appt) => (
-                        <div key={appt.id} className="py-4 first:pt-0 last:pb-0 flex justify-between items-center">
+                      {(stats?.recentAppointments || []).map((appt) => (
+                        <div key={appt?.id} className="py-4 first:pt-0 last:pb-0 flex justify-between items-center">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <h5 className="text-sm font-bold text-slate-800">
-                                Dr. {appt.doctor.user.firstName} {appt.doctor.user.lastName}
+                                Dr. {appt?.doctor?.user?.firstName || ''} {appt?.doctor?.user?.lastName || ''}
                               </h5>
                               <Badge variant="neutral">
-                                {appt.doctor.specialization}
+                                {appt?.doctor?.specialization || 'N/A'}
                               </Badge>
                             </div>
                             <p className="text-xs text-slate-500 font-semibold">
-                              Date: {new Date(appt.appointmentDate).toLocaleString('en-US', {
+                              Date: {appt?.appointmentDate ? new Date(appt.appointmentDate).toLocaleString('en-US', {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit'
-                              })}
+                              }) : 'N/A'}
                             </p>
-                            <p className="text-xs text-slate-450 font-medium">Reason: {appt.reason}</p>
+                            <p className="text-xs text-slate-450 font-medium">Reason: {appt?.reason || 'N/A'}</p>
                           </div>
                           <div>
-                            {getStatusBadge(appt.status)}
+                            {getStatusBadge(appt?.status)}
                           </div>
                         </div>
                       ))}
@@ -309,18 +309,18 @@ const PatientDashboard = ({ stats, refreshStats }) => {
                 </CardHeader>
 
                 <CardContent className="p-6">
-                  {stats.recentRecords.length === 0 ? (
+                  {!stats?.recentRecords || stats.recentRecords.length === 0 ? (
                     <p className="text-xs text-slate-400 py-6 text-center">No prescriptions on record.</p>
                   ) : (
                     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                      {stats.recentRecords.map((rec) => (
-                        <div key={rec.id} className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl space-y-3">
+                      {(stats?.recentRecords || []).map((rec) => (
+                        <div key={rec?.id} className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl space-y-3">
                           <div className="flex justify-between items-start">
                             <div>
                               <h5 className="text-xs font-bold text-slate-800">
-                                Dr. {rec.doctor.user.firstName} {rec.doctor.user.lastName}
+                                Dr. {rec?.doctor?.user?.firstName || ''} {rec?.doctor?.user?.lastName || ''}
                               </h5>
-                              <p className="text-[10px] text-slate-400 font-bold">{rec.visitDate}</p>
+                              <p className="text-[10px] text-slate-400 font-bold">{rec?.visitDate || 'N/A'}</p>
                             </div>
                             <span className="p-1 rounded bg-indigo-50 border border-indigo-100 text-indigo-605">
                               <FileText className="w-4.5 h-4.5" />
@@ -328,9 +328,9 @@ const PatientDashboard = ({ stats, refreshStats }) => {
                           </div>
                           <div className="text-[11px] space-y-1.5 border-t border-slate-200/50 pt-2">
                             <p className="text-slate-700 font-semibold leading-normal">
-                              <span className="font-bold text-slate-500">Rx:</span> {rec.prescription}
+                              <span className="font-bold text-slate-500">Rx:</span> {rec?.prescription || 'N/A'}
                             </p>
-                            <p className="text-slate-450 font-semibold">Diagnosis: {rec.diagnosis}</p>
+                            <p className="text-slate-455 font-semibold">Diagnosis: {rec?.diagnosis || 'N/A'}</p>
                           </div>
                         </div>
                       ))}
