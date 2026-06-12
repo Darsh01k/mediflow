@@ -35,10 +35,10 @@ public class Hospital {
     @Column(length = 20)
     private String pincode;
 
-    @Column(precision = 10, scale = 7)
+    @Column
     private Double latitude;
 
-    @Column(precision = 10, scale = 7)
+    @Column
     private Double longitude;
 
     @Column(name = "license_number", length = 100)
