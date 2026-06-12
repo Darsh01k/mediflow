@@ -28,14 +28,16 @@ public class MedicalRecordController {
     private PatientService patientService;
 
     @GetMapping("/patient/{patientId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN') or hasRole('HOSPITAL_ADMIN') or hasRole('DOCTOR') or hasRole('PATIENT')")
     public ResponseEntity<List<MedicalRecordDto>> getRecordsForPatient(@PathVariable Long patientId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = auth.getName();
-        boolean isAdminOrDoctor = auth.getAuthorities().stream().anyMatch(a ->
-                a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_DOCTOR"));
+        boolean isPrivileged = auth.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equals("ROLE_PLATFORM_ADMIN") || 
+                a.getAuthority().equals("ROLE_HOSPITAL_ADMIN") || 
+                a.getAuthority().equals("ROLE_DOCTOR"));
 
-        if (!isAdminOrDoctor) {
+        if (!isPrivileged) {
             PatientDto patient = patientService.getPatientById(patientId);
             if (!patient.getUser().getUsername().equals(currentUsername)) {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);

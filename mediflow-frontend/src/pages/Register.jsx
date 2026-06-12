@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -7,6 +7,8 @@ import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
+import API from '../services/api';
+import { AvatarPicker } from '../components/ui/Avatar';
 import { 
   HeartPulse, 
   User, 
@@ -16,7 +18,11 @@ import {
   DollarSign, 
   Calendar, 
   MapPin, 
-  Phone
+  Phone,
+  Briefcase,
+  Globe,
+  Building,
+  GraduationCap
 } from 'lucide-react';
 
 const Register = () => {
@@ -24,13 +30,16 @@ const Register = () => {
   const toast = useToast();
   const navigate = useNavigate();
 
-  // Common fields
+  // Role
   const [role, setRole] = useState('PATIENT');
+
+  // Common fields
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [avatarId, setAvatarId] = useState('avatar_1');
 
   // Patient fields
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -45,10 +54,45 @@ const Register = () => {
   const [licenseNumber, setLicenseNumber] = useState('');
   const [consultationFee, setConsultationFee] = useState('');
   const [bio, setBio] = useState('');
+  const [qualification, setQualification] = useState('');
+  const [experience, setExperience] = useState('');
+  const [languages, setLanguages] = useState('');
+  const [docPhone, setDocPhone] = useState('');
+  const [hospitalId, setHospitalId] = useState('');
+  const [hospitalsList, setHospitalsList] = useState([]);
+
+  // Hospital Admin fields
+  const [hospitalName, setHospitalName] = useState('');
+  const [hospitalEmail, setHospitalEmail] = useState('');
+  const [hospitalPhone, setHospitalPhone] = useState('');
+  const [hospitalAddress, setHospitalAddress] = useState('');
+  const [hospitalCity, setHospitalCity] = useState('');
+  const [hospitalState, setHospitalState] = useState('');
+  const [hospitalPincode, setHospitalPincode] = useState('');
+  const [hospitalLat, setHospitalLat] = useState('');
+  const [hospitalLng, setHospitalLng] = useState('');
+  const [hospitalLicense, setHospitalLicense] = useState('');
+  const [hospitalDesc, setHospitalDesc] = useState('');
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Fetch available hospitals for doctors to pick from
+    const loadHospitals = async () => {
+      try {
+        const res = await API.get('/hospitals');
+        setHospitalsList(res.data);
+        if (res.data.length > 0) {
+          setHospitalId(res.data[0].id.toString());
+        }
+      } catch (err) {
+        console.error('Failed to load hospitals', err);
+      }
+    };
+    loadHospitals();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,28 +110,51 @@ const Register = () => {
       role,
       firstName,
       lastName,
+      avatarId
     };
 
     if (role === 'PATIENT') {
-      if (!dateOfBirth || !phone || !address || !emergencyContact) {
-        setError('Please fill in all patient demographics');
+      if (!dateOfBirth || !phone || !emergencyContact) {
+        setError('Please fill in required patient demographics (address is optional)');
         return;
       }
       payload.dateOfBirth = dateOfBirth;
       payload.gender = gender;
       payload.phone = phone;
-      payload.address = address;
+      payload.address = address; // optional
       payload.emergencyContact = emergencyContact;
       payload.bloodType = bloodType;
-    } else {
-      if (!specialization || !licenseNumber || !consultationFee) {
-        setError('Please fill in all professional doctor details');
+    } else if (role === 'DOCTOR') {
+      if (!specialization || !licenseNumber || !consultationFee || !hospitalId || !qualification || !experience || !docPhone) {
+        setError('Please fill in all doctor details');
         return;
       }
       payload.specialization = specialization;
       payload.licenseNumber = licenseNumber;
       payload.consultationFee = parseFloat(consultationFee);
       payload.bio = bio;
+      payload.hospitalId = parseInt(hospitalId);
+      payload.qualification = qualification;
+      payload.experience = parseInt(experience);
+      payload.languages = languages;
+      payload.phone = docPhone;
+    } else if (role === 'HOSPITAL_ADMIN') {
+      if (!hospitalName || !hospitalAddress) {
+        setError('Hospital name and street address are required');
+        return;
+      }
+      payload.hospitalName = hospitalName;
+      payload.hospitalEmail = hospitalEmail;
+      payload.hospitalPhone = hospitalPhone;
+      payload.hospitalAddress = hospitalAddress;
+      payload.hospitalCity = hospitalCity;
+      payload.hospitalState = hospitalState;
+      payload.hospitalPincode = hospitalPincode;
+      payload.hospitalLatitude = hospitalLat ? parseFloat(hospitalLat) : null;
+      payload.hospitalLongitude = hospitalLng ? parseFloat(hospitalLng) : null;
+      payload.hospitalLicenseNumber = hospitalLicense;
+      payload.hospitalDescription = hospitalDesc;
+      payload.hospitalLogoAvatar = avatarId; // Use selected avatar for hospital logo
     }
 
     try {
@@ -141,37 +208,57 @@ const Register = () => {
           )}
 
           {/* Role Selector Tabs */}
-          <div className="grid grid-cols-2 bg-slate-800/50 p-1 rounded-xl mb-6 border border-slate-850">
+          <div className="grid grid-cols-3 bg-slate-800/50 p-1 rounded-xl mb-6 border border-slate-850">
             <button
               type="button"
               onClick={() => setRole('PATIENT')}
               disabled={loading}
-              className={`py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
+              className={`py-2 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer ${
                 role === 'PATIENT'
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Register as Patient
+              Patient
             </button>
             <button
               type="button"
               onClick={() => setRole('DOCTOR')}
               disabled={loading}
-              className={`py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
+              className={`py-2 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer ${
                 role === 'DOCTOR'
                   ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Register as Doctor
+              Doctor
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole('HOSPITAL_ADMIN')}
+              disabled={loading}
+              className={`py-2 text-[10px] font-bold uppercase rounded-lg transition-all cursor-pointer ${
+                role === 'HOSPITAL_ADMIN'
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Hospital Admin
             </button>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Section 1: Basic Credentials */}
+            {/* Section 1: Avatar Selector */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider pb-1.5 border-b border-slate-800">
+                Choose Profile Avatar
+              </h3>
+              <AvatarPicker selectedId={avatarId} onSelect={setAvatarId} />
+            </div>
+
+            {/* Section 2: Basic Credentials */}
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider pb-1.5 border-b border-slate-800">
                 Basic Account Credentials
@@ -240,8 +327,8 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Section 2: Dynamic Info based on Selected Role */}
-            {role === 'PATIENT' ? (
+            {/* Section 3: Dynamic Info based on Selected Role */}
+            {role === 'PATIENT' && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider pb-1.5 border-b border-slate-800">
                   Patient Medical Profile Details
@@ -306,30 +393,70 @@ const Register = () => {
                     className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
                   />
 
-                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-650">
-                    <label htmlFor="address" className="block font-bold text-slate-500 uppercase tracking-wide">Residential Address</label>
+                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                    <label htmlFor="address" className="block font-bold text-slate-500 uppercase tracking-wide">Residential Address (Optional)</label>
                     <div className="relative">
                       <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                       <textarea
                         id="address"
-                        required
                         rows="2"
                         placeholder="123 Health Ave, Medical City, MC 98765"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                         disabled={loading}
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-800/40 border border-slate-800 hover:border-slate-350 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white placeholder-slate-500 text-sm font-medium resize-none"
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-800/40 border border-slate-800 hover:border-slate-700 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white placeholder-slate-500 text-sm font-medium resize-none"
                       />
                     </div>
                   </div>
                 </div>
               </div>
-            ) : (
+            )}
+
+            {role === 'DOCTOR' && (
               <div className="space-y-4">
                 <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider pb-1.5 border-b border-slate-800">
                   Doctor Professional Practice Details
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* Hospital Selection */}
+                  <div className="space-y-1.5 text-xs font-semibold text-slate-605">
+                    <label htmlFor="hospitalSelect" className="block font-bold text-slate-500 uppercase tracking-wide">Select Practicing Hospital</label>
+                    <div className="relative">
+                      <Building className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                      <select
+                        id="hospitalSelect"
+                        required
+                        value={hospitalId}
+                        onChange={(e) => setHospitalId(e.target.value)}
+                        disabled={loading}
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-800/40 border border-slate-800 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white text-sm font-medium"
+                      >
+                        {hospitalsList.length === 0 ? (
+                          <option value="">No hospitals registered yet</option>
+                        ) : (
+                          hospitalsList.map((hosp) => (
+                            <option key={hosp.id} value={hosp.id} className="bg-slate-900 text-white">
+                              {hosp.name} ({hosp.city || hosp.address})
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  <Input
+                    label="Medical License Number"
+                    id="licenseNumber"
+                    required
+                    placeholder="LIC-98765432"
+                    value={licenseNumber}
+                    onChange={(e) => setLicenseNumber(e.target.value)}
+                    disabled={loading}
+                    icon={CreditCard}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
                   <Input
                     label="Medical Specialization"
                     id="specialization"
@@ -338,19 +465,45 @@ const Register = () => {
                     value={specialization}
                     onChange={(e) => setSpecialization(e.target.value)}
                     disabled={loading}
-                    icon={User}
+                    icon={Briefcase}
                     className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
                   />
 
                   <Input
-                    label="Medical License Number"
-                    id="licenseNumber"
+                    label="Doctor Phone"
+                    id="docPhone"
                     required
-                    placeholder="LIC-12345678"
-                    value={licenseNumber}
-                    onChange={(e) => setLicenseNumber(e.target.value)}
+                    placeholder="+1 (555) 321-7654"
+                    value={docPhone}
+                    onChange={(e) => setDocPhone(e.target.value)}
                     disabled={loading}
-                    icon={CreditCard}
+                    icon={Phone}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
+                  <Input
+                    label="Qualification"
+                    id="qualification"
+                    required
+                    placeholder="MD, MBBS, PhD"
+                    value={qualification}
+                    onChange={(e) => setQualification(e.target.value)}
+                    disabled={loading}
+                    icon={GraduationCap}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
+                  <Input
+                    label="Years of Experience"
+                    id="experience"
+                    type="number"
+                    required
+                    min="0"
+                    placeholder="12"
+                    value={experience}
+                    onChange={(e) => setExperience(e.target.value)}
+                    disabled={loading}
+                    icon={Calendar}
                     className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
                   />
 
@@ -366,10 +519,21 @@ const Register = () => {
                     onChange={(e) => setConsultationFee(e.target.value)}
                     disabled={loading}
                     icon={DollarSign}
-                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500 md:col-span-2"
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
                   />
 
-                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-650">
+                  <Input
+                    label="Spoken Languages"
+                    id="languages"
+                    placeholder="English, Spanish, French"
+                    value={languages}
+                    onChange={(e) => setLanguages(e.target.value)}
+                    disabled={loading}
+                    icon={Globe}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
+                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
                     <label htmlFor="bio" className="block font-bold text-slate-500 uppercase tracking-wide">Professional Bio</label>
                     <textarea
                       id="bio"
@@ -378,7 +542,147 @@ const Register = () => {
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       disabled={loading}
-                      className="w-full px-4 py-2.5 bg-slate-800/40 border border-slate-800 hover:border-slate-350 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white placeholder-slate-500 text-sm font-medium resize-none"
+                      className="w-full px-4 py-2.5 bg-slate-800/40 border border-slate-800 hover:border-slate-700 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white placeholder-slate-500 text-sm font-medium resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {role === 'HOSPITAL_ADMIN' && (
+              <div className="space-y-4">
+                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider pb-1.5 border-b border-slate-800">
+                  Hospital Entity Details (Setup new facility)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Hospital Name"
+                    id="hospName"
+                    required
+                    placeholder="Saint Grace Medical Center"
+                    value={hospitalName}
+                    onChange={(e) => setHospitalName(e.target.value)}
+                    disabled={loading}
+                    icon={Building}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500 md:col-span-2"
+                  />
+
+                  <Input
+                    label="Hospital Contact Email"
+                    id="hospEmail"
+                    type="email"
+                    placeholder="info@stgrace.org"
+                    value={hospitalEmail}
+                    onChange={(e) => setHospitalEmail(e.target.value)}
+                    disabled={loading}
+                    icon={Mail}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
+                  <Input
+                    label="Hospital Contact Phone"
+                    id="hospPhone"
+                    placeholder="+1 (555) 123-4567"
+                    value={hospitalPhone}
+                    onChange={(e) => setHospitalPhone(e.target.value)}
+                    disabled={loading}
+                    icon={Phone}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
+                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                    <label htmlFor="hospAddress" className="block font-bold text-slate-500 uppercase tracking-wide">Street Address (Mandatory)</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                      <textarea
+                        id="hospAddress"
+                        required
+                        rows="2"
+                        placeholder="777 Health Blvd, Sector 4"
+                        value={hospitalAddress}
+                        onChange={(e) => setHospitalAddress(e.target.value)}
+                        disabled={loading}
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-800/40 border border-slate-800 hover:border-slate-700 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white placeholder-slate-500 text-sm font-medium resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <Input
+                    label="City"
+                    id="hospCity"
+                    placeholder="Medical City"
+                    value={hospitalCity}
+                    onChange={(e) => setHospitalCity(e.target.value)}
+                    disabled={loading}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
+                  <Input
+                    label="State"
+                    id="hospState"
+                    placeholder="CA"
+                    value={hospitalState}
+                    onChange={(e) => setHospitalState(e.target.value)}
+                    disabled={loading}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
+                  <Input
+                    label="Pincode"
+                    id="hospPincode"
+                    placeholder="90210"
+                    value={hospitalPincode}
+                    onChange={(e) => setHospitalPincode(e.target.value)}
+                    disabled={loading}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
+                  <Input
+                    label="Hospital License Number"
+                    id="hospLicense"
+                    placeholder="LIC-HOSP-99008"
+                    value={hospitalLicense}
+                    onChange={(e) => setHospitalLicense(e.target.value)}
+                    disabled={loading}
+                    icon={CreditCard}
+                    className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input
+                      label="Latitude"
+                      id="hospLat"
+                      type="number"
+                      step="any"
+                      placeholder="34.0522"
+                      value={hospitalLat}
+                      onChange={(e) => setHospitalLat(e.target.value)}
+                      disabled={loading}
+                      className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                    />
+                    <Input
+                      label="Longitude"
+                      id="hospLng"
+                      type="number"
+                      step="any"
+                      placeholder="-118.2437"
+                      value={hospitalLng}
+                      onChange={(e) => setHospitalLng(e.target.value)}
+                      disabled={loading}
+                      className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                    <label htmlFor="hospDesc" className="block font-bold text-slate-500 uppercase tracking-wide">Facility Description</label>
+                    <textarea
+                      id="hospDesc"
+                      rows="2"
+                      placeholder="Brief description of specialized fields, patient accommodations, etc..."
+                      value={hospitalDesc}
+                      onChange={(e) => setHospitalDesc(e.target.value)}
+                      disabled={loading}
+                      className="w-full px-4 py-2.5 bg-slate-800/40 border border-slate-800 hover:border-slate-700 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white placeholder-slate-500 text-sm font-medium resize-none"
                     />
                   </div>
                 </div>

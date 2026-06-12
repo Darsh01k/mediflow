@@ -14,7 +14,7 @@ public class DtoMapperTest {
 
     @Test
     public void testUserToDto() {
-        User user = new User("username", "password", "email@example.com", Role.ADMIN, "First", "Last");
+        User user = new User("username", "password", "email@example.com", Role.PLATFORM_ADMIN, "First", "Last");
         user.setId(10L);
 
         UserDto dto = DtoMapper.toDto(user);
@@ -23,7 +23,7 @@ public class DtoMapperTest {
         assertEquals(10L, dto.getId());
         assertEquals("username", dto.getUsername());
         assertEquals("email@example.com", dto.getEmail());
-        assertEquals(Role.ADMIN, dto.getRole());
+        assertEquals(Role.PLATFORM_ADMIN, dto.getRole());
         assertEquals("First", dto.getFirstName());
         assertEquals("Last", dto.getLastName());
     }

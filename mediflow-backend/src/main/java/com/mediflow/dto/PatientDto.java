@@ -12,6 +12,7 @@ public class PatientDto {
     private String address;
     private String emergencyContact;
     private String bloodType;
+    private String medicalNotes;
     private LocalDateTime createdAt;
 
     public PatientDto() {}
@@ -25,6 +26,19 @@ public class PatientDto {
         this.address = address;
         this.emergencyContact = emergencyContact;
         this.bloodType = bloodType;
+        this.createdAt = createdAt;
+    }
+
+    public PatientDto(Long id, UserDto user, LocalDate dateOfBirth, String gender, String phone, String address, String emergencyContact, String bloodType, String medicalNotes, LocalDateTime createdAt) {
+        this.id = id;
+        this.user = user;
+        this.dateOfBirth = dateOfBirth;
+        this.gender = gender;
+        this.phone = phone;
+        this.address = address;
+        this.emergencyContact = emergencyContact;
+        this.bloodType = bloodType;
+        this.medicalNotes = medicalNotes;
         this.createdAt = createdAt;
     }
 
@@ -90,6 +104,14 @@ public class PatientDto {
 
     public void setBloodType(String bloodType) {
         this.bloodType = bloodType;
+    }
+
+    public String getMedicalNotes() {
+        return medicalNotes;
+    }
+
+    public void setMedicalNotes(String medicalNotes) {
+        this.medicalNotes = medicalNotes;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -27,7 +27,7 @@ public class Patient {
     @Column(nullable = false, length = 20)
     private String phone;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String address;
 
     @Column(name = "emergency_contact", nullable = false, length = 100)
@@ -35,6 +35,9 @@ public class Patient {
 
     @Column(name = "blood_type", length = 5)
     private String bloodType;
+
+    @Column(name = "medical_notes", columnDefinition = "TEXT")
+    private String medicalNotes;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -122,5 +125,13 @@ public class Patient {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getMedicalNotes() {
+        return medicalNotes;
+    }
+
+    public void setMedicalNotes(String medicalNotes) {
+        this.medicalNotes = medicalNotes;
     }
 }

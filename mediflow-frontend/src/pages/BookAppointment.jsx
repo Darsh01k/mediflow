@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import API from '../services/api';
@@ -21,11 +21,15 @@ const BookAppointment = () => {
   const { user } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const searchParams = new URLSearchParams(location.search);
+  const queryDoctorId = searchParams.get('doctorId');
 
   const [doctors, setDoctors] = useState([]);
   const [specializations, setSpecializations] = useState([]);
   const [selectedSpecialization, setSelectedSpecialization] = useState('');
-  const [selectedDoctorId, setSelectedDoctorId] = useState('');
+  const [selectedDoctorId, setSelectedDoctorId] = useState(queryDoctorId || '');
   const [appointmentDate, setAppointmentDate] = useState('');
   const [reason, setReason] = useState('');
   const [notes, setNotes] = useState('');
@@ -50,6 +54,17 @@ const BookAppointment = () => {
     };
     loadBookingData();
   }, []);
+
+  // Pre-select specialization if doctorId query parameter is provided
+  useEffect(() => {
+    if (queryDoctorId && doctors.length > 0) {
+      const doc = doctors.find(d => d.id === parseInt(queryDoctorId));
+      if (doc) {
+        setSelectedSpecialization(doc.specialization);
+        setSelectedDoctorId(queryDoctorId);
+      }
+    }
+  }, [queryDoctorId, doctors]);
 
   const filteredDoctors = selectedSpecialization 
     ? doctors.filter(doc => doc.specialization === selectedSpecialization)
@@ -114,7 +129,7 @@ const BookAppointment = () => {
           </Alert>
         )}
 
-        <form onSubmit={handleBook} className="space-y-6 text-xs font-medium text-slate-655">
+        <form onSubmit={handleBook} className="space-y-6 text-xs font-medium text-slate-600">
           {/* Step 1: Filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Select
@@ -154,7 +169,7 @@ const BookAppointment = () => {
 
           {/* Doctor Details Summary Card */}
           {selectedDoctorDetails && (
-            <div className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl flex items-start gap-4 hover:bg-slate-50/80 transition-colors">
+            <div className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl flex items-start gap-4 hover:bg-slate-50/80 transition-colors animate-in fade-in duration-200">
               <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold shrink-0">
                 Dr
               </div>
@@ -186,7 +201,7 @@ const BookAppointment = () => {
 
           {/* Step 3: Clinical Reason */}
           <div className="space-y-4">
-            <div className="space-y-1.5 text-xs font-semibold text-slate-650">
+            <div className="space-y-1.5 text-xs font-semibold text-slate-600">
               <label htmlFor="reason" className="block font-bold text-slate-500 uppercase tracking-wide">Reason for Consultation</label>
               <div className="relative">
                 <FileQuestion className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
@@ -202,7 +217,7 @@ const BookAppointment = () => {
               </div>
             </div>
 
-            <div className="space-y-1.5 text-xs font-semibold text-slate-655">
+            <div className="space-y-1.5 text-xs font-semibold text-slate-600">
               <label htmlFor="notes" className="block font-bold text-slate-500 uppercase tracking-wide">Additional Notes (Optional)</label>
               <textarea
                 id="notes"

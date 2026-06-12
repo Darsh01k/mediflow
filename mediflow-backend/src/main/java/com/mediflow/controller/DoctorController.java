@@ -25,6 +25,17 @@ public class DoctorController {
         return ResponseEntity.ok(doctors);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<DoctorDto>> searchDoctors(
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "specialization", required = false) String specialization,
+            @RequestParam(value = "hospital", required = false) String hospital,
+            @RequestParam(value = "city", required = false) String city,
+            @RequestParam(value = "experience", required = false) Integer experience) {
+        List<DoctorDto> doctors = doctorService.searchDoctors(name, specialization, hospital, city, experience);
+        return ResponseEntity.ok(doctors);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<DoctorDto> getDoctorById(@PathVariable Long id) {
         DoctorDto doctor = doctorService.getDoctorById(id);
@@ -32,15 +43,17 @@ public class DoctorController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN') or hasRole('HOSPITAL_ADMIN') or hasRole('DOCTOR')")
     public ResponseEntity<DoctorDto> getDoctorByUserId(@PathVariable Long userId) {
         DoctorDto doctor = doctorService.getDoctorByUserId(userId);
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = auth.getName();
-        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isPrivileged = auth.getAuthorities().stream().anyMatch(a -> 
+                a.getAuthority().equals("ROLE_PLATFORM_ADMIN") || 
+                a.getAuthority().equals("ROLE_HOSPITAL_ADMIN"));
 
-        if (!isAdmin && !doctor.getUser().getUsername().equals(currentUsername)) {
+        if (!isPrivileged && !doctor.getUser().getUsername().equals(currentUsername)) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         
@@ -48,15 +61,17 @@ public class DoctorController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('DOCTOR')")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN') or hasRole('HOSPITAL_ADMIN') or hasRole('DOCTOR')")
     public ResponseEntity<DoctorDto> updateDoctor(@PathVariable Long id, @RequestBody DoctorDto doctorDto) {
         DoctorDto existingDoctor = doctorService.getDoctorById(id);
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = auth.getName();
-        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isPrivileged = auth.getAuthorities().stream().anyMatch(a -> 
+                a.getAuthority().equals("ROLE_PLATFORM_ADMIN") || 
+                a.getAuthority().equals("ROLE_HOSPITAL_ADMIN"));
 
-        if (!isAdmin && !existingDoctor.getUser().getUsername().equals(currentUsername)) {
+        if (!isPrivileged && !existingDoctor.getUser().getUsername().equals(currentUsername)) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
@@ -65,7 +80,7 @@ public class DoctorController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
     public ResponseEntity<Void> deleteDoctor(@PathVariable Long id) {
         doctorService.deleteDoctor(id);
         return ResponseEntity.noContent().build();

@@ -1,7 +1,11 @@
 package com.mediflow.entity;
 
 public enum AppointmentStatus {
-    SCHEDULED,
+    PENDING,
+    APPROVED,
+    REJECTED,
     COMPLETED,
-    CANCELLED
+    CANCELLED,
+    SCHEDULED
 }
+

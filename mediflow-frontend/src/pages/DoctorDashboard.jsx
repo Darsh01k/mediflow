@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   Calendar, 
@@ -8,19 +8,33 @@ import {
   AlertCircle,
   Stethoscope,
   ClipboardList,
-  Plus
+  Plus,
+  Phone,
+  GraduationCap,
+  Briefcase,
+  Globe,
+  DollarSign,
+  Settings,
+  Activity,
+  Heart
 } from 'lucide-react';
 import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
+import { Table, THead, TBody, TR, TH, TD } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
 import Alert from '../components/ui/Alert';
+import Spinner from '../components/ui/Spinner';
+import EmptyState from '../components/ui/EmptyState';
+import { HealthAvatar, AvatarPicker } from '../components/ui/Avatar';
 
 const DoctorDashboard = ({ stats, refreshStats }) => {
   const { user } = useAuth();
   const toast = useToast();
+  const [activeTab, setActiveTab] = useState('appointments');
   
   // Clinical record modal state
   const [activeAppointment, setActiveAppointment] = useState(null);
@@ -29,6 +43,57 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
   const [treatmentNotes, setTreatmentNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Doctor Profile state
+  const [doctorProfile, setDoctorProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Form states
+  const [spec, setSpec] = useState('');
+  const [lic, setLic] = useState('');
+  const [fee, setFee] = useState('');
+  const [bio, setBio] = useState('');
+  const [phone, setPhone] = useState('');
+  const [qual, setQual] = useState('');
+  const [exp, setExp] = useState('');
+  const [lang, setLang] = useState('');
+  const [avail, setAvail] = useState('');
+  const [avId, setAvId] = useState('avatar_1');
+  const [fname, setFname] = useState('');
+  const [lname, setLname] = useState('');
+  const [mail, setMail] = useState('');
+
+  const fetchDoctorProfile = async () => {
+    try {
+      setLoadingProfile(true);
+      const res = await API.get(`/doctors/user/${user.userId}`);
+      setDoctorProfile(res.data);
+      // Bind fields
+      setSpec(res.data.specialization || '');
+      setLic(res.data.licenseNumber || '');
+      setFee(res.data.consultationFee || '');
+      setBio(res.data.bio || '');
+      setPhone(res.data.phone || '');
+      setQual(res.data.qualification || '');
+      setExp(res.data.experience !== undefined ? res.data.experience.toString() : '');
+      setLang(res.data.languages || '');
+      setAvail(res.data.availability || '');
+      setAvId(res.data.user?.avatarId || 'avatar_1');
+      setFname(res.data.user?.firstName || '');
+      setLname(res.data.user?.lastName || '');
+      setMail(res.data.user?.email || '');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load doctor profile');
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDoctorProfile();
+  }, []);
 
   const handleCancelAppointment = async (apptId) => {
     if (window.confirm('Are you sure you want to cancel this consultation?')) {
@@ -86,6 +151,60 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
     }
   };
 
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    if (!spec || !lic || !fee || !qual || !exp || !phone) {
+      toast.error('Please fill in all mandatory profile fields');
+      return;
+    }
+
+    try {
+      setSavingProfile(true);
+      const payload = {
+        specialization: spec,
+        licenseNumber: lic,
+        consultationFee: parseFloat(fee),
+        bio,
+        phone,
+        qualification: qual,
+        experience: parseInt(exp),
+        languages: lang,
+        availability: avail,
+        user: {
+          firstName: fname,
+          lastName: lname,
+          email: mail,
+          avatarId: avId
+        }
+      };
+
+      const res = await API.put(`/doctors/${doctorProfile.id}`, payload);
+      setDoctorProfile(res.data);
+      
+      // Update local storage user data for real-time avatar sync
+      const savedUser = JSON.parse(localStorage.getItem('user'));
+      if (savedUser) {
+        savedUser.avatarId = avId;
+        savedUser.firstName = fname;
+        savedUser.lastName = lname;
+        savedUser.email = mail;
+        localStorage.setItem('user', JSON.stringify(savedUser));
+      }
+      
+      toast.success('Profile details modified successfully!');
+      // Force refresh auth context or reload if needed to sync headers
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save profile updates');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'SCHEDULED':
@@ -99,149 +218,474 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
     }
   };
 
+  // Derive unique patients list from stats appointments
+  const getUniquePatients = () => {
+    const map = new Map();
+    stats.recentAppointments.forEach(appt => {
+      if (appt.patient) {
+        map.set(appt.patient.id, appt.patient);
+      }
+    });
+    return Array.from(map.values());
+  };
+
+  const patientsList = getUniquePatients();
+
   return (
     <div className="space-y-8 relative">
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
-          <CardContent className="p-6 flex items-center gap-5">
-            <div className="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center text-sky-650 shrink-0">
-              <ClipboardList className="w-6 h-6" />
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
+              <Users className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">My Total Consults</p>
-              <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats.totalAppointments}</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Patients Served</p>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalPatients}</h3>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 flex items-center gap-5">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-650 shrink-0">
-              <Calendar className="w-6 h-6" />
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0">
+              <Clock className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Pending Visits</p>
-              <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats.upcomingAppointments}</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Today's Visits</p>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.todayAppointments}</h3>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 flex items-center gap-5">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-650 shrink-0">
-              <CheckCircle className="w-6 h-6" />
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-650 shrink-0">
+              <FileText className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Completed</p>
-              <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats.completedAppointments}</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Prescriptions Issued</p>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalPrescriptions}</h3>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6 flex items-center gap-5">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-650 shrink-0">
-              <Users className="w-6 h-6" />
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-650 shrink-0">
+              <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Patients Managed</p>
-              <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats.totalPatients}</h3>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">Pending Visits</p>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.upcomingAppointments}</h3>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-sky-600 shrink-0">
+              <ClipboardList className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">My Total Consults</p>
+              <h3 className="text-xl font-black text-slate-800 mt-0.5">{stats.totalAppointments}</h3>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Consultations List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Appointments Section */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>My Consultation Schedule</CardTitle>
-            <CardDescription>Review upcoming and past visits assigned to you</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            {stats.recentAppointments.length === 0 ? (
-              <p className="text-xs text-slate-400 py-6 text-center">No scheduled visits found.</p>
-            ) : (
-              <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto pr-2">
-                {stats.recentAppointments.map((appt) => (
-                  <div key={appt.id} className="py-4 first:pt-0 last:pb-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h5 className="text-sm font-bold text-slate-800">
-                          {appt.patient.user.firstName} {appt.patient.user.lastName}
-                        </h5>
-                        {getStatusBadge(appt.status)}
-                      </div>
-                      <p className="text-xs text-slate-500 font-semibold">
-                        Date: {new Date(appt.appointmentDate).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                      <p className="text-xs text-slate-400 font-semibold italic">Reason: {appt.reason}</p>
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('appointments')}
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+            activeTab === 'appointments'
+              ? 'border-emerald-500 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Consultation Schedule
+        </button>
+        <button
+          onClick={() => setActiveTab('prescriptions')}
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+            activeTab === 'prescriptions'
+              ? 'border-emerald-500 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Prescriptions & Charts
+        </button>
+        <button
+          onClick={() => setActiveTab('patients')}
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+            activeTab === 'patients'
+              ? 'border-emerald-500 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          My Patients Directory
+        </button>
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+            activeTab === 'profile'
+              ? 'border-emerald-500 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Modify Profile
+        </button>
+      </div>
+
+      {/* Dynamic Tab Panels */}
+      <div className="space-y-6">
+
+        {/* Tab 1: Appointments Schedule */}
+        {activeTab === 'appointments' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>My Consultation Schedule</CardTitle>
+              <CardDescription>Review upcoming and past visits assigned to you</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              {stats.recentAppointments.length === 0 ? (
+                <EmptyState
+                  title="No Scheduled Consultations"
+                  description="You do not have any patient visits currently booked."
+                  icon={Calendar}
+                />
+              ) : (
+                <Table>
+                  <THead>
+                    <TR>
+                      <TH>Patient</TH>
+                      <TH>Appointment Time</TH>
+                      <TH>Reason for Visit</TH>
+                      <TH className="text-center">Status</TH>
+                      <TH className="text-right">Action</TH>
+                    </TR>
+                  </THead>
+                  <TBody>
+                    {stats.recentAppointments.map((appt) => (
+                      <TR key={appt.id}>
+                        <TD>
+                          <div className="flex items-center gap-3">
+                            <HealthAvatar avatarId={appt.patient?.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
+                            <div>
+                              <div className="font-bold text-slate-800">
+                                {appt.patient?.user?.firstName} {appt.patient?.user?.lastName}
+                              </div>
+                              <div className="text-[10px] font-semibold text-slate-400">
+                                Gender: {appt.patient?.gender} • Blood: {appt.patient?.bloodType || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+                        </TD>
+                        <TD className="text-xs font-semibold text-slate-600">
+                          {new Date(appt.appointmentDate).toLocaleString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </TD>
+                        <TD className="max-w-xs text-xs text-slate-500 font-medium truncate" title={appt.reason}>
+                          {appt.reason}
+                        </TD>
+                        <TD className="text-center">
+                          {getStatusBadge(appt.status)}
+                        </TD>
+                        <TD className="text-right">
+                          {appt.status === 'SCHEDULED' && (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="xs"
+                                icon={Plus}
+                                onClick={() => setActiveAppointment(appt)}
+                              >
+                                Diagnose
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => handleCancelAppointment(appt.id)}
+                                className="text-rose-500 border-rose-100 hover:bg-rose-50 hover:text-rose-700"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          )}
+                        </TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tab 2: Prescriptions & Charts */}
+        {activeTab === 'prescriptions' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Clinical Charts History</CardTitle>
+              <CardDescription>Review past diagnosis logs and drugs prescriptions.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              {stats.recentRecords.length === 0 ? (
+                <EmptyState
+                  title="No Medical Entries"
+                  description="You have not logged any diagnostics chart summaries yet."
+                  icon={FileText}
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {stats.recentRecords.map((rec) => (
+                    <Card key={rec.id} className="border border-slate-200/60 shadow-sm">
+                      <CardHeader className="flex flex-row justify-between items-center bg-slate-50/50 pb-3 border-b">
+                        <div className="flex items-center gap-3">
+                          <HealthAvatar avatarId={rec.patient?.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
+                          <div>
+                            <CardTitle className="text-xs font-bold text-slate-800">
+                              {rec.patient?.user?.firstName} {rec.patient?.user?.lastName}
+                            </CardTitle>
+                            <CardDescription className="text-[10px]">Patient ID: #{rec.patient?.id}</CardDescription>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 border border-slate-200/50 rounded-full">
+                          {rec.visitDate}
+                        </span>
+                      </CardHeader>
+                      <CardContent className="p-4 text-xs space-y-3 font-semibold text-slate-600">
+                        <div>
+                          <span className="block font-bold text-slate-400 uppercase tracking-wide text-[9px] mb-1">Diagnosis</span>
+                          <p className="bg-slate-50 p-2.5 border border-slate-100 rounded-lg text-slate-800 font-medium">
+                            {rec.diagnosis}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="block font-bold text-slate-400 uppercase tracking-wide text-[9px] mb-1">Prescribed Treatment</span>
+                          <p className="bg-emerald-50/10 p-2.5 border border-emerald-100/30 rounded-lg text-emerald-800 font-medium">
+                            {rec.prescription}
+                          </p>
+                        </div>
+                        {rec.treatmentNotes && (
+                          <div>
+                            <span className="block font-bold text-slate-400 uppercase tracking-wide text-[9px] mb-1">Clinical Notes</span>
+                            <p className="text-slate-500 font-medium italic">
+                              {rec.treatmentNotes}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tab 3: My Patients */}
+        {activeTab === 'patients' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>My Patients Directory</CardTitle>
+              <CardDescription>Overview of unique patients associated with your practice logs</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              {patientsList.length === 0 ? (
+                <EmptyState
+                  title="No Patients Registered"
+                  description="No patient accounts are currently linked with your consult logs."
+                  icon={Users}
+                />
+              ) : (
+                <Table>
+                  <THead>
+                    <TR>
+                      <TH>Patient</TH>
+                      <TH>Date of Birth</TH>
+                      <TH>Gender & Blood Type</TH>
+                      <TH>Phone Number</TH>
+                      <TH>Emergency Contact</TH>
+                      <TH>Medical Notes</TH>
+                    </TR>
+                  </THead>
+                  <TBody>
+                    {patientsList.map((pat) => (
+                      <TR key={pat.id}>
+                        <TD>
+                          <div className="flex items-center gap-3">
+                            <HealthAvatar avatarId={pat.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
+                            <div>
+                              <div className="font-bold text-slate-800">
+                                {pat.user?.firstName} {pat.user?.lastName}
+                              </div>
+                              <div className="text-[10px] font-semibold text-slate-400">
+                                {pat.user?.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TD>
+                        <TD className="text-xs font-semibold text-slate-600">{pat.dateOfBirth}</TD>
+                        <TD className="text-xs font-semibold text-slate-600">
+                          {pat.gender} • <Badge variant="neutral">{pat.bloodType || 'N/A'}</Badge>
+                        </TD>
+                        <TD className="text-xs font-semibold text-slate-655">{pat.phone}</TD>
+                        <TD className="text-xs font-semibold text-slate-400 max-w-[150px] truncate" title={pat.emergencyContact}>
+                          {pat.emergencyContact}
+                        </TD>
+                        <TD className="max-w-xs text-xs text-slate-500 font-medium italic truncate" title={pat.medicalNotes || 'No notes'}>
+                          {pat.medicalNotes || 'None logged'}
+                        </TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tab 4: Modify Profile */}
+        {activeTab === 'profile' && doctorProfile && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Manage Doctor Profile</CardTitle>
+              <CardDescription>Change avatar, availability, specialization, consult fee, and qualifications.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              {loadingProfile ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-2">
+                  <Spinner />
+                  <p className="text-xs text-slate-400 font-semibold">Retrieving profile...</p>
+                </div>
+              ) : (
+                <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-4xl">
+                  {/* Avatar Picker Section */}
+                  <div className="space-y-3">
+                    <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Healthcare Avatar</span>
+                    <AvatarPicker selectedId={avId} onSelect={setAvId} />
+                  </div>
+
+                  {/* Basic Form Attributes */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      label="First Name"
+                      required
+                      placeholder="Doctor First Name"
+                      value={fname}
+                      onChange={(e) => setFname(e.target.value)}
+                    />
+                    <Input
+                      label="Last Name"
+                      required
+                      placeholder="Doctor Last Name"
+                      value={lname}
+                      onChange={(e) => setLname(e.target.value)}
+                    />
+                    <Input
+                      label="Email Address"
+                      required
+                      type="email"
+                      placeholder="dr.name@example.com"
+                      value={mail}
+                      onChange={(e) => setMail(e.target.value)}
+                    />
+                    <Input
+                      label="Practice Phone"
+                      required
+                      placeholder="+1 (555) 000-1111"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                    <Input
+                      label="Medical Specialization"
+                      required
+                      placeholder="Cardiology, General, etc."
+                      value={spec}
+                      onChange={(e) => setSpec(e.target.value)}
+                    />
+                    <Input
+                      label="License Number"
+                      required
+                      placeholder="LIC-12345"
+                      value={lic}
+                      onChange={(e) => setLic(e.target.value)}
+                    />
+                    <Input
+                      label="Academic Qualification"
+                      required
+                      placeholder="MD, MBBS, PhD"
+                      value={qual}
+                      onChange={(e) => setQual(e.target.value)}
+                    />
+                    <Input
+                      label="Years of Experience"
+                      required
+                      type="number"
+                      placeholder="10"
+                      value={exp}
+                      onChange={(e) => setExp(e.target.value)}
+                    />
+                    <Input
+                      label="Consultation Fee (USD)"
+                      required
+                      type="number"
+                      step="0.01"
+                      placeholder="80.00"
+                      value={fee}
+                      onChange={(e) => setFee(e.target.value)}
+                    />
+                    <Input
+                      label="Languages Spoken"
+                      placeholder="English, Spanish"
+                      value={lang}
+                      onChange={(e) => setLang(e.target.value)}
+                    />
+                    
+                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                      <label className="block font-bold text-slate-500 uppercase tracking-wide">Availability Schedule</label>
+                      <textarea
+                        rows="2"
+                        placeholder="Mon-Fri: 9:00 AM - 5:00 PM, Sat: 10:00 AM - 2:00 PM"
+                        value={avail}
+                        onChange={(e) => setAvail(e.target.value)}
+                        className="w-full text-xs font-semibold text-slate-805 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
+                      />
                     </div>
 
-                    {appt.status === 'SCHEDULED' && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          icon={Plus}
-                          onClick={() => setActiveAppointment(appt)}
-                        >
-                          Diagnose
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          icon={XCircle}
-                          onClick={() => handleCancelAppointment(appt.id)}
-                          className="text-rose-600 border-rose-100 hover:bg-rose-50/50"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    )}
+                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-605">
+                      <label className="block font-bold text-slate-500 uppercase tracking-wide">Professional Biography</label>
+                      <textarea
+                        rows="3"
+                        placeholder="Doctor's credentials and clinical history details..."
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        className="w-full text-xs font-semibold text-slate-805 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
+                      />
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Recent Medical Charts */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Patient Charts</CardTitle>
-            <CardDescription>Latest diagnostics entries</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            {stats.recentRecords.length === 0 ? (
-              <p className="text-xs text-slate-400 py-6 text-center">No medical entries found.</p>
-            ) : (
-              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                {stats.recentRecords.map((rec) => (
-                  <div key={rec.id} className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl space-y-2 hover:bg-slate-50 transition-colors">
-                    <div className="flex justify-between items-start">
-                      <h5 className="text-xs font-bold text-slate-800">
-                        {rec.patient.user.firstName} {rec.patient.user.lastName}
-                      </h5>
-                      <span className="text-[10px] text-slate-400 font-bold">{rec.visitDate}</span>
-                    </div>
-                    <div className="text-[11px] space-y-1">
-                      <p className="text-slate-700 leading-normal"><span className="font-bold text-slate-500">Diagnosis:</span> {rec.diagnosis}</p>
-                      <p className="text-slate-700 leading-normal"><span className="font-bold text-slate-500">Prescription:</span> {rec.prescription}</p>
-                    </div>
+                  <div className="flex gap-2 justify-end pt-3 border-t">
+                    <Button
+                      type="submit"
+                      loading={savingProfile}
+                    >
+                      Save Changes
+                    </Button>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
       </div>
 
@@ -283,7 +727,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                     placeholder="Describe patient condition, e.g. Acute Pharyngitis with mild dehydration."
                     value={diagnosis}
                     onChange={(e) => setDiagnosis(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 text-slate-800 placeholder-slate-400 resize-none font-medium text-sm"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 resize-none font-medium text-sm"
                   />
                 </div>
 
@@ -295,7 +739,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                     placeholder="e.g. Amoxicillin 500mg, 1 tablet 3x daily for 7 days."
                     value={prescription}
                     onChange={(e) => setPrescription(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 text-slate-800 placeholder-slate-400 resize-none font-medium text-sm"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 resize-none font-medium text-sm"
                   />
                 </div>
 
@@ -306,7 +750,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                     placeholder="Advised bed rest, keep hydrated, return if fever persists."
                     value={treatmentNotes}
                     onChange={(e) => setTreatmentNotes(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/15 text-slate-800 placeholder-slate-400 resize-none font-medium text-sm"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 resize-none font-medium text-sm"
                   />
                 </div>
 

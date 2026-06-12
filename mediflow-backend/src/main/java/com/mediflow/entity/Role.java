@@ -1,7 +1,8 @@
 package com.mediflow.entity;
 
 public enum Role {
-    ADMIN,
+    PLATFORM_ADMIN,
+    HOSPITAL_ADMIN,
     DOCTOR,
     PATIENT
 }

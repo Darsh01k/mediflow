@@ -103,7 +103,6 @@ const Login = () => {
             </Button>
           </form>
 
-          {/* Register Redirect */}
           <div className="mt-8 text-center text-xs font-semibold">
             <p className="text-slate-400">
               Don't have an account?{' '}
@@ -111,7 +110,7 @@ const Login = () => {
                 to="/register"
                 className="text-emerald-400 hover:text-emerald-300 hover:underline transition-colors"
               >
-                Create patient account
+                Register here
               </Link>
             </p>
           </div>

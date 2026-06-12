@@ -9,6 +9,8 @@ public class UserDto {
     private Role role;
     private String firstName;
     private String lastName;
+    private String avatarId;
+    private HospitalDto hospital;
 
     public UserDto() {}
 
@@ -19,6 +21,17 @@ public class UserDto {
         this.role = role;
         this.firstName = firstName;
         this.lastName = lastName;
+    }
+
+    public UserDto(Long id, String username, String email, Role role, String firstName, String lastName, String avatarId, HospitalDto hospital) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.role = role;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.avatarId = avatarId;
+        this.hospital = hospital;
     }
 
     public Long getId() {
@@ -67,5 +80,21 @@ public class UserDto {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public String getAvatarId() {
+        return avatarId;
+    }
+
+    public void setAvatarId(String avatarId) {
+        this.avatarId = avatarId;
+    }
+
+    public HospitalDto getHospital() {
+        return hospital;
+    }
+
+    public void setHospital(HospitalDto hospital) {
+        this.hospital = hospital;
     }
 }

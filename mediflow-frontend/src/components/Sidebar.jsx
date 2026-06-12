@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { HealthAvatar } from './ui/Avatar';
 import { 
   LayoutDashboard, 
   Users, 
@@ -9,7 +10,12 @@ import {
   FileText, 
   LogOut,
   HeartPulse,
-  X
+  X,
+  Search,
+  Building,
+  Navigation,
+  Clock,
+  AlertOctagon
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -17,25 +23,44 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const getLinks = () => {
     switch (user?.role) {
+      case 'PLATFORM_ADMIN':
       case 'ADMIN':
         return [
           { path: '/', label: 'Dashboard', icon: LayoutDashboard },
           { path: '/doctors', label: 'Doctor Management', icon: Stethoscope },
           { path: '/patients', label: 'Patient Management', icon: Users },
           { path: '/appointments', label: 'All Appointments', icon: Calendar },
+          { path: '/prescriptions', label: 'Prescriptions', icon: FileText },
+          { path: '/emergency', label: 'Emergency Help', icon: AlertOctagon },
+        ];
+      case 'HOSPITAL_ADMIN':
+        return [
+          { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+          { path: '/patients', label: 'Hospital Patients', icon: Users },
+          { path: '/appointments', label: 'Hospital Visits', icon: Calendar },
+          { path: '/prescriptions', label: 'Prescriptions', icon: FileText },
+          { path: '/emergency', label: 'Emergency Help', icon: AlertOctagon },
         ];
       case 'DOCTOR':
         return [
           { path: '/', label: 'Doctor Dashboard', icon: LayoutDashboard },
           { path: '/appointments', label: 'My Appointments', icon: Calendar },
           { path: '/patients', label: 'My Patients', icon: Users },
+          { path: '/prescriptions', label: 'Prescriptions', icon: FileText },
+          { path: '/emergency', label: 'Emergency Help', icon: AlertOctagon },
         ];
       case 'PATIENT':
         return [
           { path: '/', label: 'Patient Dashboard', icon: LayoutDashboard },
+          { path: '/doctor-search', label: 'Search Doctors', icon: Search },
+          { path: '/hospital-search', label: 'Search Hospitals', icon: Building },
+          { path: '/nearby-hospitals', label: 'Nearby Hospitals', icon: Navigation },
           { path: '/book-appointment', label: 'Book Appointment', icon: Calendar },
           { path: '/appointments', label: 'My Visits', icon: Calendar },
           { path: '/records', label: 'Medical Records', icon: FileText },
+          { path: '/prescriptions', label: 'My Prescriptions', icon: FileText },
+          { path: '/history', label: 'Medical History', icon: Clock },
+          { path: '/emergency', label: 'Emergency Help (SOS)', icon: AlertOctagon },
         ];
       default:
         return [];
@@ -73,21 +98,25 @@ const Sidebar = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* User Info */}
-        <div className="p-6 border-b border-slate-800">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Signed in as</p>
-          <h4 className="text-sm font-bold text-white mt-1 truncate">
-            {user?.firstName} {user?.lastName}
-          </h4>
-          <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
-            {user?.role}
-          </span>
+        {/* User Info with Premium Avatar Display */}
+        <div className="p-6 border-b border-slate-800 flex items-center gap-3">
+          <HealthAvatar avatarId={user?.avatarId || 'avatar_1'} className="w-12 h-12" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Signed in as</p>
+            <h4 className="text-xs font-bold text-white mt-0.5 truncate" title={`${user?.firstName} ${user?.lastName}`}>
+              {user?.firstName} {user?.lastName}
+            </h4>
+            <span className="inline-block mt-1.5 text-[8px] font-black px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
+              {user?.role?.replace('_', ' ')}
+            </span>
+          </div>
         </div>
 
         {/* Nav Links */}
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
           {links.map((link) => {
             const Icon = link.icon;
+            const isEmergency = link.path === '/emergency';
             return (
               <NavLink
                 key={link.path}
@@ -97,12 +126,18 @@ const Sidebar = ({ isOpen, onClose }) => {
                 className={({ isActive }) =>
                   `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 gap-3 group ${
                     isActive
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-950/20'
-                      : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                      ? isEmergency
+                        ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md shadow-red-950/20'
+                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-950/20'
+                      : isEmergency
+                        ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300 border border-red-500/20 font-bold'
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
                   }`
                 }
               >
-                <Icon className="w-5 h-5 flex-shrink-0 group-hover:scale-105 transition-transform" />
+                <Icon className={`w-5 h-5 flex-shrink-0 group-hover:scale-105 transition-transform ${
+                  isEmergency && !isOpen ? 'text-red-450' : ''
+                }`} />
                 <span>{link.label}</span>
               </NavLink>
             );

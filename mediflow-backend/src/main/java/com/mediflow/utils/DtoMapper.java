@@ -13,7 +13,29 @@ public class DtoMapper {
                 user.getEmail(),
                 user.getRole(),
                 user.getFirstName(),
-                user.getLastName()
+                user.getLastName(),
+                user.getAvatarId(),
+                toDto(user.getHospital())
+        );
+    }
+
+    public static HospitalDto toDto(Hospital hospital) {
+        if (hospital == null) return null;
+        return new HospitalDto(
+                hospital.getId(),
+                hospital.getName(),
+                hospital.getEmail(),
+                hospital.getPhone(),
+                hospital.getAddress(),
+                hospital.getCity(),
+                hospital.getState(),
+                hospital.getPincode(),
+                hospital.getLatitude(),
+                hospital.getLongitude(),
+                hospital.getLicenseNumber(),
+                hospital.getDescription(),
+                hospital.getLogoAvatar(),
+                hospital.getCreatedAt()
         );
     }
 
@@ -28,6 +50,7 @@ public class DtoMapper {
                 patient.getAddress(),
                 patient.getEmergencyContact(),
                 patient.getBloodType(),
+                patient.getMedicalNotes(),
                 patient.getCreatedAt()
         );
     }
@@ -41,6 +64,13 @@ public class DtoMapper {
                 doctor.getLicenseNumber(),
                 doctor.getConsultationFee(),
                 doctor.getBio(),
+                doctor.getPhone(),
+                doctor.getQualification(),
+                doctor.getExperience(),
+                doctor.getLanguages(),
+                doctor.getAvailability(),
+                doctor.getStatus(),
+                toDto(doctor.getHospital()),
                 doctor.getCreatedAt()
         );
     }
@@ -71,6 +101,32 @@ public class DtoMapper {
                 record.getTreatmentNotes(),
                 record.getVisitDate(),
                 record.getCreatedAt()
+        );
+    }
+
+    public static PrescriptionDto toDto(Prescription prescription) {
+        if (prescription == null) return null;
+        return new PrescriptionDto(
+                prescription.getId(),
+                toDto(prescription.getPatient()),
+                toDto(prescription.getDoctor()),
+                toDto(prescription.getHospital()),
+                prescription.getPrescriptionDate(),
+                prescription.getMedicinesJson(),
+                prescription.getDosage(),
+                prescription.getInstructions(),
+                prescription.getNotes(),
+                prescription.getCreatedAt()
+        );
+    }
+
+    public static NotificationDto toDto(Notification notification) {
+        if (notification == null) return null;
+        return new NotificationDto(
+                notification.getId(),
+                notification.getMessage(),
+                notification.isRead(),
+                notification.getCreatedAt()
         );
     }
 }

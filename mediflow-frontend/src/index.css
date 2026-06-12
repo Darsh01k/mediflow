@@ -39,3 +39,26 @@
 .glass-panel {
   @apply bg-white/80 backdrop-blur-md border border-slate-200/50 shadow-sm;
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-prescription, #printable-prescription * {
+    visibility: visible;
+  }
+  #printable-prescription {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: white;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}
+

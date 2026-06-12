@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API from '../services/api';
 import AdminDashboard from './AdminDashboard';
+import HospitalDashboard from './HospitalDashboard';
 import DoctorDashboard from './DoctorDashboard';
 import PatientDashboard from './PatientDashboard';
 import Spinner from '../components/ui/Spinner';
@@ -60,8 +61,11 @@ const Dashboard = () => {
   }
 
   switch (user?.role) {
-    case 'ADMIN':
+    case 'PLATFORM_ADMIN':
+    case 'ADMIN': // Backwards compatibility for existing users
       return <AdminDashboard stats={stats} refreshStats={fetchStats} />;
+    case 'HOSPITAL_ADMIN':
+      return <HospitalDashboard stats={stats} refreshStats={fetchStats} />;
     case 'DOCTOR':
       return <DoctorDashboard stats={stats} refreshStats={fetchStats} />;
     case 'PATIENT':

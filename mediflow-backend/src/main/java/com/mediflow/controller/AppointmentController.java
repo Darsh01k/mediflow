@@ -43,10 +43,12 @@ public class AppointmentController {
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = auth.getName();
-        boolean isAdminOrDoctor = auth.getAuthorities().stream().anyMatch(a ->
-                a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_DOCTOR"));
+        boolean isPrivileged = auth.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equals("ROLE_PLATFORM_ADMIN") || 
+                a.getAuthority().equals("ROLE_HOSPITAL_ADMIN") || 
+                a.getAuthority().equals("ROLE_DOCTOR"));
 
-        if (!isAdminOrDoctor && !appointment.getPatient().getUser().getUsername().equals(currentUsername)) {
+        if (!isPrivileged && !appointment.getPatient().getUser().getUsername().equals(currentUsername)) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         
@@ -54,14 +56,14 @@ public class AppointmentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('PATIENT')")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN') or hasRole('PATIENT')")
     public ResponseEntity<AppointmentDto> bookAppointment(@Valid @RequestBody AppointmentRequestDto requestDto) {
         AppointmentDto appointment = appointmentService.bookAppointment(requestDto);
         return new ResponseEntity<>(appointment, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}/reschedule")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('PATIENT')")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN') or hasRole('PATIENT')")
     public ResponseEntity<AppointmentDto> rescheduleAppointment(
             @PathVariable Long id,
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime newDate) {
@@ -69,9 +71,9 @@ public class AppointmentController {
         AppointmentDto appointment = appointmentService.getAppointmentById(id);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = auth.getName();
-        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isPlatformAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PLATFORM_ADMIN"));
 
-        if (!isAdmin && !appointment.getPatient().getUser().getUsername().equals(currentUsername)) {
+        if (!isPlatformAdmin && !appointment.getPatient().getUser().getUsername().equals(currentUsername)) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 
@@ -89,8 +91,10 @@ public class AppointmentController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = auth.getName();
         
-        boolean isAdminOrDoctor = auth.getAuthorities().stream().anyMatch(a ->
-                a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_DOCTOR"));
+        boolean isPrivileged = auth.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equals("ROLE_PLATFORM_ADMIN") || 
+                a.getAuthority().equals("ROLE_HOSPITAL_ADMIN") || 
+                a.getAuthority().equals("ROLE_DOCTOR"));
         
         boolean isPatientSelf = appointment.getPatient().getUser().getUsername().equals(currentUsername);
 
@@ -99,7 +103,7 @@ public class AppointmentController {
             if (status != AppointmentStatus.CANCELLED) {
                 return new ResponseEntity<>(HttpStatus.FORBIDDEN);
             }
-        } else if (!isAdminOrDoctor) {
+        } else if (!isPrivileged) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 

@@ -3,6 +3,7 @@ package com.mediflow.service;
 import com.mediflow.dto.DoctorDto;
 import com.mediflow.dto.UserDto;
 import com.mediflow.entity.Doctor;
+import com.mediflow.entity.DoctorStatus;
 import com.mediflow.entity.User;
 import com.mediflow.exception.ResourceNotFoundException;
 import com.mediflow.repository.DoctorRepository;
@@ -25,7 +26,7 @@ public class DoctorService {
     private UserRepository userRepository;
 
     public List<DoctorDto> getAllDoctors() {
-        return doctorRepository.findAll().stream()
+        return doctorRepository.findByStatus(DoctorStatus.APPROVED).stream()
                 .map(DtoMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -51,6 +52,11 @@ public class DoctorService {
         doctor.setLicenseNumber(doctorDto.getLicenseNumber());
         doctor.setConsultationFee(doctorDto.getConsultationFee());
         doctor.setBio(doctorDto.getBio());
+        doctor.setPhone(doctorDto.getPhone());
+        doctor.setQualification(doctorDto.getQualification());
+        doctor.setExperience(doctorDto.getExperience());
+        doctor.setLanguages(doctorDto.getLanguages());
+        doctor.setAvailability(doctorDto.getAvailability());
 
         if (doctorDto.getUser() != null) {
             User user = doctor.getUser();
@@ -58,11 +64,20 @@ public class DoctorService {
             user.setFirstName(userDto.getFirstName());
             user.setLastName(userDto.getLastName());
             user.setEmail(userDto.getEmail());
+            if (userDto.getAvatarId() != null) {
+                user.setAvatarId(userDto.getAvatarId());
+            }
             userRepository.save(user);
         }
 
         Doctor updatedDoctor = doctorRepository.save(doctor);
         return DtoMapper.toDto(updatedDoctor);
+    }
+
+    public List<DoctorDto> searchDoctors(String name, String specialization, String hospital, String city, Integer experience) {
+        return doctorRepository.searchDoctors(name, specialization, hospital, city, experience).stream()
+                .map(DtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -74,7 +89,7 @@ public class DoctorService {
     }
 
     public List<String> getSpecializations() {
-        return doctorRepository.findAll().stream()
+        return doctorRepository.findByStatus(DoctorStatus.APPROVED).stream()
                 .map(Doctor::getSpecialization)
                 .distinct()
                 .collect(Collectors.toList());

@@ -13,6 +13,14 @@ import Appointments from './pages/Appointments';
 import BookAppointment from './pages/BookAppointment';
 import MyMedicalRecords from './pages/MyMedicalRecords';
 
+// New upgraded pages
+import DoctorSearch from './pages/DoctorSearch';
+import HospitalSearch from './pages/HospitalSearch';
+import NearbyHospitals from './pages/NearbyHospitals';
+import EmergencyHelp from './pages/EmergencyHelp';
+import Prescriptions from './pages/Prescriptions';
+import MedicalHistory from './pages/MedicalHistory';
+
 function App() {
   return (
     <Router>
@@ -32,25 +40,25 @@ function App() {
               <Route index element={<Dashboard />} />
               
               <Route path="doctors" element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'ADMIN', 'HOSPITAL_ADMIN']}>
                   <DoctorManagement />
                 </ProtectedRoute>
               } />
               
               <Route path="patients" element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'DOCTOR']}>
+                <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR']}>
                   <PatientManagement />
                 </ProtectedRoute>
               } />
               
               <Route path="appointments" element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'DOCTOR', 'PATIENT']}>
+                <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'ADMIN', 'HOSPITAL_ADMIN', 'DOCTOR', 'PATIENT']}>
                   <Appointments />
                 </ProtectedRoute>
               } />
               
               <Route path="book-appointment" element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'PATIENT']}>
+                <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'ADMIN', 'PATIENT']}>
                   <BookAppointment />
                 </ProtectedRoute>
               } />
@@ -58,6 +66,43 @@ function App() {
               <Route path="records" element={
                 <ProtectedRoute allowedRoles={['PATIENT']}>
                   <MyMedicalRecords />
+                </ProtectedRoute>
+              } />
+
+              {/* Advanced search engines & nearby facilities */}
+              <Route path="doctor-search" element={
+                <ProtectedRoute allowedRoles={['PATIENT']}>
+                  <DoctorSearch />
+                </ProtectedRoute>
+              } />
+
+              <Route path="hospital-search" element={
+                <ProtectedRoute allowedRoles={['PATIENT']}>
+                  <HospitalSearch />
+                </ProtectedRoute>
+              } />
+
+              <Route path="nearby-hospitals" element={
+                <ProtectedRoute allowedRoles={['PATIENT']}>
+                  <NearbyHospitals />
+                </ProtectedRoute>
+              } />
+
+              <Route path="emergency" element={
+                <ProtectedRoute>
+                  <EmergencyHelp />
+                </ProtectedRoute>
+              } />
+
+              <Route path="prescriptions" element={
+                <ProtectedRoute>
+                  <Prescriptions />
+                </ProtectedRoute>
+              } />
+
+              <Route path="history" element={
+                <ProtectedRoute allowedRoles={['PATIENT']}>
+                  <MedicalHistory />
                 </ProtectedRoute>
               } />
             </Route>

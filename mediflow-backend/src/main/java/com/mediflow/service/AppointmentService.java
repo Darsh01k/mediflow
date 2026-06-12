@@ -8,6 +8,7 @@ import com.mediflow.exception.ResourceNotFoundException;
 import com.mediflow.repository.AppointmentRepository;
 import com.mediflow.repository.DoctorRepository;
 import com.mediflow.repository.PatientRepository;
+import com.mediflow.repository.UserRepository;
 import com.mediflow.utils.DtoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,12 @@ public class AppointmentService {
     @Autowired
     private DoctorRepository doctorRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private NotificationService notificationService;
+
     public List<AppointmentDto> getAllAppointments() {
         return appointmentRepository.findAllByOrderByAppointmentDateDesc().stream()
                 .map(DtoMapper::toDto)
@@ -36,8 +43,17 @@ public class AppointmentService {
     }
 
     public List<AppointmentDto> getAppointmentsForUser(Long userId, Role role) {
-        if (role == Role.ADMIN) {
+        if (role == Role.PLATFORM_ADMIN) {
             return getAllAppointments();
+        } else if (role == Role.HOSPITAL_ADMIN) {
+            User admin = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Admin user not found with ID: " + userId));
+            if (admin.getHospital() == null) {
+                throw new BadRequestException("Hospital admin is not associated with any hospital");
+            }
+            return appointmentRepository.findByDoctorHospitalIdOrderByAppointmentDateDesc(admin.getHospital().getId()).stream()
+                    .map(DtoMapper::toDto)
+                    .collect(Collectors.toList());
         } else if (role == Role.DOCTOR) {
             return appointmentRepository.findByDoctorUserIdOrderByAppointmentDateDesc(userId).stream()
                     .map(DtoMapper::toDto)
@@ -72,7 +88,7 @@ public class AppointmentService {
                 patient,
                 doctor,
                 request.getAppointmentDate(),
-                AppointmentStatus.SCHEDULED,
+                AppointmentStatus.PENDING,
                 request.getReason(),
                 request.getNotes()
         );
@@ -90,8 +106,8 @@ public class AppointmentService {
             throw new BadRequestException("Cannot reschedule to a past date");
         }
 
-        if (appointment.getStatus() != AppointmentStatus.SCHEDULED) {
-            throw new BadRequestException("Only scheduled appointments can be rescheduled");
+        if (appointment.getStatus() != AppointmentStatus.PENDING && appointment.getStatus() != AppointmentStatus.APPROVED && appointment.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new BadRequestException("Only pending or approved appointments can be rescheduled");
         }
 
         appointment.setAppointmentDate(newDate);
@@ -104,12 +120,29 @@ public class AppointmentService {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
 
+        AppointmentStatus oldStatus = appointment.getStatus();
         appointment.setStatus(status);
         if (notes != null && !notes.isBlank()) {
             appointment.setNotes(notes);
         }
 
         Appointment updatedAppointment = appointmentRepository.save(appointment);
+
+        // Notify patient on approval/rejection
+        if (status == AppointmentStatus.APPROVED && oldStatus != AppointmentStatus.APPROVED) {
+            String message = String.format("Your appointment with Dr. %s %s on %s has been APPROVED.",
+                    appointment.getDoctor().getUser().getFirstName(),
+                    appointment.getDoctor().getUser().getLastName(),
+                    appointment.getAppointmentDate().toString().replace("T", " "));
+            notificationService.createNotification(appointment.getPatient().getUser(), message);
+        } else if (status == AppointmentStatus.REJECTED && oldStatus != AppointmentStatus.REJECTED) {
+            String message = String.format("Your appointment with Dr. %s %s on %s has been REJECTED.",
+                    appointment.getDoctor().getUser().getFirstName(),
+                    appointment.getDoctor().getUser().getLastName(),
+                    appointment.getAppointmentDate().toString().replace("T", " "));
+            notificationService.createNotification(appointment.getPatient().getUser(), message);
+        }
+
         return DtoMapper.toDto(updatedAppointment);
     }
 }

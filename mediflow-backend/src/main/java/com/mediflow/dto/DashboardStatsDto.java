@@ -9,6 +9,8 @@ public class DashboardStatsDto {
     private long upcomingAppointments;
     private long completedAppointments;
     private long cancelledAppointments;
+    private long totalPrescriptions;
+    private long todayAppointments;
     private List<AppointmentDto> recentAppointments;
     private List<MedicalRecordDto> recentRecords;
 
@@ -21,6 +23,19 @@ public class DashboardStatsDto {
         this.upcomingAppointments = upcomingAppointments;
         this.completedAppointments = completedAppointments;
         this.cancelledAppointments = cancelledAppointments;
+        this.recentAppointments = recentAppointments;
+        this.recentRecords = recentRecords;
+    }
+
+    public DashboardStatsDto(long totalPatients, long totalDoctors, long totalAppointments, long upcomingAppointments, long completedAppointments, long cancelledAppointments, long totalPrescriptions, long todayAppointments, List<AppointmentDto> recentAppointments, List<MedicalRecordDto> recentRecords) {
+        this.totalPatients = totalPatients;
+        this.totalDoctors = totalDoctors;
+        this.totalAppointments = totalAppointments;
+        this.upcomingAppointments = upcomingAppointments;
+        this.completedAppointments = completedAppointments;
+        this.cancelledAppointments = cancelledAppointments;
+        this.totalPrescriptions = totalPrescriptions;
+        this.todayAppointments = todayAppointments;
         this.recentAppointments = recentAppointments;
         this.recentRecords = recentRecords;
     }
@@ -71,6 +86,22 @@ public class DashboardStatsDto {
 
     public void setCancelledAppointments(long cancelledAppointments) {
         this.cancelledAppointments = cancelledAppointments;
+    }
+
+    public long getTotalPrescriptions() {
+        return totalPrescriptions;
+    }
+
+    public void setTotalPrescriptions(long totalPrescriptions) {
+        this.totalPrescriptions = totalPrescriptions;
+    }
+
+    public long getTodayAppointments() {
+        return todayAppointments;
+    }
+
+    public void setTodayAppointments(long todayAppointments) {
+        this.todayAppointments = todayAppointments;
     }
 
     public List<AppointmentDto> getRecentAppointments() {

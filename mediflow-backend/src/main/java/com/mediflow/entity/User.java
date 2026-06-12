@@ -27,6 +27,13 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @Column(name = "avatar_id", length = 50)
+    private String avatarId;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "hospital_id")
+    private Hospital hospital;
+
     @Column(name = "first_name", nullable = false, length = 50)
     private String firstName;
 
@@ -122,5 +129,21 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getAvatarId() {
+        return avatarId;
+    }
+
+    public void setAvatarId(String avatarId) {
+        this.avatarId = avatarId;
+    }
+
+    public Hospital getHospital() {
+        return hospital;
+    }
+
+    public void setHospital(Hospital hospital) {
+        this.hospital = hospital;
     }
 }
