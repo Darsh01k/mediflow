@@ -20,8 +20,17 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import org.springframework.http.HttpMethod;
-
 import java.util.List;
+import org.springframework.web.filter.OncePerRequestFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import java.io.IOException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Configuration
 @EnableWebSecurity
@@ -82,13 +91,29 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/api/auth/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/hospitals", "/api/hospitals/search", "/api/hospitals/{id:\\d+}").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/hospitals/my-hospital", "/api/hospitals/my-hospital/**").authenticated()
+                                .requestMatchers(HttpMethod.GET, "/api/hospitals", "/api/hospitals/search", "/api/hospitals/**").permitAll()
                                 .anyRequest().authenticated()
                 );
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(new SecurityDebugFilter(), AuthTokenFilter.class);
 
         return http.build();
+    }
+
+    public static class SecurityDebugFilter extends OncePerRequestFilter {
+        private static final Logger logger = LoggerFactory.getLogger(SecurityDebugFilter.class);
+
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+                throws ServletException, IOException {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            logger.info("[SecurityConfig Debug] Matched Endpoint: {} {}, Authentication State: {}",
+                    request.getMethod(), request.getRequestURI(),
+                    (auth != null ? auth.getName() + " (Authenticated=" + auth.isAuthenticated() + ", Authorities=" + auth.getAuthorities() + ")" : "Anonymous"));
+            filterChain.doFilter(request, response);
+        }
     }
 }
