@@ -1,6 +1,11 @@
 package com.mediflow.controller;
 
+import com.mediflow.config.UserDetailsImpl;
 import com.mediflow.dto.DoctorDto;
+import com.mediflow.entity.Role;
+import com.mediflow.entity.User;
+import com.mediflow.repository.UserRepository;
+import com.mediflow.exception.BadRequestException;
 import com.mediflow.service.DoctorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +23,9 @@ public class DoctorController {
 
     @Autowired
     private DoctorService doctorService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public ResponseEntity<List<DoctorDto>> getAllDoctors() {
@@ -42,6 +50,18 @@ public class DoctorController {
         return ResponseEntity.ok(doctor);
     }
 
+    @GetMapping("/hospital/{hospitalId}")
+    public ResponseEntity<List<DoctorDto>> getApprovedDoctorsByHospital(@PathVariable Long hospitalId) {
+        List<DoctorDto> doctors = doctorService.getApprovedDoctorsByHospital(hospitalId);
+        return ResponseEntity.ok(doctors);
+    }
+
+    @GetMapping("/hospital/{hospitalId}/specializations")
+    public ResponseEntity<List<String>> getSpecializationsByHospital(@PathVariable Long hospitalId) {
+        List<String> specs = doctorService.getSpecializationsByHospital(hospitalId);
+        return ResponseEntity.ok(specs);
+    }
+
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('PLATFORM_ADMIN') or hasRole('HOSPITAL_ADMIN') or hasRole('DOCTOR')")
     public ResponseEntity<DoctorDto> getDoctorByUserId(@PathVariable Long userId) {
@@ -49,15 +69,31 @@ public class DoctorController {
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = auth.getName();
-        boolean isPrivileged = auth.getAuthorities().stream().anyMatch(a -> 
-                a.getAuthority().equals("ROLE_PLATFORM_ADMIN") || 
-                a.getAuthority().equals("ROLE_HOSPITAL_ADMIN"));
+        UserDetailsImpl userPrincipal = (UserDetailsImpl) auth.getPrincipal();
 
-        if (!isPrivileged && !doctor.getUser().getUsername().equals(currentUsername)) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        boolean isPlatformAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PLATFORM_ADMIN"));
+        boolean isHospitalAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_HOSPITAL_ADMIN"));
+        boolean isDoctorSelf = doctor.getUser().getUsername().equals(currentUsername);
+
+        if (isPlatformAdmin) {
+            return ResponseEntity.ok(doctor);
+        }
+
+        if (isHospitalAdmin) {
+            User admin = userRepository.findById(userPrincipal.getId())
+                    .orElseThrow(() -> new BadRequestException("Admin not found"));
+            if (admin.getHospital() == null || doctor.getHospital() == null ||
+                    !admin.getHospital().getId().equals(doctor.getHospital().getId())) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+            return ResponseEntity.ok(doctor);
+        }
+
+        if (isDoctorSelf) {
+            return ResponseEntity.ok(doctor);
         }
         
-        return ResponseEntity.ok(doctor);
+        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
 
     @PutMapping("/{id}")
@@ -67,11 +103,24 @@ public class DoctorController {
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = auth.getName();
-        boolean isPrivileged = auth.getAuthorities().stream().anyMatch(a -> 
-                a.getAuthority().equals("ROLE_PLATFORM_ADMIN") || 
-                a.getAuthority().equals("ROLE_HOSPITAL_ADMIN"));
+        UserDetailsImpl userPrincipal = (UserDetailsImpl) auth.getPrincipal();
 
-        if (!isPrivileged && !existingDoctor.getUser().getUsername().equals(currentUsername)) {
+        boolean isPlatformAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_PLATFORM_ADMIN"));
+        boolean isHospitalAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_HOSPITAL_ADMIN"));
+        boolean isDoctorSelf = existingDoctor.getUser().getUsername().equals(currentUsername);
+
+        if (isPlatformAdmin) {
+            // allow
+        } else if (isHospitalAdmin) {
+            User admin = userRepository.findById(userPrincipal.getId())
+                    .orElseThrow(() -> new BadRequestException("Admin not found"));
+            if (admin.getHospital() == null || existingDoctor.getHospital() == null ||
+                    !admin.getHospital().getId().equals(existingDoctor.getHospital().getId())) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } else if (isDoctorSelf) {
+            // allow
+        } else {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
 

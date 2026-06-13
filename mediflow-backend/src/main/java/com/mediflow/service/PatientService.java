@@ -133,6 +133,136 @@ public class PatientService {
         return timeline;
     }
 
+    public List<PatientDto> getPatientsForDoctor(Long doctorId) {
+        return patientRepository.findPatientsByDoctorId(doctorId).stream()
+                .map(DtoMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public boolean isPatientOfDoctor(Long patientId, Long doctorId) {
+        return patientRepository.findPatientsByDoctorId(doctorId).stream()
+                .anyMatch(p -> p.getId().equals(patientId));
+    }
+
+    public boolean isPatientOfHospital(Long patientId, Long hospitalId) {
+        return appointmentRepository.findByDoctorHospitalId(hospitalId).stream()
+                .anyMatch(a -> a.getPatient().getId().equals(patientId));
+    }
+
+    public List<TimelineItemDto> getTimelineHistoryForDoctor(Long patientId, Long doctorId) {
+        List<TimelineItemDto> timeline = new ArrayList<>();
+
+        // 1. Add Appointments
+        List<Appointment> appointments = appointmentRepository.findByPatientIdOrderByAppointmentDateDesc(patientId);
+        for (Appointment a : appointments) {
+            if (a.getDoctor().getId().equals(doctorId)) {
+                timeline.add(new TimelineItemDto(
+                    "APPOINTMENT",
+                    a.getId(),
+                    a.getAppointmentDate(),
+                    "Appointment with Dr. " + a.getDoctor().getUser().getFirstName() + " " + a.getDoctor().getUser().getLastName(),
+                    a.getDoctor().getHospital() != null ? a.getDoctor().getHospital().getName() : "General Hospital",
+                    a.getReason() + (a.getNotes() != null && !a.getNotes().isBlank() ? " | Notes: " + a.getNotes() : ""),
+                    a.getStatus().name()
+                ));
+            }
+        }
+
+        // 2. Add Prescriptions
+        List<Prescription> prescriptions = prescriptionRepository.findByPatientIdOrderByPrescriptionDateDesc(patientId);
+        for (Prescription p : prescriptions) {
+            if (p.getDoctor().getId().equals(doctorId)) {
+                timeline.add(new TimelineItemDto(
+                    "PRESCRIPTION",
+                    p.getId(),
+                    p.getPrescriptionDate().atStartOfDay(),
+                    "Prescription from Dr. " + p.getDoctor().getUser().getFirstName() + " " + p.getDoctor().getUser().getLastName(),
+                    p.getHospital().getName(),
+                    p.getDosage() != null ? p.getDosage() : "Medicines prescribed",
+                    null
+                ));
+            }
+        }
+
+        // 3. Add Medical Records (Visits)
+        List<MedicalRecord> records = medicalRecordRepository.findByPatientIdOrderByVisitDateDesc(patientId);
+        for (MedicalRecord r : records) {
+            if (r.getDoctor().getId().equals(doctorId)) {
+                timeline.add(new TimelineItemDto(
+                    "VISIT",
+                    r.getId(),
+                    r.getVisitDate().atStartOfDay(),
+                    "Visit: " + r.getDiagnosis(),
+                    "Dr. " + r.getDoctor().getUser().getFirstName() + " " + r.getDoctor().getUser().getLastName(),
+                    r.getTreatmentNotes(),
+                    null
+                ));
+            }
+        }
+
+        // Sort descending by date
+        timeline.sort((t1, t2) -> t2.getDate().compareTo(t1.getDate()));
+
+        return timeline;
+    }
+
+    public List<TimelineItemDto> getTimelineHistoryForHospital(Long patientId, Long hospitalId) {
+        List<TimelineItemDto> timeline = new ArrayList<>();
+
+        // 1. Add Appointments
+        List<Appointment> appointments = appointmentRepository.findByPatientIdOrderByAppointmentDateDesc(patientId);
+        for (Appointment a : appointments) {
+            if (a.getDoctor().getHospital() != null && a.getDoctor().getHospital().getId().equals(hospitalId)) {
+                timeline.add(new TimelineItemDto(
+                    "APPOINTMENT",
+                    a.getId(),
+                    a.getAppointmentDate(),
+                    "Appointment with Dr. " + a.getDoctor().getUser().getFirstName() + " " + a.getDoctor().getUser().getLastName(),
+                    a.getDoctor().getHospital().getName(),
+                    a.getReason() + (a.getNotes() != null && !a.getNotes().isBlank() ? " | Notes: " + a.getNotes() : ""),
+                    a.getStatus().name()
+                ));
+            }
+        }
+
+        // 2. Add Prescriptions
+        List<Prescription> prescriptions = prescriptionRepository.findByPatientIdOrderByPrescriptionDateDesc(patientId);
+        for (Prescription p : prescriptions) {
+            if (p.getHospital().getId().equals(hospitalId)) {
+                timeline.add(new TimelineItemDto(
+                    "PRESCRIPTION",
+                    p.getId(),
+                    p.getPrescriptionDate().atStartOfDay(),
+                    "Prescription from Dr. " + p.getDoctor().getUser().getFirstName() + " " + p.getDoctor().getUser().getLastName(),
+                    p.getHospital().getName(),
+                    p.getDosage() != null ? p.getDosage() : "Medicines prescribed",
+                    null
+                ));
+            }
+        }
+
+        // 3. Add Medical Records (Visits)
+        List<MedicalRecord> records = medicalRecordRepository.findByPatientIdOrderByVisitDateDesc(patientId);
+        for (MedicalRecord r : records) {
+            if (r.getDoctor().getHospital() != null && r.getDoctor().getHospital().getId().equals(hospitalId)) {
+                timeline.add(new TimelineItemDto(
+                    "VISIT",
+                    r.getId(),
+                    r.getVisitDate().atStartOfDay(),
+                    "Visit: " + r.getDiagnosis(),
+                    "Dr. " + r.getDoctor().getUser().getFirstName() + " " + r.getDoctor().getUser().getLastName(),
+                    r.getTreatmentNotes(),
+                    null
+                ));
+            }
+        }
+
+        // Sort descending by date
+        timeline.sort((t1, t2) -> t2.getDate().compareTo(t1.getDate()));
+
+        return timeline;
+    }
+
     @Transactional
     public void deletePatient(Long id) {
         Patient patient = patientRepository.findById(id)

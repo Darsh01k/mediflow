@@ -9,12 +9,14 @@ import Select from '../components/ui/Select';
 import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
 import Spinner from '../components/ui/Spinner';
+import { HealthAvatar } from '../components/ui/Avatar';
 import { 
   Calendar, 
   User, 
   Stethoscope, 
   DollarSign, 
-  FileQuestion
+  FileQuestion,
+  Hospital
 } from 'lucide-react';
 
 const BookAppointment = () => {
@@ -26,6 +28,8 @@ const BookAppointment = () => {
   const searchParams = new URLSearchParams(location.search);
   const queryDoctorId = searchParams.get('doctorId');
 
+  const [hospitals, setHospitals] = useState([]);
+  const [selectedHospitalId, setSelectedHospitalId] = useState('');
   const [doctors, setDoctors] = useState([]);
   const [specializations, setSpecializations] = useState([]);
   const [selectedSpecialization, setSelectedSpecialization] = useState('');
@@ -39,32 +43,66 @@ const BookAppointment = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const loadBookingData = async () => {
+    const loadInitialData = async () => {
       try {
-        const docsRes = await API.get('/doctors');
-        setDoctors(docsRes.data);
-        
-        const specsRes = await API.get('/doctors/specializations');
-        setSpecializations(specsRes.data);
+        const hospRes = await API.get('/hospitals');
+        setHospitals(hospRes.data);
+
+        if (queryDoctorId) {
+          const docRes = await API.get(`/doctors/${queryDoctorId}`);
+          const doctor = docRes.data;
+          if (doctor && doctor.hospital) {
+            setSelectedHospitalId(doctor.hospital.id.toString());
+            // Fetch doctors and specializations for this hospital
+            const docsRes = await API.get(`/doctors/hospital/${doctor.hospital.id}`);
+            const specsRes = await API.get(`/doctors/hospital/${doctor.hospital.id}/specializations`);
+            setDoctors(docsRes.data);
+            setSpecializations(specsRes.data);
+            setSelectedSpecialization(doctor.specialization);
+            setSelectedDoctorId(queryDoctorId);
+          }
+        }
       } catch (err) {
-        setError('Failed to load doctor listings. Please try again.');
+        setError('Failed to load initial data. Please try again.');
       } finally {
         setFetching(false);
       }
     };
-    loadBookingData();
-  }, []);
+    loadInitialData();
+  }, [queryDoctorId]);
 
-  // Pre-select specialization if doctorId query parameter is provided
   useEffect(() => {
-    if (queryDoctorId && doctors.length > 0) {
-      const doc = doctors.find(d => d.id === parseInt(queryDoctorId));
-      if (doc) {
-        setSelectedSpecialization(doc.specialization);
-        setSelectedDoctorId(queryDoctorId);
-      }
+    if (!selectedHospitalId) {
+      setDoctors([]);
+      setSpecializations([]);
+      setSelectedSpecialization('');
+      setSelectedDoctorId('');
+      return;
     }
-  }, [queryDoctorId, doctors]);
+
+    const loadHospitalData = async () => {
+      try {
+        setLoading(true);
+        const docsRes = await API.get(`/doctors/hospital/${selectedHospitalId}`);
+        setDoctors(docsRes.data);
+        
+        const specsRes = await API.get(`/doctors/hospital/${selectedHospitalId}/specializations`);
+        setSpecializations(specsRes.data);
+      } catch (err) {
+        setError('Failed to load doctors for the selected hospital.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Only load if the selected doctor does not belong to the selected hospital
+    const hasPreselectedDoctor = selectedDoctorId && doctors.some(d => d.id === parseInt(selectedDoctorId) && d.hospital?.id === parseInt(selectedHospitalId));
+    if (!hasPreselectedDoctor) {
+      setSelectedDoctorId('');
+      setSelectedSpecialization('');
+      loadHospitalData();
+    }
+  }, [selectedHospitalId]);
 
   const filteredDoctors = selectedSpecialization 
     ? doctors.filter(doc => doc.specialization === selectedSpecialization)
@@ -130,66 +168,121 @@ const BookAppointment = () => {
         )}
 
         <form onSubmit={handleBook} className="space-y-6 text-xs font-medium text-slate-600">
-          {/* Step 1: Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Step 1: Hospital Select and Filters */}
+          <div className="space-y-4">
             <Select
-              label="1. Filter by Specialization"
-              id="specialization"
-              icon={Stethoscope}
-              value={selectedSpecialization}
-              onChange={(e) => {
-                setSelectedSpecialization(e.target.value);
-                setSelectedDoctorId(''); // Reset doctor select
-              }}
+              label="1. Select Hospital / Clinic"
+              id="hospital"
+              required
+              icon={Hospital}
+              value={selectedHospitalId}
+              onChange={(e) => setSelectedHospitalId(e.target.value)}
               className="bg-white"
             >
-              <option value="">All Specializations</option>
-              {specializations.map(spec => (
-                <option key={spec} value={spec}>{spec}</option>
+              <option value="">Choose a Hospital...</option>
+              {hospitals.map(hosp => (
+                <option key={hosp.id} value={hosp.id}>{hosp.name} ({hosp.city})</option>
               ))}
             </Select>
 
-            <Select
-              label="2. Select Practitioner"
-              id="doctor"
-              required
-              icon={User}
-              value={selectedDoctorId}
-              onChange={(e) => setSelectedDoctorId(e.target.value)}
-              className="bg-white"
-            >
-              <option value="">Choose a Doctor...</option>
-              {filteredDoctors.map(doc => (
-                <option key={doc.id} value={doc.id}>
-                  Dr. {doc.user.firstName} {doc.user.lastName} ({doc.specialization})
-                </option>
-              ))}
-            </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Select
+                label="2. Filter by Specialization"
+                id="specialization"
+                icon={Stethoscope}
+                value={selectedSpecialization}
+                onChange={(e) => {
+                  setSelectedSpecialization(e.target.value);
+                  setSelectedDoctorId(''); // Reset doctor select
+                }}
+                disabled={!selectedHospitalId}
+                className="bg-white"
+              >
+                <option value="">All Specializations</option>
+                {specializations.map(spec => (
+                  <option key={spec} value={spec}>{spec}</option>
+                ))}
+              </Select>
+
+              <Select
+                label="3. Select Practitioner"
+                id="doctor"
+                required
+                icon={User}
+                value={selectedDoctorId}
+                onChange={(e) => setSelectedDoctorId(e.target.value)}
+                disabled={!selectedHospitalId}
+                className="bg-white"
+              >
+                <option value="">Choose a Doctor...</option>
+                {filteredDoctors.map(doc => (
+                  <option key={doc.id} value={doc.id}>
+                    Dr. {doc.user.firstName} {doc.user.lastName} ({doc.specialization})
+                  </option>
+                ))}
+              </Select>
+            </div>
           </div>
 
           {/* Doctor Details Summary Card */}
           {selectedDoctorDetails && (
-            <div className="p-4 bg-slate-50 border border-slate-200/50 rounded-xl flex items-start gap-4 hover:bg-slate-50/80 transition-colors animate-in fade-in duration-200">
-              <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold shrink-0">
-                Dr
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-bold text-slate-800 text-xs">
-                  Dr. {selectedDoctorDetails.user.firstName} {selectedDoctorDetails.user.lastName}
-                </h4>
-                <p className="text-[10px] text-slate-400 font-bold">{selectedDoctorDetails.specialization} • LIC: {selectedDoctorDetails.licenseNumber}</p>
-                {selectedDoctorDetails.bio && <p className="text-[10px] text-slate-500 italic mt-1 font-semibold leading-normal">"{selectedDoctorDetails.bio}"</p>}
-                <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 mt-2">
-                  <DollarSign className="w-4 h-4 shrink-0" />
-                  <span>Consultation Fee: ${selectedDoctorDetails.consultationFee}</span>
+            <div className="p-5 bg-slate-50 border border-slate-200/50 rounded-xl space-y-4 hover:bg-slate-50/80 transition-colors animate-in fade-in duration-200">
+              {/* Doctor Details Section */}
+              <div className="flex items-start gap-4">
+                <HealthAvatar avatarId={selectedDoctorDetails.user.avatarId || 'doctor_1'} className="w-12 h-12 rounded-full" />
+                <div className="space-y-1">
+                  <h4 className="font-bold text-slate-800 text-xs">
+                    Dr. {selectedDoctorDetails.user.firstName} {selectedDoctorDetails.user.lastName}
+                  </h4>
+                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">{selectedDoctorDetails.specialization}</p>
+                  
+                  {selectedDoctorDetails.qualification && (
+                    <p className="text-[11px] text-slate-500 font-semibold">
+                      Qualification: <span className="text-slate-700 font-bold">{selectedDoctorDetails.qualification}</span>
+                    </p>
+                  )}
+                  {selectedDoctorDetails.experience !== undefined && (
+                    <p className="text-[11px] text-slate-500 font-semibold">
+                      Experience: <span className="text-slate-700 font-bold">{selectedDoctorDetails.experience} Years</span>
+                    </p>
+                  )}
+                  
+                  {selectedDoctorDetails.bio && <p className="text-[10px] text-slate-500 italic mt-1 font-semibold leading-normal">"{selectedDoctorDetails.bio}"</p>}
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 mt-2">
+                    <DollarSign className="w-4 h-4 shrink-0" />
+                    <span>Consultation Fee: ${selectedDoctorDetails.consultationFee}</span>
+                  </div>
                 </div>
               </div>
+
+              {/* Divider */}
+              <hr className="border-slate-200/60" />
+
+              {/* Hospital Details Section */}
+              {selectedDoctorDetails.hospital && (
+                <div className="flex items-start gap-4">
+                  <HealthAvatar avatarId={selectedDoctorDetails.hospital.logoAvatar || 'hospital_1'} className="w-12 h-12 rounded-xl" />
+                  <div className="space-y-1 text-slate-600 font-medium">
+                    <h4 className="font-bold text-slate-800 text-xs">
+                      {selectedDoctorDetails.hospital.name}
+                    </h4>
+                    <p className="text-[11px] text-slate-550 leading-normal font-semibold">
+                      Address: <span className="text-slate-700 font-bold">{selectedDoctorDetails.hospital.address}</span>
+                    </p>
+                    {selectedDoctorDetails.hospital.phone && (
+                      <p className="text-[11px] text-slate-550 font-semibold">
+                        Phone: <span className="text-slate-700 font-bold">{selectedDoctorDetails.hospital.phone}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* Step 2: Schedule Date/Time */}
           <Input
-            label="3. Choose Appointment Date & Time"
+            label="4. Choose Appointment Date & Time"
             id="appointmentDate"
             type="datetime-local"
             required

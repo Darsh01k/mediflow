@@ -124,4 +124,19 @@ public class DoctorService {
                 .distinct()
                 .collect(Collectors.toList());
     }
+
+    public List<DoctorDto> getApprovedDoctorsByHospital(Long hospitalId) {
+        logger.info("Fetching approved doctors for hospital ID: {}", hospitalId);
+        return doctorRepository.findByHospitalIdAndStatus(hospitalId, DoctorStatus.APPROVED).stream()
+                .map(DtoMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getSpecializationsByHospital(Long hospitalId) {
+        logger.info("Fetching distinct specializations of approved doctors for hospital ID: {}", hospitalId);
+        return doctorRepository.findByHospitalIdAndStatus(hospitalId, DoctorStatus.APPROVED).stream()
+                .map(Doctor::getSpecialization)
+                .distinct()
+                .collect(Collectors.toList());
+    }
 }

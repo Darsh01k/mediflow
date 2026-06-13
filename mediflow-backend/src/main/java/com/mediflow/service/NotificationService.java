@@ -43,9 +43,12 @@ public class NotificationService {
     }
 
     @Transactional
-    public NotificationDto markAsRead(Long id) {
+    public NotificationDto markAsRead(Long id, Long authenticatedUserId) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found with ID: " + id));
+        if (!notification.getUser().getId().equals(authenticatedUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized access to notification.");
+        }
         notification.setRead(true);
         Notification saved = notificationRepository.save(notification);
         return DtoMapper.toDto(saved);

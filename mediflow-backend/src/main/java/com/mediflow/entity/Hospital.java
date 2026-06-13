@@ -17,7 +17,7 @@ public class Hospital {
     @Column(nullable = false, length = 150)
     private String name;
 
-    @Column(length = 100)
+    @Column(unique = true, length = 100)
     private String email;
 
     @Column(length = 20)
@@ -41,7 +41,7 @@ public class Hospital {
     @Column
     private Double longitude;
 
-    @Column(name = "license_number", length = 100)
+    @Column(name = "license_number", unique = true, length = 100)
     private String licenseNumber;
 
     @Column(columnDefinition = "TEXT")

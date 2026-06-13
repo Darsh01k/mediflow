@@ -5,6 +5,9 @@ import com.mediflow.dto.AppointmentDto;
 import com.mediflow.dto.AppointmentRequestDto;
 import com.mediflow.entity.AppointmentStatus;
 import com.mediflow.entity.Role;
+import com.mediflow.entity.User;
+import com.mediflow.repository.UserRepository;
+import com.mediflow.exception.BadRequestException;
 import com.mediflow.service.AppointmentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +29,9 @@ public class AppointmentController {
     @Autowired
     private AppointmentService appointmentService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @GetMapping
     public ResponseEntity<List<AppointmentDto>> getAppointments() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -42,13 +48,26 @@ public class AppointmentController {
         AppointmentDto appointment = appointmentService.getAppointmentById(id);
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = auth.getName();
-        boolean isPrivileged = auth.getAuthorities().stream().anyMatch(a ->
-                a.getAuthority().equals("ROLE_PLATFORM_ADMIN") || 
-                a.getAuthority().equals("ROLE_HOSPITAL_ADMIN") || 
-                a.getAuthority().equals("ROLE_DOCTOR"));
+        UserDetailsImpl userPrincipal = (UserDetailsImpl) auth.getPrincipal();
+        String roleStr = auth.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
+        Role role = Role.valueOf(roleStr);
 
-        if (!isPrivileged && !appointment.getPatient().getUser().getUsername().equals(currentUsername)) {
+        if (role == Role.DOCTOR) {
+            if (!appointment.getDoctor().getUser().getId().equals(userPrincipal.getId())) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } else if (role == Role.HOSPITAL_ADMIN) {
+            User admin = userRepository.findById(userPrincipal.getId())
+                    .orElseThrow(() -> new BadRequestException("Admin not found"));
+            if (admin.getHospital() == null || appointment.getDoctor().getHospital() == null ||
+                    !admin.getHospital().getId().equals(appointment.getDoctor().getHospital().getId())) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } else if (role == Role.PATIENT) {
+            if (!appointment.getPatient().getUser().getId().equals(userPrincipal.getId())) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        } else if (role != Role.PLATFORM_ADMIN) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
         
@@ -90,6 +109,7 @@ public class AppointmentController {
         AppointmentDto appointment = appointmentService.getAppointmentById(id);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String currentUsername = auth.getName();
+        UserDetailsImpl userPrincipal = (UserDetailsImpl) auth.getPrincipal();
         
         boolean isPrivileged = auth.getAuthorities().stream().anyMatch(a ->
                 a.getAuthority().equals("ROLE_PLATFORM_ADMIN") || 
@@ -105,6 +125,23 @@ public class AppointmentController {
             }
         } else if (!isPrivileged) {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
+        // For Doctor role
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DOCTOR"))) {
+            if (!appointment.getDoctor().getUser().getUsername().equals(currentUsername)) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
+        }
+
+        // For Hospital Admin role
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_HOSPITAL_ADMIN"))) {
+            User admin = userRepository.findById(userPrincipal.getId())
+                    .orElseThrow(() -> new BadRequestException("Admin not found"));
+            if (admin.getHospital() == null || appointment.getDoctor().getHospital() == null ||
+                    !admin.getHospital().getId().equals(appointment.getDoctor().getHospital().getId())) {
+                return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            }
         }
 
         AppointmentDto updated = appointmentService.updateStatus(id, status, notes);
