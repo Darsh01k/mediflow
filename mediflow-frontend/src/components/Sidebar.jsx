@@ -22,7 +22,12 @@ const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
 
   let fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
-  if (user?.role === 'DOCTOR' && !fullName.toLowerCase().startsWith('dr')) {
+  if (!fullName || 
+      fullName.toLowerCase() === 'user' || 
+      fullName.toLowerCase() === 'undefined' || 
+      fullName.toLowerCase() === 'null') {
+    fullName = user?.username || 'User';
+  } else if (user?.role === 'DOCTOR' && !fullName.toLowerCase().startsWith('dr')) {
     fullName = `Dr. ${fullName}`;
   }
 

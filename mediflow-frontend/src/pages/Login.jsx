@@ -30,18 +30,20 @@ const Login = () => {
       setLoading(true);
       const user = await login(username, password);
       let greeting = '';
-      if (user.role === 'DOCTOR') {
-        let name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-        if (!name.toLowerCase().startsWith('dr')) {
-          name = `Dr ${name}`;
-        }
-        greeting = name;
-      } else if (user.role === 'HOSPITAL_ADMIN') {
-        greeting = user.firstName || 'Hospital Admin';
+      const fname = user.firstName ? user.firstName.trim() : '';
+      const lname = user.lastName ? user.lastName.trim() : '';
+      let fullName = `${fname} ${lname}`.trim();
+      
+      if (!fullName || 
+          fullName.toLowerCase() === 'user' || 
+          fullName.toLowerCase() === 'undefined' || 
+          fullName.toLowerCase() === 'null') {
+        greeting = user.username || 'user';
       } else {
-        greeting = user.firstName || 'User';
+        greeting = fullName;
       }
-      toast.success(`Welcome back ${greeting}`);
+      
+      toast.success(`Welcome Back, ${greeting}`);
       navigate('/');
     } catch (err) {
       setError(err);

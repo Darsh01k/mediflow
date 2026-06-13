@@ -21,10 +21,10 @@ public interface DoctorRepository extends JpaRepository<Doctor, Long> {
     List<Doctor> findByHospitalIdAndStatus(Long hospitalId, DoctorStatus status);
 
     @Query("SELECT d FROM Doctor d WHERE d.status = 'APPROVED' AND " +
-           "(:name IS NULL OR :name = '' OR LOWER(CONCAT(d.user.firstName, ' ', d.user.lastName)) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(d.user.username) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
-           "(:specialization IS NULL OR :specialization = '' OR LOWER(d.specialization) LIKE LOWER(CONCAT('%', :specialization, '%'))) AND " +
-           "(:hospital IS NULL OR :hospital = '' OR LOWER(d.hospital.name) LIKE LOWER(CONCAT('%', :hospital, '%'))) AND " +
-           "(:city IS NULL OR :city = '' OR LOWER(d.hospital.city) LIKE LOWER(CONCAT('%', :city, '%'))) AND " +
+           "(:name IS NULL OR TRIM(:name) = '' OR LOWER(TRIM(CONCAT(d.user.firstName, ' ', d.user.lastName))) LIKE LOWER(CONCAT('%', TRIM(:name), '%')) OR LOWER(TRIM(d.user.username)) LIKE LOWER(CONCAT('%', TRIM(:name), '%'))) AND " +
+           "(:specialization IS NULL OR TRIM(:specialization) = '' OR LOWER(TRIM(d.specialization)) LIKE LOWER(CONCAT('%', TRIM(:specialization), '%'))) AND " +
+           "(:hospital IS NULL OR TRIM(:hospital) = '' OR LOWER(TRIM(d.hospital.name)) LIKE LOWER(CONCAT('%', TRIM(:hospital), '%'))) AND " +
+           "(:city IS NULL OR TRIM(:city) = '' OR LOWER(TRIM(d.hospital.city)) LIKE LOWER(CONCAT('%', TRIM(:city), '%'))) AND " +
            "(:experience IS NULL OR d.experience >= :experience)")
     List<Doctor> searchDoctors(
         @Param("name") String name,

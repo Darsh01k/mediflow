@@ -8,6 +8,15 @@ const Navbar = ({ title, onToggleSidebar }) => {
   const { user } = useAuth();
   
   const [notifications, setNotifications] = useState([]);
+  let navFullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  if (!navFullName || 
+      navFullName.toLowerCase() === 'user' || 
+      navFullName.toLowerCase() === 'undefined' || 
+      navFullName.toLowerCase() === 'null') {
+    navFullName = user?.username || 'User';
+  } else if (user?.role === 'DOCTOR' && !navFullName.toLowerCase().startsWith('dr')) {
+    navFullName = `Dr. ${navFullName}`;
+  }
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -197,7 +206,7 @@ const Navbar = ({ title, onToggleSidebar }) => {
         <div className="flex items-center gap-2 md:gap-3 pl-4 md:pl-6 border-l border-slate-200">
           <div className="flex flex-col text-right">
             <span className="text-xs md:text-sm font-bold text-slate-800 truncate max-w-[80px] sm:max-w-none">
-              {user?.firstName} {user?.lastName}
+              {navFullName}
             </span>
             <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wide">
               {user?.role?.replace('_', ' ')} ID: #{user?.profileId || user?.userId}
