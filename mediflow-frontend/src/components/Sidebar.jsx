@@ -21,6 +21,18 @@ import {
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
 
+  let fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  if (user?.role === 'DOCTOR' && !fullName.toLowerCase().startsWith('dr')) {
+    fullName = `Dr. ${fullName}`;
+  }
+
+  const formatRole = (role) => {
+    if (!role) return '';
+    if (role === 'HOSPITAL_ADMIN') return 'Hospital Admin';
+    if (role === 'PLATFORM_ADMIN' || role === 'ADMIN') return 'Platform Admin';
+    return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  };
+
   const getLinks = () => {
     switch (user?.role) {
       case 'PLATFORM_ADMIN':
@@ -100,15 +112,17 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* User Info with Premium Avatar Display */}
         <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-          <HealthAvatar avatarId={user?.avatarId || 'avatar_1'} className="w-12 h-12" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Signed in as</p>
-            <h4 className="text-xs font-bold text-white mt-0.5 truncate" title={`${user?.firstName} ${user?.lastName}`}>
-              {user?.firstName} {user?.lastName}
+          <HealthAvatar avatarId={user?.avatarId || 'avatar_1'} className="w-12 h-12 rounded-xl border border-slate-700/50" />
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <h4 className="text-sm font-bold text-white truncate leading-tight" title={fullName}>
+              {fullName}
             </h4>
-            <span className="inline-block mt-1.5 text-[8px] font-black px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-              {user?.role?.replace('_', ' ')}
-            </span>
+            <p className="text-xs text-slate-400 font-medium leading-none mt-0.5">
+              @{user?.username}
+            </p>
+            <p className="text-[11px] font-semibold text-emerald-400 leading-tight mt-1">
+              {formatRole(user?.role)}
+            </p>
           </div>
         </div>
 

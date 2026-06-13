@@ -33,7 +33,7 @@ import EmptyState from '../components/ui/EmptyState';
 import { HealthAvatar, AvatarPicker } from '../components/ui/Avatar';
 
 const DoctorDashboard = ({ stats, refreshStats }) => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const toast = useToast();
   const [activeTab, setActiveTab] = useState('appointments');
   
@@ -182,21 +182,15 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
       const res = await API.put(`/doctors/${doctorProfile.id}`, payload);
       setDoctorProfile(res.data);
       
-      // Update local storage user data for real-time avatar sync
-      const savedUser = JSON.parse(localStorage.getItem('user'));
-      if (savedUser) {
-        savedUser.avatarId = avId;
-        savedUser.firstName = fname;
-        savedUser.lastName = lname;
-        savedUser.email = mail;
-        localStorage.setItem('user', JSON.stringify(savedUser));
-      }
+      // Update local storage and context user data for real-time sync
+      updateUser({
+        avatarId: avId,
+        firstName: fname,
+        lastName: lname,
+        email: mail
+      });
       
       toast.success('Profile details modified successfully!');
-      // Force refresh auth context or reload if needed to sync headers
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
 
     } catch (err) {
       console.error(err);

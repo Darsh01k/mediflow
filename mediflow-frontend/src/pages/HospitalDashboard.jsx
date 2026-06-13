@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import API from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Table, THead, TBody, TR, TH, TD } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
@@ -35,6 +36,7 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 
 const HospitalDashboard = ({ stats, refreshStats }) => {
   const toast = useToast();
+  const { updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   
   // Lists
@@ -162,6 +164,13 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
       };
       const res = await API.put('/hospitals/my-hospital', payload);
       setHospital(res.data);
+      
+      // Update global context state for real-time sidebar/navbar refresh
+      updateUser({
+        firstName: hospName,
+        avatarId: hospLogo
+      });
+
       toast.success('Hospital profile updated successfully!');
     } catch (err) {
       console.error(err);

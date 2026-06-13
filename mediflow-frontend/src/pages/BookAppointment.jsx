@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -28,6 +28,8 @@ const BookAppointment = () => {
   const searchParams = new URLSearchParams(location.search);
   const queryDoctorId = searchParams.get('doctorId');
 
+  const isInitialPreselect = useRef(false);
+
   const [hospitals, setHospitals] = useState([]);
   const [selectedHospitalId, setSelectedHospitalId] = useState('');
   const [doctors, setDoctors] = useState([]);
@@ -52,6 +54,7 @@ const BookAppointment = () => {
           const docRes = await API.get(`/doctors/${queryDoctorId}`);
           const doctor = docRes.data;
           if (doctor && doctor.hospital) {
+            isInitialPreselect.current = true;
             setSelectedHospitalId(doctor.hospital.id.toString());
             // Fetch doctors and specializations for this hospital
             const docsRes = await API.get(`/doctors/hospital/${doctor.hospital.id}`);
@@ -63,7 +66,8 @@ const BookAppointment = () => {
           }
         }
       } catch (err) {
-        setError('Failed to load initial data. Please try again.');
+        console.error("Failed to load initial data for booking:", err);
+        setError(`Failed to load initial data: ${err.response?.data?.message || err.message || 'Please try again.'}`);
       } finally {
         setFetching(false);
       }
@@ -80,6 +84,11 @@ const BookAppointment = () => {
       return;
     }
 
+    if (isInitialPreselect.current) {
+      isInitialPreselect.current = false;
+      return;
+    }
+
     const loadHospitalData = async () => {
       try {
         setLoading(true);
@@ -89,19 +98,16 @@ const BookAppointment = () => {
         const specsRes = await API.get(`/doctors/hospital/${selectedHospitalId}/specializations`);
         setSpecializations(specsRes.data);
       } catch (err) {
-        setError('Failed to load doctors for the selected hospital.');
+        console.error("Failed to load hospital data:", err);
+        setError(`Failed to load doctors for the selected hospital: ${err.response?.data?.message || err.message}`);
       } finally {
         setLoading(false);
       }
     };
 
-    // Only load if the selected doctor does not belong to the selected hospital
-    const hasPreselectedDoctor = selectedDoctorId && doctors.some(d => d.id === parseInt(selectedDoctorId) && d.hospital?.id === parseInt(selectedHospitalId));
-    if (!hasPreselectedDoctor) {
-      setSelectedDoctorId('');
-      setSelectedSpecialization('');
-      loadHospitalData();
-    }
+    setSelectedDoctorId('');
+    setSelectedSpecialization('');
+    loadHospitalData();
   }, [selectedHospitalId]);
 
   const filteredDoctors = selectedSpecialization 

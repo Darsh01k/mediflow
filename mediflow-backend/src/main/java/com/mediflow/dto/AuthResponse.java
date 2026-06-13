@@ -7,6 +7,9 @@ public class AuthResponse {
     private String email;
     private String role;
     private Long profileId;
+    private String firstName;
+    private String lastName;
+    private String avatarId;
 
     public AuthResponse() {}
 
@@ -17,6 +20,18 @@ public class AuthResponse {
         this.email = email;
         this.role = role;
         this.profileId = profileId;
+    }
+
+    public AuthResponse(String token, Long userId, String username, String email, String role, Long profileId, String firstName, String lastName, String avatarId) {
+        this.token = token;
+        this.userId = userId;
+        this.username = username;
+        this.email = email;
+        this.role = role;
+        this.profileId = profileId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.avatarId = avatarId;
     }
 
     public String getToken() {
@@ -66,4 +81,29 @@ public class AuthResponse {
     public void setProfileId(Long profileId) {
         this.profileId = profileId;
     }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getAvatarId() {
+        return avatarId;
+    }
+
+    public void setAvatarId(String avatarId) {
+        this.avatarId = avatarId;
+    }
 }
+

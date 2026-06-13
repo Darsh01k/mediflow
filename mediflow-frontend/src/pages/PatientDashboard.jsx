@@ -27,7 +27,7 @@ import { AvatarPicker } from '../components/ui/Avatar';
 
 const PatientDashboard = ({ stats, refreshStats }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const toast = useToast();
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -107,21 +107,15 @@ const PatientDashboard = ({ stats, refreshStats }) => {
       const res = await API.put(`/patients/${patientProfile.id}`, payload);
       setPatientProfile(res.data);
       
-      // Update local storage user data for real-time avatar sync
-      const savedUser = JSON.parse(localStorage.getItem('user'));
-      if (savedUser) {
-        savedUser.avatarId = avId;
-        savedUser.firstName = fname;
-        savedUser.lastName = lname;
-        savedUser.email = mail;
-        localStorage.setItem('user', JSON.stringify(savedUser));
-      }
+      // Update local storage and context user data for real-time sync
+      updateUser({
+        avatarId: avId,
+        firstName: fname,
+        lastName: lname,
+        email: mail
+      });
 
       toast.success('Patient profile updated successfully!');
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
 
     } catch (err) {
       console.error(err);

@@ -29,7 +29,19 @@ const Login = () => {
       setError('');
       setLoading(true);
       const user = await login(username, password);
-      toast.success(`Welcome back, ${user.firstName}!`);
+      let greeting = '';
+      if (user.role === 'DOCTOR') {
+        let name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+        if (!name.toLowerCase().startsWith('dr')) {
+          name = `Dr ${name}`;
+        }
+        greeting = name;
+      } else if (user.role === 'HOSPITAL_ADMIN') {
+        greeting = user.firstName || 'Hospital Admin';
+      } else {
+        greeting = user.firstName || 'User';
+      }
+      toast.success(`Welcome back ${greeting}`);
       navigate('/');
     } catch (err) {
       setError(err);

@@ -66,6 +66,9 @@ public class UserService {
             UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
             String role = userPrincipal.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
 
+            User user = userRepository.findById(userPrincipal.getId())
+                    .orElseThrow(() -> new BadRequestException("User profile not found"));
+
             Long profileId = null;
             if (Role.DOCTOR.name().equals(role)) {
                 Optional<Doctor> doctor = doctorRepository.findByUserId(userPrincipal.getId());
@@ -89,13 +92,21 @@ public class UserService {
                     profileId = patient.get().getId();
                 }
             } else if (Role.HOSPITAL_ADMIN.name().equals(role)) {
-                User user = userRepository.findById(userPrincipal.getId())
-                        .orElseThrow(() -> new BadRequestException("User profile not found"));
                 if (user.getHospital() != null) {
                     profileId = user.getHospital().getId();
                 }
             } else if (Role.PLATFORM_ADMIN.name().equals(role)) {
                 profileId = userPrincipal.getId();
+            }
+
+            String firstName = user.getFirstName();
+            String lastName = user.getLastName();
+            String avatarId = user.getAvatarId();
+
+            if (Role.HOSPITAL_ADMIN.name().equals(role) && user.getHospital() != null) {
+                firstName = user.getHospital().getName();
+                lastName = "";
+                avatarId = user.getHospital().getLogoAvatar() != null ? user.getHospital().getLogoAvatar() : "hospital_1";
             }
 
             logger.info("User {} successfully authenticated with role: {}", loginRequest.getUsername(), role);
@@ -105,7 +116,10 @@ public class UserService {
                     userPrincipal.getUsername(),
                     userPrincipal.getEmail(),
                     role,
-                    profileId
+                    profileId,
+                    firstName,
+                    lastName,
+                    avatarId
             );
         } catch (Exception e) {
             logger.error("Authentication exception for user {}: {}", loginRequest.getUsername(), e.getMessage());
