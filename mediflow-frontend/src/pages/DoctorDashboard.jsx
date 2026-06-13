@@ -200,16 +200,33 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
     }
   };
 
+  const handleAppointmentStatusUpdate = async (appointmentId, status) => {
+    try {
+      await API.put(`/appointments/${appointmentId}/status?status=${status}`);
+      toast.success(`Appointment successfully ${status === 'APPROVED' ? 'accepted' : 'rejected'}!`);
+      refreshStats();
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || `Failed to update appointment status`);
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
+      case 'PENDING':
+        return <Badge variant="warning">Pending</Badge>;
+      case 'APPROVED':
+        return <Badge variant="info">Approved</Badge>;
       case 'SCHEDULED':
         return <Badge variant="primary">Scheduled</Badge>;
       case 'COMPLETED':
         return <Badge variant="success">Completed</Badge>;
       case 'CANCELLED':
         return <Badge variant="danger">Cancelled</Badge>;
+      case 'REJECTED':
+        return <Badge variant="danger">Rejected</Badge>;
       default:
-        return null;
+        return <Badge variant="neutral">{status}</Badge>;
     }
   };
 
@@ -397,7 +414,25 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                           {getStatusBadge(appt?.status)}
                         </TD>
                         <TD className="text-right">
-                          {appt?.status === 'SCHEDULED' && (
+                          {appt?.status === 'PENDING' && (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="xs"
+                                onClick={() => handleAppointmentStatusUpdate(appt?.id, 'APPROVED')}
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => handleAppointmentStatusUpdate(appt?.id, 'REJECTED')}
+                                className="text-rose-500 border-rose-100 hover:bg-rose-50 hover:text-rose-700"
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                          {appt?.status === 'APPROVED' && (
                             <div className="flex justify-end gap-2">
                               <Button
                                 size="xs"
@@ -415,6 +450,17 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                                 Cancel
                               </Button>
                             </div>
+                          )}
+                          {appt?.status === 'REJECTED' && (
+                            <Badge variant="neutral" className="opacity-60 bg-slate-100 text-slate-400 border-slate-200">
+                              Rejected by Doctor
+                            </Badge>
+                          )}
+                          {appt?.status === 'COMPLETED' && (
+                            <span className="text-xs text-slate-400 font-semibold">Completed</span>
+                          )}
+                          {appt?.status === 'CANCELLED' && (
+                            <span className="text-xs text-slate-400 font-semibold">Cancelled</span>
                           )}
                         </TD>
                       </TR>
