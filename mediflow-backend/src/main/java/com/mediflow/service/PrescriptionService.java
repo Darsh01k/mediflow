@@ -7,6 +7,8 @@ import com.mediflow.exception.BadRequestException;
 import com.mediflow.exception.ResourceNotFoundException;
 import com.mediflow.repository.*;
 import com.mediflow.utils.DtoMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class PrescriptionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PrescriptionService.class);
 
     @Autowired
     private PrescriptionRepository prescriptionRepository;
@@ -58,6 +62,7 @@ public class PrescriptionService {
         );
 
         Prescription saved = prescriptionRepository.save(prescription);
+        logger.info("Prescription saved successfully with ID: {}", saved.getId());
 
         // Notify patient
         String message = String.format("A new prescription has been added by Dr. %s %s (%s).",
@@ -70,34 +75,35 @@ public class PrescriptionService {
     }
 
     public PrescriptionDto getPrescriptionById(Long id) {
+        logger.info("Fetching prescription by ID: {}", id);
         Prescription prescription = prescriptionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Prescription not found with ID: " + id));
+        logger.info("Prescription fetched: ID={}", id);
         return DtoMapper.toDto(prescription);
     }
 
     public List<PrescriptionDto> getPrescriptionsForUser(Long userId, Role role) {
+        logger.info("Fetching prescriptions for user ID: {} with role: {}", userId, role);
+        List<Prescription> results;
         if (role == Role.PLATFORM_ADMIN) {
-            return prescriptionRepository.findAll().stream()
-                    .map(DtoMapper::toDto)
-                    .collect(Collectors.toList());
+            results = prescriptionRepository.findAll();
         } else if (role == Role.HOSPITAL_ADMIN) {
             User admin = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("Hospital Admin user not found with ID: " + userId));
             if (admin.getHospital() == null) {
                 throw new BadRequestException("Hospital admin is not associated with any hospital");
             }
-            return prescriptionRepository.findByHospitalIdOrderByPrescriptionDateDesc(admin.getHospital().getId()).stream()
-                    .map(DtoMapper::toDto)
-                    .collect(Collectors.toList());
+            results = prescriptionRepository.findByHospitalIdOrderByPrescriptionDateDesc(admin.getHospital().getId());
         } else if (role == Role.DOCTOR) {
-            return prescriptionRepository.findByDoctorUserIdOrderByPrescriptionDateDesc(userId).stream()
-                    .map(DtoMapper::toDto)
-                    .collect(Collectors.toList());
+            results = prescriptionRepository.findByDoctorUserIdOrderByPrescriptionDateDesc(userId);
         } else if (role == Role.PATIENT) {
-            return prescriptionRepository.findByPatientUserIdOrderByPrescriptionDateDesc(userId).stream()
-                    .map(DtoMapper::toDto)
-                    .collect(Collectors.toList());
+            results = prescriptionRepository.findByPatientUserIdOrderByPrescriptionDateDesc(userId);
+        } else {
+            throw new BadRequestException("Invalid role provided for retrieving prescriptions");
         }
-        throw new BadRequestException("Invalid role provided for retrieving prescriptions");
+        logger.info("Number of prescriptions returned for user ID {}: {}", userId, results.size());
+        return results.stream()
+                .map(DtoMapper::toDto)
+                .collect(Collectors.toList());
     }
 }

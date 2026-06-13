@@ -128,19 +128,25 @@ public class AppointmentService {
 
         Appointment updatedAppointment = appointmentRepository.save(appointment);
 
-        // Notify patient on approval/rejection
-        if (status == AppointmentStatus.APPROVED && oldStatus != AppointmentStatus.APPROVED) {
-            String message = String.format("Your appointment with Dr. %s %s on %s has been APPROVED.",
-                    appointment.getDoctor().getUser().getFirstName(),
-                    appointment.getDoctor().getUser().getLastName(),
-                    appointment.getAppointmentDate().toString().replace("T", " "));
-            notificationService.createNotification(appointment.getPatient().getUser(), message);
-        } else if (status == AppointmentStatus.REJECTED && oldStatus != AppointmentStatus.REJECTED) {
-            String message = String.format("Your appointment with Dr. %s %s on %s has been REJECTED.",
-                    appointment.getDoctor().getUser().getFirstName(),
-                    appointment.getDoctor().getUser().getLastName(),
-                    appointment.getAppointmentDate().toString().replace("T", " "));
-            notificationService.createNotification(appointment.getPatient().getUser(), message);
+        // Notify patient on status changes
+        if (status != oldStatus) {
+            String doctorName = appointment.getDoctor().getUser().getFirstName() + " " + appointment.getDoctor().getUser().getLastName();
+            String dateTime = appointment.getAppointmentDate().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            String message = null;
+
+            if (status == AppointmentStatus.APPROVED) {
+                message = String.format("Your appointment with Dr. %s on %s has been APPROVED.", doctorName, dateTime);
+            } else if (status == AppointmentStatus.REJECTED) {
+                message = String.format("Your appointment with Dr. %s on %s has been REJECTED.", doctorName, dateTime);
+            } else if (status == AppointmentStatus.CANCELLED) {
+                message = String.format("Your appointment with Dr. %s on %s has been CANCELLED.", doctorName, dateTime);
+            } else if (status == AppointmentStatus.COMPLETED) {
+                message = String.format("Your appointment with Dr. %s on %s has been marked COMPLETED.", doctorName, dateTime);
+            }
+
+            if (message != null) {
+                notificationService.createNotification(appointment.getPatient().getUser(), message);
+            }
         }
 
         return DtoMapper.toDto(updatedAppointment);

@@ -101,6 +101,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
       try {
         await API.put(`/appointments/${apptId}/status?status=CANCELLED`);
         toast.success('Consultation cancelled successfully.');
+        window.dispatchEvent(new CustomEvent('refresh-notifications'));
         refreshStats();
       } catch (err) {
         toast.error('Failed to cancel appointment');
@@ -130,11 +131,35 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
       // 1. Save Medical Record
       await API.post('/medical-records', payload);
 
-      // 2. Mark Appointment as Completed
+      // 2. Save Prescription
+      const rxPayload = {
+        patientId: activeAppointment?.patient?.id,
+        doctorId: activeAppointment?.doctor?.id,
+        hospitalId: activeAppointment?.doctor?.hospital?.id || doctorProfile?.hospital?.id || user?.hospital?.id || 1,
+        prescriptionDate: new Date().toISOString().split('T')[0],
+        medicinesJson: JSON.stringify([
+          {
+            name: prescription,
+            dosage: 'As directed',
+            frequency: 'As directed',
+            duration: 'As directed',
+            instructions: treatmentNotes || 'As directed'
+          }
+        ]),
+        dosage: 'As directed',
+        instructions: treatmentNotes || 'As directed',
+        notes: diagnosis
+      };
+      await API.post('/prescriptions', rxPayload);
+
+      // 3. Mark Appointment as Completed
       await API.put(`/appointments/${activeAppointment?.id}/status?status=COMPLETED&notes=Record saved`);
 
       toast.success('Clinical chart and prescription registered!');
       
+      // Dispatch notification event to sync immediately
+      window.dispatchEvent(new CustomEvent('refresh-notifications'));
+
       // Clear & close
       setDiagnosis('');
       setPrescription('');
@@ -204,6 +229,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
     try {
       await API.put(`/appointments/${appointmentId}/status?status=${status}`);
       toast.success(`Appointment successfully ${status === 'APPROVED' ? 'accepted' : 'rejected'}!`);
+      window.dispatchEvent(new CustomEvent('refresh-notifications'));
       refreshStats();
     } catch (err) {
       console.error(err);

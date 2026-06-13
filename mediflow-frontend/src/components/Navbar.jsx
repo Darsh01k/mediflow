@@ -43,9 +43,18 @@ const Navbar = ({ title, onToggleSidebar }) => {
 
   useEffect(() => {
     loadNotifications();
+
+    const handleRefresh = () => {
+      loadNotifications();
+    };
+    window.addEventListener('refresh-notifications', handleRefresh);
+
     // Refresh notifications every 60 seconds
     const interval = setInterval(loadNotifications, 60000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('refresh-notifications', handleRefresh);
+    };
   }, [user]);
 
   // Click outside handler

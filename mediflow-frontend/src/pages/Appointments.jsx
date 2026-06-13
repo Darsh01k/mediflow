@@ -54,6 +54,7 @@ const Appointments = () => {
         setActionLoading(true);
         await API.put(`/appointments/${apptId}/status?status=CANCELLED`);
         toast.success('Appointment cancelled successfully');
+        window.dispatchEvent(new CustomEvent('refresh-notifications'));
         fetchAppointments();
       } catch (err) {
         toast.error('Failed to cancel appointment');
@@ -72,6 +73,7 @@ const Appointments = () => {
       const formattedDate = new Date(newDate).toISOString().slice(0, 19);
       await API.put(`/appointments/${reschedulingAppt.id}/reschedule?date=${formattedDate}`);
       toast.success('Appointment rescheduled successfully');
+      window.dispatchEvent(new CustomEvent('refresh-notifications'));
       setReschedulingAppt(null);
       setNewDate('');
       fetchAppointments();
