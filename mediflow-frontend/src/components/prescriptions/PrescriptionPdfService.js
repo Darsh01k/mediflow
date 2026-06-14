@@ -126,10 +126,65 @@ export const sanitizeColorsForPdf = (rootElement) => {
   console.log(`[PDF SANITIZER] Color sanitization sweep completed. Total elements processed: ${elementsSanitized}`);
 };
 
+export const scanForUnsupportedColors = () => {
+  console.log('[PDF Service] Beginning document.styleSheets audit for unsupported colors...');
+  let oklchCount = 0;
+  const offendingRules = [];
+  
+  const sheets = Array.from(document.styleSheets);
+  sheets.forEach((sheet, sheetIndex) => {
+    try {
+      const rules = Array.from(sheet.cssRules || sheet.rules || []);
+      rules.forEach((rule, ruleIndex) => {
+        const cssText = rule.cssText;
+        if (cssText) {
+          const hasOklch = cssText.includes('oklch');
+          const hasOklab = cssText.includes('oklab');
+          const hasLch = cssText.includes('lch(');
+          const hasLab = cssText.includes('lab(');
+          const hasColorMix = cssText.includes('color-mix(');
+          
+          if (hasOklch || hasOklab || hasLch || hasLab || hasColorMix) {
+            oklchCount++;
+            const selectorText = rule.selectorText || `Rule #${ruleIndex}`;
+            const sourceHref = sheet.href || 'inline/dynamic style';
+            offendingRules.push({
+              sheetIndex,
+              sourceHref,
+              selector: selectorText,
+              cssText: cssText.substring(0, 150) + (cssText.length > 150 ? '...' : '')
+            });
+          }
+        }
+      });
+    } catch (e) {
+      // Cross-origin stylesheet access security errors are common for external links
+    }
+  });
+
+  console.log('[PDF DEBUG] Found OKLCH styles:', oklchCount);
+  if (offendingRules.length > 0) {
+    console.log('[PDF Service] Detailed list of offending CSS selectors:');
+    offendingRules.forEach(rule => {
+      console.log(`- Selector: "${rule.selector}" in sheet "${rule.sourceHref}" contains unsupported style.`);
+      console.log(`  CSS snippet: ${rule.cssText}`);
+    });
+  } else {
+    console.log('[PDF Service] No offending CSS rules found in accessible document.styleSheets.');
+  }
+
+  return oklchCount;
+};
+
 export const downloadPrescriptionPdf = async (prescription, elementId = 'printable-prescription') => {
   let container = null;
   let tempStyle = null;
+  let originalQuerySelectorAll = null;
+  let originalGetElementsByTagName = null;
   try {
+    // Run diagnostics
+    scanForUnsupportedColors();
+
     const patientName = `${prescription.patient.user?.firstName || ''}${prescription.patient.user?.lastName || ''}`.replace(/[^a-zA-Z0-9]/g, '');
     const dateObj = prescription.createdAt ? new Date(prescription.createdAt) : new Date();
     const YYYY = dateObj.getFullYear();
@@ -238,6 +293,26 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
       configurable: true
     });
 
+    // Backup and intercept querySelectorAll
+    originalQuerySelectorAll = document.querySelectorAll;
+    document.querySelectorAll = function(selector) {
+      if (typeof selector === 'string' && (selector.includes('stylesheet') || selector.includes('style') || selector.includes('link'))) {
+        console.log('[PDF Service] Intercepted querySelectorAll:', selector);
+        return document.createDocumentFragment().querySelectorAll('*');
+      }
+      return originalQuerySelectorAll.apply(this, arguments);
+    };
+
+    // Backup and intercept getElementsByTagName
+    originalGetElementsByTagName = document.getElementsByTagName;
+    document.getElementsByTagName = function(tagName) {
+      if (typeof tagName === 'string' && (tagName.toLowerCase() === 'style' || tagName.toLowerCase() === 'link')) {
+        console.log('[PDF Service] Intercepted getElementsByTagName:', tagName);
+        return originalGetElementsByTagName.apply(document.createElement('div'), ['*']);
+      }
+      return originalGetElementsByTagName.apply(this, arguments);
+    };
+
     const opt = {
       margin:       0.3,
       filename:     filename,
@@ -265,6 +340,14 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
   } finally {
     // Restore document.styleSheets getter
     delete document.styleSheets;
+
+    // Restore DOM queries
+    if (originalQuerySelectorAll) {
+      document.querySelectorAll = originalQuerySelectorAll;
+    }
+    if (originalGetElementsByTagName) {
+      document.getElementsByTagName = originalGetElementsByTagName;
+    }
     
     // Cleanup container
     if (container && container.parentNode) {
@@ -278,7 +361,12 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
   let container = null;
   let tempStyle = null;
   let blobUrl = null;
+  let originalQuerySelectorAll = null;
+  let originalGetElementsByTagName = null;
   try {
+    // Run diagnostics
+    scanForUnsupportedColors();
+
     const patientName = `${prescription.patient.user?.firstName || ''}${prescription.patient.user?.lastName || ''}`.replace(/[^a-zA-Z0-9]/g, '');
     const dateObj = prescription.createdAt ? new Date(prescription.createdAt) : new Date();
     const YYYY = dateObj.getFullYear();
@@ -385,6 +473,26 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
       configurable: true
     });
 
+    // Backup and intercept querySelectorAll
+    originalQuerySelectorAll = document.querySelectorAll;
+    document.querySelectorAll = function(selector) {
+      if (typeof selector === 'string' && (selector.includes('stylesheet') || selector.includes('style') || selector.includes('link'))) {
+        console.log('[PDF Service] Intercepted querySelectorAll:', selector);
+        return document.createDocumentFragment().querySelectorAll('*');
+      }
+      return originalQuerySelectorAll.apply(this, arguments);
+    };
+
+    // Backup and intercept getElementsByTagName
+    originalGetElementsByTagName = document.getElementsByTagName;
+    document.getElementsByTagName = function(tagName) {
+      if (typeof tagName === 'string' && (tagName.toLowerCase() === 'style' || tagName.toLowerCase() === 'link')) {
+        console.log('[PDF Service] Intercepted getElementsByTagName:', tagName);
+        return originalGetElementsByTagName.apply(document.createElement('div'), ['*']);
+      }
+      return originalGetElementsByTagName.apply(this, arguments);
+    };
+
     const opt = {
       margin:       0.3,
       filename:     filename,
@@ -426,6 +534,14 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
   } finally {
     // Restore document.styleSheets
     delete document.styleSheets;
+
+    // Restore DOM queries
+    if (originalQuerySelectorAll) {
+      document.querySelectorAll = originalQuerySelectorAll;
+    }
+    if (originalGetElementsByTagName) {
+      document.getElementsByTagName = originalGetElementsByTagName;
+    }
     
     // Cleanup container
     if (container && container.parentNode) {
