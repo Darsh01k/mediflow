@@ -9,6 +9,8 @@ const PrescriptionActions = ({ prescription, onView, onDownload, onPrint, showVi
   const [downloading, setDownloading] = useState(false);
   const [printing, setPrinting] = useState(false);
 
+  const isBusy = downloading || printing;
+
   const handlePrintClick = async () => {
     if (onPrint) {
       onPrint();
@@ -52,6 +54,7 @@ const PrescriptionActions = ({ prescription, onView, onDownload, onPrint, showVi
       {showView && onView && (
         <Button 
           onClick={onView}
+          disabled={isBusy}
           variant="outline" 
           size="sm"
           icon={Eye}
@@ -63,6 +66,7 @@ const PrescriptionActions = ({ prescription, onView, onDownload, onPrint, showVi
       <Button 
         onClick={handleDownloadClick}
         loading={downloading}
+        disabled={isBusy}
         variant="outline" 
         size="sm"
         icon={Download}
@@ -73,6 +77,7 @@ const PrescriptionActions = ({ prescription, onView, onDownload, onPrint, showVi
       <Button 
         onClick={handlePrintClick}
         loading={printing}
+        disabled={isBusy}
         variant="outline" 
         size="sm"
         icon={Printer}
