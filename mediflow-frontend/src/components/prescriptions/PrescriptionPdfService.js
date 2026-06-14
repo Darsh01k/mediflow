@@ -1,92 +1,34 @@
 import html2pdf from 'html2pdf.js';
 
-const stripParentStylesheets = () => {
-  console.log('[PDF Service] Temporarily stripping parent window stylesheets to avoid oklch parsing crashes...');
-  const elements = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'));
-  const savedElements = [];
-  elements.forEach(el => {
-    const parent = el.parentNode;
-    const nextSibling = el.nextSibling;
-    if (parent) {
-      parent.removeChild(el);
-      savedElements.push({ element: el, parent, nextSibling });
-    }
-  });
+const sanitizeImagesForPdf = (clone) => {
+  const images = clone.getElementsByTagName('img');
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    
+    // Log the image audit
+    console.log('[PDF Service] Sanitizing image styles:', img.src || 'inline');
 
-  // Backup and clear adoptedStyleSheets
-  let savedAdopted = [];
-  if (document.adoptedStyleSheets) {
-    savedAdopted = [...document.adoptedStyleSheets];
-    try {
-      document.adoptedStyleSheets = [];
-    } catch (e) {
-      console.warn('[PDF Service] Failed to clear document.adoptedStyleSheets:', e);
-    }
-  }
+    // Force fixed dimensions inside the PDF clone
+    img.style.width = '56px';
+    img.style.height = '56px';
+    img.style.minWidth = '56px';
+    img.style.minHeight = '56px';
+    img.style.maxWidth = '56px';
+    img.style.maxHeight = '56px';
+    img.style.objectFit = 'cover';
+    img.style.display = 'block';
 
-  // Backup and clean inline style attributes on html and body tags
-  const savedHtmlStyle = document.documentElement.getAttribute('style');
-  const savedBodyStyle = document.body.getAttribute('style');
+    // Prevent image stretching
+    img.style.transform = 'none';
+    img.style.scale = '1';
+    img.style.position = 'static';
 
-  const cleanInlineStyle = (el) => {
-    if (!el || !el.style) return;
-    for (let i = el.style.length - 1; i >= 0; i--) {
-      const prop = el.style[i];
-      if (prop) {
-        const val = el.style.getPropertyValue(prop);
-        if (val && (val.includes('oklch') || val.includes('var(') || val.includes('color-mix') || prop.startsWith('--'))) {
-          el.style.removeProperty(prop);
-        }
-      }
-    }
-  };
+    // Strip class names to ensure no CSS rules or utility classes can override inline size
+    img.className = '';
 
-  cleanInlineStyle(document.documentElement);
-  cleanInlineStyle(document.body);
-
-  return {
-    savedElements,
-    savedAdopted,
-    savedHtmlStyle,
-    savedBodyStyle
-  };
-};
-
-const restoreParentStylesheets = (savedData) => {
-  console.log('[PDF Service] Restoring parent window stylesheets...');
-  if (!savedData) return;
-
-  // Restore elements
-  if (savedData.savedElements) {
-    savedData.savedElements.forEach(item => {
-      if (item.nextSibling && item.nextSibling.parentNode === item.parent) {
-        item.parent.insertBefore(item.element, item.nextSibling);
-      } else {
-        item.parent.appendChild(item.element);
-      }
-    });
-  }
-
-  // Restore adoptedStyleSheets
-  if (document.adoptedStyleSheets && savedData.savedAdopted && savedData.savedAdopted.length > 0) {
-    try {
-      document.adoptedStyleSheets = savedData.savedAdopted;
-    } catch (e) {
-      console.warn('[PDF Service] Failed to restore document.adoptedStyleSheets:', e);
-    }
-  }
-
-  // Restore html/body style attributes
-  if (savedData.savedHtmlStyle !== null && savedData.savedHtmlStyle !== undefined) {
-    document.documentElement.setAttribute('style', savedData.savedHtmlStyle);
-  } else {
-    document.documentElement.removeAttribute('style');
-  }
-
-  if (savedData.savedBodyStyle !== null && savedData.savedBodyStyle !== undefined) {
-    document.body.setAttribute('style', savedData.savedBodyStyle);
-  } else {
-    document.body.removeAttribute('style');
+    // Direct attributes to ensure fallback is 56x56
+    img.setAttribute('width', '56');
+    img.setAttribute('height', '56');
   }
 };
 
@@ -184,108 +126,9 @@ export const sanitizeColorsForPdf = (rootElement) => {
   console.log(`[PDF SANITIZER] Color sanitization sweep completed. Total elements processed: ${elementsSanitized}`);
 };
 
-export const generatePrescriptionDocument = async (prescription, elementId = 'printable-prescription') => {
-  console.log('[PDF Service] Triggered isolated document generation for element:', elementId);
-  const element = document.getElementById(elementId);
-  if (!element) {
-    console.error('[PDF Service] Element not found in DOM:', elementId);
-    throw new Error('Prescription template element not found in DOM.');
-  }
-
-  // Create isolated sandbox iframe
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'absolute';
-  iframe.style.width = '800px';
-  iframe.style.height = '1200px';
-  iframe.style.left = '-9999px';
-  iframe.style.top = '-9999px';
-  iframe.style.border = 'none';
-  iframe.style.background = '#ffffff';
-  document.body.appendChild(iframe);
-
-  const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-  iframeDoc.open();
-  iframeDoc.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Prescription Sandbox</title>
-        <style>
-          body {
-            font-family: system-ui, -apple-system, sans-serif;
-            color: #111827;
-            background-color: #ffffff;
-            margin: 0;
-            padding: 24px;
-            box-sizing: border-box;
-          }
-          .prescription-print-container {
-            width: 100%;
-            max-width: 750px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            color: #111827;
-          }
-          .prescription-grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-          }
-          .prescription-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
-            text-align: left;
-            margin-top: 12px;
-          }
-          .prescription-table th {
-            padding: 10px 12px;
-            background-color: #f3f4f6;
-            color: #374151;
-            font-weight: 800;
-            border-bottom: 2px solid #d1d5db;
-          }
-          .prescription-table td {
-            padding: 10px 12px;
-            color: #4b5563;
-            border-bottom: 1px solid #e5e7eb;
-          }
-          .print-safe {
-            color: #111827 !important;
-            background-color: #ffffff !important;
-            border-color: #d1d5db !important;
-          }
-          /* Strip unsupported transitions, shadows, gradients, and filters */
-          * {
-            box-shadow: none !important;
-            text-shadow: none !important;
-            background-image: none !important;
-            filter: none !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            transition: none !important;
-            animation: none !important;
-          }
-        </style>
-      </head>
-      <body>
-        <div id="prescription-target"></div>
-      </body>
-    </html>
-  `);
-  iframeDoc.close();
-
-  // Clone original element and place inside isolated sandbox
-  const target = iframeDoc.getElementById('prescription-target');
-  const clone = element.cloneNode(true);
-  target.appendChild(clone);
-
-  return { iframe, target: clone };
-};
-
 export const downloadPrescriptionPdf = async (prescription, elementId = 'printable-prescription') => {
-  let sandbox = null;
-  let savedStyles = [];
+  let container = null;
+  let tempStyle = null;
   try {
     const patientName = `${prescription.patient.user?.firstName || ''}${prescription.patient.user?.lastName || ''}`.replace(/[^a-zA-Z0-9]/g, '');
     const dateObj = prescription.createdAt ? new Date(prescription.createdAt) : new Date();
@@ -300,11 +143,100 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
     const filename = `MediFlow_Prescription_${patientName}_${formattedDateTime}.pdf`;
     console.log('[PDF Service] Downloading PDF:', filename);
 
-    // Create sandbox iframe
-    sandbox = await generatePrescriptionDocument(prescription, elementId);
+    // Create an off-screen container
+    container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-99999px';
+    container.style.top = '0';
+    container.style.visibility = 'hidden';
+    container.style.width = '800px';
+    container.style.height = '1200px';
+    container.style.overflow = 'hidden';
+    container.style.backgroundColor = '#ffffff';
+    document.body.appendChild(container);
+    console.log('[PDF Service] Hidden PDF container created');
 
-    // Sanitize all colors inside the clone
-    sanitizeColorsForPdf(sandbox.target);
+    const element = document.getElementById(elementId);
+    if (!element) {
+      throw new Error('Prescription template element not found in DOM.');
+    }
+
+    // Render the cloned prescription only inside this hidden container
+    const clone = element.cloneNode(true);
+    container.appendChild(clone);
+
+    // Sanitize colors and images inside the clone
+    sanitizeColorsForPdf(clone);
+    sanitizeImagesForPdf(clone);
+
+    // Create temporary style tag inside the container
+    tempStyle = document.createElement('style');
+    tempStyle.textContent = `
+      .print-safe {
+        color: #111827 !important;
+        background-color: #ffffff !important;
+        border-color: #d1d5db !important;
+      }
+      .prescription-print-container {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 32px !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+        color: #111827 !important;
+        overflow: visible !important;
+      }
+      .prescription-grid-2 {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 1.5rem !important;
+      }
+      .prescription-table {
+        display: table !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      .prescription-table thead {
+        display: table-header-group !important;
+      }
+      .prescription-table tbody {
+        display: table-row-group !important;
+      }
+      .prescription-table tr {
+        display: table-row !important;
+      }
+      .prescription-table th,
+      .prescription-table td {
+        display: table-cell !important;
+        padding: 10px 12px !important;
+        border-bottom: 1px solid #e5e7eb !important;
+      }
+      .prescription-table th {
+        background-color: #f3f4f6 !important;
+        font-weight: 800 !important;
+      }
+      * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+        background-image: none !important;
+        filter: none !important;
+        backdrop-filter: none !important;
+        transition: none !important;
+      }
+    `;
+    container.appendChild(tempStyle);
+
+    // Intercept document.styleSheets
+    const cleanSheet = tempStyle.sheet;
+    Object.defineProperty(document, 'styleSheets', {
+      get: () => {
+        return cleanSheet ? [cleanSheet] : [];
+      },
+      configurable: true
+    });
 
     const opt = {
       margin:       0.3,
@@ -320,30 +252,32 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
       jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
 
-    // Temporarily remove parent window stylesheets
-    savedStyles = stripParentStylesheets();
+    // Make container visible off-screen for html2canvas
+    container.style.visibility = 'visible';
+    console.log('[PDF Service] Rendering in isolated container');
 
     console.log('[PDF Service] Running html2pdf generator...');
-    await html2pdf().from(sandbox.target).set(opt).save();
+    await html2pdf().from(clone).set(opt).save();
     console.log('[PDF Service] PDF download complete successfully.');
   } catch (err) {
     console.error('[PDF Service] PDF download failed:', err);
     throw err;
   } finally {
-    // Restore parent stylesheets
-    restoreParentStylesheets(savedStyles);
+    // Restore document.styleSheets getter
+    delete document.styleSheets;
     
-    // Cleanup sandbox iframe
-    if (sandbox && sandbox.iframe && sandbox.iframe.parentNode) {
-      sandbox.iframe.parentNode.removeChild(sandbox.iframe);
-      console.log('[PDF Service] Sandbox iframe cleaned up.');
+    // Cleanup container
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+      console.log('[PDF Service] Hidden container removed');
     }
   }
 };
 
 export const printPrescription = async (prescription, elementId = 'printable-prescription') => {
-  let sandbox = null;
-  let savedStyles = [];
+  let container = null;
+  let tempStyle = null;
+  let blobUrl = null;
   try {
     const patientName = `${prescription.patient.user?.firstName || ''}${prescription.patient.user?.lastName || ''}`.replace(/[^a-zA-Z0-9]/g, '');
     const dateObj = prescription.createdAt ? new Date(prescription.createdAt) : new Date();
@@ -356,11 +290,100 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
     const filename = `MediFlow_Prescription_${patientName}_${formattedDateTime}.pdf`;
     console.log('[PDF Service] Printing PDF:', filename);
 
-    // Create sandbox iframe
-    sandbox = await generatePrescriptionDocument(prescription, elementId);
+    // Create an off-screen container
+    container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-99999px';
+    container.style.top = '0';
+    container.style.visibility = 'hidden';
+    container.style.width = '800px';
+    container.style.height = '1200px';
+    container.style.overflow = 'hidden';
+    container.style.backgroundColor = '#ffffff';
+    document.body.appendChild(container);
+    console.log('[PDF Service] Hidden PDF container created');
 
-    // Sanitize colors inside the clone
-    sanitizeColorsForPdf(sandbox.target);
+    const element = document.getElementById(elementId);
+    if (!element) {
+      throw new Error('Prescription template element not found in DOM.');
+    }
+
+    // Render the cloned prescription only inside this hidden container
+    const clone = element.cloneNode(true);
+    container.appendChild(clone);
+
+    // Sanitize colors and images inside the clone
+    sanitizeColorsForPdf(clone);
+    sanitizeImagesForPdf(clone);
+
+    // Create temporary style tag inside the container
+    tempStyle = document.createElement('style');
+    tempStyle.textContent = `
+      .print-safe {
+        color: #111827 !important;
+        background-color: #ffffff !important;
+        border-color: #d1d5db !important;
+      }
+      .prescription-print-container {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 32px !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+        color: #111827 !important;
+        overflow: visible !important;
+      }
+      .prescription-grid-2 {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 1.5rem !important;
+      }
+      .prescription-table {
+        display: table !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      .prescription-table thead {
+        display: table-header-group !important;
+      }
+      .prescription-table tbody {
+        display: table-row-group !important;
+      }
+      .prescription-table tr {
+        display: table-row !important;
+      }
+      .prescription-table th,
+      .prescription-table td {
+        display: table-cell !important;
+        padding: 10px 12px !important;
+        border-bottom: 1px solid #e5e7eb !important;
+      }
+      .prescription-table th {
+        background-color: #f3f4f6 !important;
+        font-weight: 800 !important;
+      }
+      * {
+        box-shadow: none !important;
+        text-shadow: none !important;
+        background-image: none !important;
+        filter: none !important;
+        backdrop-filter: none !important;
+        transition: none !important;
+      }
+    `;
+    container.appendChild(tempStyle);
+
+    // Intercept document.styleSheets
+    const cleanSheet = tempStyle.sheet;
+    Object.defineProperty(document, 'styleSheets', {
+      get: () => {
+        return cleanSheet ? [cleanSheet] : [];
+      },
+      configurable: true
+    });
 
     const opt = {
       margin:       0.3,
@@ -376,25 +399,38 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
       jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
 
-    // Temporarily remove parent window stylesheets
-    savedStyles = stripParentStylesheets();
+    // Make container visible off-screen for html2canvas
+    container.style.visibility = 'visible';
+    console.log('[PDF Service] Rendering in isolated container');
 
     console.log('[PDF Service] Running html2pdf print generator...');
-    const pdfBlob = await html2pdf().from(sandbox.target).set(opt).output('blob');
-    const blobUrl = URL.createObjectURL(pdfBlob);
+    const pdfBlob = await html2pdf().from(clone).set(opt).output('blob');
+    blobUrl = URL.createObjectURL(pdfBlob);
     window.open(blobUrl, '_blank');
     console.log('[PDF Service] Print PDF blob opened.');
+
+    // Revoke blob URL after safe duration
+    const targetUrl = blobUrl;
+    setTimeout(() => {
+      try {
+        URL.revokeObjectURL(targetUrl);
+        console.log('[PDF Service] Revoked print blob URL:', targetUrl);
+      } catch (e) {
+        console.error('[PDF Service] Failed to revoke blob URL:', e);
+      }
+    }, 20000);
+
   } catch (err) {
     console.error('[PDF Service] Print failed:', err);
     throw err;
   } finally {
-    // Restore parent stylesheets
-    restoreParentStylesheets(savedStyles);
+    // Restore document.styleSheets
+    delete document.styleSheets;
     
-    // Cleanup sandbox iframe
-    if (sandbox && sandbox.iframe && sandbox.iframe.parentNode) {
-      sandbox.iframe.parentNode.removeChild(sandbox.iframe);
-      console.log('[PDF Service] Sandbox iframe cleaned up.');
+    // Cleanup container
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+      console.log('[PDF Service] Hidden container removed');
     }
   }
 };
