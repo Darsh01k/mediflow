@@ -53,13 +53,23 @@ const Prescriptions = () => {
   useEffect(() => {
     if (viewingPrescription && pendingAction) {
       // Wait 150ms to ensure the React render and browser paint are complete
-      const timer = setTimeout(() => {
-        if (pendingAction === 'print') {
-          printPrescription(viewingPrescription);
-        } else if (pendingAction === 'download') {
-          downloadPrescriptionPdf(viewingPrescription);
+      const timer = setTimeout(async () => {
+        try {
+          if (pendingAction === 'print') {
+            toast.info('Generating PDF for print preview...');
+            await printPrescription(viewingPrescription);
+            toast.success('Print document opened successfully in new tab.');
+          } else if (pendingAction === 'download') {
+            toast.info('Generating PDF download...');
+            await downloadPrescriptionPdf(viewingPrescription);
+            toast.success('Prescription PDF downloaded successfully.');
+          }
+        } catch (err) {
+          console.error('[Prescriptions Page] Deferred action error:', err);
+          toast.error('Failed to process prescription document.');
+        } finally {
+          setPendingAction(null);
         }
-        setPendingAction(null);
       }, 150);
       return () => clearTimeout(timer);
     }

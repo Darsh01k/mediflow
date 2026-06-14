@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { HeartPulse } from 'lucide-react';
-import { HealthAvatar } from '../ui/Avatar';
 import './PrescriptionPrint.css';
 
 const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescription' }) => {
+  const [logoError, setLogoError] = useState(false);
+
   if (!prescription) return null;
 
   const parseMedicines = (jsonStr) => {
@@ -30,17 +31,27 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
 
   const renderHospitalLogo = () => {
     const logoId = prescription.hospital.logoAvatar;
-    if (logoId) {
-      return <HealthAvatar avatarId={logoId} className="w-14 h-14 rounded-xl border border-slate-200 shadow-sm shrink-0 font-sans" />;
+    const isValidUrl = logoId && !logoError && (logoId.startsWith('http') || logoId.startsWith('/') || logoId.includes('.'));
+    
+    if (isValidUrl) {
+      return (
+        <img 
+          src={logoId} 
+          alt={prescription.hospital.name} 
+          crossOrigin="anonymous"
+          className="w-14 h-14 rounded-xl border border-slate-200 shadow-sm shrink-0 object-cover"
+          onError={() => setLogoError(true)}
+        />
+      );
     }
     
-    // Professional initials fallback if hospital logo is missing
+    // Fallback initials component
     const initials = prescription.hospital.name
       ? prescription.hospital.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
       : 'H';
 
     return (
-      <div className="w-14 h-14 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 p-0.5 flex items-center justify-center shadow-md shrink-0 border border-slate-200">
+      <div className="w-14 h-14 rounded-xl bg-gradient-to-r from-emerald-650 to-teal-700 p-0.5 flex items-center justify-center shadow-md shrink-0 border border-slate-200">
         <div className="w-full h-full rounded-xl flex items-center justify-center bg-slate-950/10">
           <span className="fallback-initials text-white font-black text-sm uppercase tracking-tight select-none">
             {initials}
@@ -57,11 +68,11 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
     >
       {/* Header Letterhead */}
       <div className="flex justify-between items-start border-b-2 border-emerald-600 pb-5 gap-6">
-        <div className="space-y-1.5 text-left flex-1">
+        <div className="space-y-1.5 text-left flex-1 font-sans">
           <div className="flex items-center gap-3">
             {renderHospitalLogo()}
             <div>
-              <h2 className="text-lg font-black tracking-tight text-slate-900 uppercase font-sans leading-none">
+              <h2 className="text-lg font-black tracking-tight text-slate-900 uppercase leading-none">
                 {prescription.hospital.name}
               </h2>
               <p className="text-[9px] text-emerald-650 font-bold uppercase tracking-wider mt-1">
@@ -69,20 +80,20 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
               </p>
             </div>
           </div>
-          <p className="text-[10px] text-slate-500 font-semibold max-w-sm leading-relaxed mt-2 font-sans">
+          <p className="text-[10px] text-slate-500 font-semibold max-w-sm leading-relaxed mt-2">
             {prescription.hospital.address}, {prescription.hospital.city}, {prescription.hospital.state} - {prescription.hospital.pincode || ''}
           </p>
-          <p className="text-[9px] text-slate-400 font-semibold leading-none pt-0.5 font-sans">
+          <p className="text-[9px] text-slate-400 font-semibold leading-none pt-0.5">
             Phone: {prescription.hospital.phone} | Email: {prescription.hospital.email || 'contact@hosp.com'}
           </p>
         </div>
         <div className="text-right space-y-1 shrink-0 bg-slate-50 p-3 rounded-xl border border-slate-200/50 print:bg-white print:border-none print:p-0 font-sans">
-          <span className="inline-block text-[8px] font-black tracking-wider uppercase bg-emerald-500 text-white px-2.5 py-0.5 rounded-full">
+          <span className="inline-block text-[8px] font-black tracking-wider uppercase bg-emerald-500 text-white px-2.5 py-0.5 rounded-full font-sans">
             PRESCRIPTION
           </span>
-          <p className="text-[10px] text-slate-600 font-bold mt-1.5 font-sans">RX-ID: #{prescription.id}</p>
-          <p className="text-[10px] text-slate-500 font-bold font-sans font-sans">Date: {prescription.prescriptionDate}</p>
-          <p className="text-[10px] text-slate-500 font-bold font-sans font-sans">
+          <p className="text-[10px] text-slate-600 font-bold mt-1.5">RX-ID: #{prescription.id}</p>
+          <p className="text-[10px] text-slate-500 font-bold">Date: {prescription.prescriptionDate}</p>
+          <p className="text-[10px] text-slate-500 font-bold">
             Time: {prescription.createdAt 
               ? new Date(prescription.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
               : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -95,12 +106,12 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
       <div className="prescription-grid-2 grid grid-cols-2 gap-6 bg-slate-50/50 p-4 border border-slate-200/60 rounded-xl print:bg-white print:p-0 print:border-none">
         {/* Doctor Info */}
         <div className="space-y-1.5 text-left text-[11px] font-semibold text-slate-500 font-sans">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Practitioner Details</p>
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-sans">Practitioner Details</p>
           <div className="space-y-0.5">
             <h4 className="font-extrabold text-slate-800 text-xs">
               Dr. {prescription.doctor.user?.firstName} {prescription.doctor.user?.lastName}
             </h4>
-            <p className="text-emerald-655 font-bold text-[9px] uppercase tracking-wide leading-none mt-0.5">
+            <p className="text-emerald-650 font-bold text-[9px] uppercase tracking-wide leading-none mt-0.5">
               {prescription.doctor.specialization}
             </p>
             <p className="text-slate-500 font-medium text-[9px] mt-0.5">
@@ -111,7 +122,7 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
 
         {/* Patient Info */}
         <div className="space-y-1.5 text-left text-[11px] font-semibold text-slate-500 border-l border-slate-200/80 pl-6 print:border-l print:pl-6 font-sans">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Patient Details</p>
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-sans">Patient Details</p>
           <div className="space-y-0.5">
             <h4 className="font-extrabold text-slate-800 text-xs">
               {prescription.patient.user?.firstName} {prescription.patient.user?.lastName}
@@ -131,7 +142,7 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
             <HeartPulse className="w-4 h-4 text-emerald-500" />
             <span>Clinical Assessment / Diagnosis</span>
           </h4>
-          <p className="text-slate-700 font-medium bg-slate-50/50 p-3 rounded-lg border border-slate-200/50 leading-relaxed print:bg-white print:p-0 print:border-none font-sans">
+          <p className="text-slate-700 font-medium bg-slate-50/50 p-3 rounded-lg border border-slate-200/50 leading-relaxed print:bg-white print:p-0 print:border-none">
             {prescription.notes}
           </p>
         </div>
@@ -203,7 +214,7 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
           <p className="font-extrabold text-slate-700 text-xs">
             Dr. {prescription.doctor.user?.firstName} {prescription.doctor.user?.lastName}
           </p>
-          <p className="text-[9px] text-slate-400 uppercase font-black">Authorized Signature</p>
+          <p className="text-[9px] text-slate-400 uppercase font-black font-sans font-sans">Authorized Signature</p>
         </div>
       </div>
     </div>

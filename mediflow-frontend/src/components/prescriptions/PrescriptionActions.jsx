@@ -1,23 +1,49 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Eye, Download, Printer } from 'lucide-react';
 import Button from '../ui/Button';
+import { useToast } from '../../context/ToastContext';
 import { downloadPrescriptionPdf, printPrescription } from './PrescriptionPdfService';
 
 const PrescriptionActions = ({ prescription, onView, onDownload, onPrint, showView = true, className = "" }) => {
-  
-  const handlePrintClick = () => {
+  const toast = useToast();
+  const [downloading, setDownloading] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  const handlePrintClick = async () => {
     if (onPrint) {
       onPrint();
-    } else {
-      printPrescription(prescription);
+      return;
+    }
+    
+    try {
+      setPrinting(true);
+      toast.info('Generating PDF for print preview...');
+      await printPrescription(prescription);
+      toast.success('Print document opened successfully in new tab.');
+    } catch (err) {
+      console.error('[PrescriptionActions] Print error:', err);
+      toast.error('Failed to generate print document. Please try again.');
+    } finally {
+      setPrinting(false);
     }
   };
 
   const handleDownloadClick = async () => {
     if (onDownload) {
       onDownload();
-    } else {
+      return;
+    }
+
+    try {
+      setDownloading(true);
+      toast.info('Generating PDF download...');
       await downloadPrescriptionPdf(prescription);
+      toast.success('Prescription PDF downloaded successfully.');
+    } catch (err) {
+      console.error('[PrescriptionActions] Download error:', err);
+      toast.error('Failed to download PDF. Please try again.');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -36,6 +62,7 @@ const PrescriptionActions = ({ prescription, onView, onDownload, onPrint, showVi
       )}
       <Button 
         onClick={handleDownloadClick}
+        loading={downloading}
         variant="outline" 
         size="sm"
         icon={Download}
@@ -45,6 +72,7 @@ const PrescriptionActions = ({ prescription, onView, onDownload, onPrint, showVi
       </Button>
       <Button 
         onClick={handlePrintClick}
+        loading={printing}
         variant="outline" 
         size="sm"
         icon={Printer}
