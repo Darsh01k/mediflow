@@ -41,6 +41,12 @@
 }
 
 @media print {
+  /* Force background graphics printing */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   /* Reset all structural wrappers to prevent clipping and hidden overflow */
   html, body, #root, .min-h-screen, main, .flex-1, .flex-col, .flex {
     height: auto !important;
@@ -95,6 +101,15 @@
     background: white !important;
     color: black !important;
     overflow: visible !important;
+  }
+
+  /* Vector & initials fallback styles when backgrounds are disabled */
+  #printable-prescription svg *[stroke="#ffffff"],
+  #printable-prescription svg *[stroke="white"] {
+    stroke: #0f766e !important;
+  }
+  #printable-prescription span.fallback-initials {
+    color: #0f766e !important;
   }
 
   /* Display print grid fields correctly */

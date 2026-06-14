@@ -76,11 +76,30 @@ export const getGradientStyle = (avatarId) => {
 };
 
 export const HealthAvatar = ({ avatarId, className = "w-10 h-10", initials = "" }) => {
-  const avatar = AVATARS.find(a => a.id === avatarId) || AVATARS[0];
-  const gradStyle = getGradientStyle(avatarId);
+  let avatar = AVATARS.find(a => a.id === avatarId);
+  
+  if (!avatar) {
+    if (avatarId && avatarId.startsWith('hospital')) {
+      avatar = AVATARS.find(a => a.id === 'hospital_1');
+    } else if (avatarId && avatarId.startsWith('doctor')) {
+      avatar = AVATARS.find(a => a.id === 'doctor_1');
+    } else {
+      avatar = AVATARS[0];
+    }
+  }
+
+  const gradStyle = getGradientStyle(avatar ? avatar.id : avatarId);
+  const formattedInitials = initials ? initials.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '';
 
   // Map avatar ID to a specific SVG overlay graphic
   const renderAvatarContent = () => {
+    if (!avatarId && initials) {
+      return (
+        <span className="fallback-initials text-white font-black text-xs md:text-sm uppercase tracking-tight select-none">
+          {formattedInitials}
+        </span>
+      );
+    }
     switch (avatarId) {
       // Patient 1 / Legacy avatar_3
       case 'patient_1':
@@ -235,6 +254,13 @@ export const HealthAvatar = ({ avatarId, className = "w-10 h-10", initials = "" 
         );
 
       default:
+        if (formattedInitials) {
+          return (
+            <span className="fallback-initials text-white font-black text-xs md:text-sm uppercase tracking-tight select-none">
+              {formattedInitials}
+            </span>
+          );
+        }
         return <User className="w-5 h-5 text-white" stroke="#ffffff" />;
     }
   };

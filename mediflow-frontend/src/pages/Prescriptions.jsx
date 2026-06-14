@@ -56,7 +56,7 @@ const Prescriptions = () => {
       // Wait 150ms to ensure the React render and browser paint are complete
       const timer = setTimeout(() => {
         if (pendingAction === 'print') {
-          window.print();
+          handlePrint();
         } else if (pendingAction === 'download') {
           downloadPDF(viewingPrescription);
         }
@@ -68,6 +68,18 @@ const Prescriptions = () => {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
+    // Preload html2pdf.js for instant download capability
+    if (!window.html2pdf) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.integrity = 'sha512-GsLlZN/3F2ErC5xGLnLDu5897DLgGLuOP8bKOqg86cGl4nFMibis6UpGG30UMNkOPdApcWEX8/Obc9JNnK1OPg==';
+      script.crossOrigin = 'anonymous';
+      script.async = true;
+      document.body.appendChild(script);
+    }
   }, []);
 
   const loadData = async () => {
@@ -156,7 +168,27 @@ const Prescriptions = () => {
   };
 
   const handlePrint = () => {
+    if (!viewingPrescription) return;
+    
+    const rx = viewingPrescription;
+    const patientName = `${rx.patient.user?.firstName || ''}${rx.patient.user?.lastName || ''}`.replace(/[^a-zA-Z0-9]/g, '');
+    const dateObj = rx.createdAt ? new Date(rx.createdAt) : new Date();
+    const YYYY = dateObj.getFullYear();
+    const MM = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const DD = String(dateObj.getDate()).padStart(2, '0');
+    const HH = String(dateObj.getHours()).padStart(2, '0');
+    const mm = String(dateObj.getMinutes()).padStart(2, '0');
+    const formattedDateTime = `${YYYY}-${MM}-${DD}_${HH}-${mm}`;
+    const filename = `MediFlow_${patientName}_${formattedDateTime}`;
+
+    const originalTitle = document.title;
+    document.title = filename;
+    
     window.print();
+    
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   const getAge = (dob) => {
@@ -173,7 +205,10 @@ const Prescriptions = () => {
 
   const downloadPDF = (rx) => {
     const element = document.getElementById('printable-prescription');
-    if (!element) return;
+    if (!element) {
+      toast.error('Prescription content not found.');
+      return;
+    }
     
     const patientName = `${rx.patient.user?.firstName || ''}${rx.patient.user?.lastName || ''}`.replace(/[^a-zA-Z0-9]/g, '');
     const dateObj = rx.createdAt ? new Date(rx.createdAt) : new Date();
@@ -194,12 +229,18 @@ const Prescriptions = () => {
     };
 
     const runHtml2Pdf = () => {
-      window.html2pdf().from(element).set(opt).save();
+      try {
+        window.html2pdf().from(element).set(opt).save();
+      } catch (err) {
+        console.error('PDF generation error:', err);
+        toast.error('Failed to generate PDF download.');
+      }
     };
 
     if (window.html2pdf) {
       runHtml2Pdf();
     } else {
+      toast.info('Downloading helper is loading, please try again in a second...');
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
       script.integrity = 'sha512-GsLlZN/3F2ErC5xGLnLDu5897DLgGLuOP8bKOqg86cGl4nFMibis6UpGG30UMNkOPdApcWEX8/Obc9JNnK1OPg==';
@@ -463,25 +504,25 @@ const Prescriptions = () => {
                     </div>
                   </CardContent>
 
-                  <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex justify-end gap-2 shrink-0">
+                  <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-end gap-2.5 shrink-0">
                     <Button 
                       onClick={() => setViewingPrescription(rx)}
-                      variant="secondary" 
-                      size="xs"
+                      variant="outline" 
+                      size="sm"
                       icon={Eye}
-                      className="border border-slate-200 shadow-sm"
+                      className="border-slate-200 hover:border-slate-350 hover:bg-slate-50/80 transition-all font-semibold rounded-xl text-slate-700 flex-1 sm:flex-initial"
                     >
-                      View
+                      View Prescription
                     </Button>
                     <Button 
                       onClick={() => {
                         setViewingPrescription(rx);
                         setPendingAction('download');
                       }}
-                      variant="secondary" 
-                      size="xs"
+                      variant="outline" 
+                      size="sm"
                       icon={Download}
-                      className="border border-slate-200 shadow-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      className="border-indigo-200 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/50 hover:border-indigo-300 transition-all font-semibold rounded-xl flex-1 sm:flex-initial"
                     >
                       Download PDF
                     </Button>
@@ -490,12 +531,12 @@ const Prescriptions = () => {
                         setViewingPrescription(rx);
                         setPendingAction('print');
                       }}
-                      variant="secondary" 
-                      size="xs"
+                      variant="outline" 
+                      size="sm"
                       icon={Printer}
-                      className="border border-slate-200 shadow-sm text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                      className="border-emerald-200 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/50 hover:border-emerald-300 transition-all font-semibold rounded-xl flex-1 sm:flex-initial"
                     >
-                      Print
+                      Print Prescription
                     </Button>
                   </div>
                 </Card>
@@ -516,20 +557,21 @@ const Prescriptions = () => {
               <div className="flex items-center gap-2">
                 <Button 
                   onClick={() => downloadPDF(viewingPrescription)} 
-                  size="xs" 
-                  variant="primary" 
+                  size="sm" 
+                  variant="outline" 
                   icon={Download}
+                  className="border-indigo-200 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/50 hover:border-indigo-300 font-semibold rounded-xl"
                 >
                   Download PDF
                 </Button>
                  <Button 
                   onClick={handlePrint} 
-                  size="xs" 
-                  variant="secondary" 
+                  size="sm" 
+                  variant="outline" 
                   icon={Printer}
-                  className="border border-slate-200 shadow-sm text-emerald-600 hover:text-emerald-700"
+                  className="border-emerald-200 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50/50 hover:border-emerald-300 font-semibold rounded-xl"
                 >
-                  Print
+                  Print Prescription
                 </Button>
                 <button 
                   onClick={() => setViewingPrescription(null)}
@@ -571,35 +613,29 @@ const Prescriptions = () => {
                   </div>
                 </div>
 
-                {/* Doctor and Patient particulars with photos */}
+                {/* Doctor and Patient particulars */}
                 <div className="grid grid-cols-2 gap-6 bg-slate-50/50 p-4 border border-slate-200/60 rounded-xl print:bg-white print:p-0 print:border-none print:grid-cols-2">
                   {/* Doctor Info */}
                   <div className="space-y-1.5 text-left text-[11px] font-semibold text-slate-500">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Practitioner Details</p>
-                    <div className="flex items-center gap-3">
-                      <HealthAvatar avatarId={viewingPrescription.doctor.user?.avatarId || 'doctor_1'} className="w-10 h-10 rounded-full border border-slate-200 shadow-sm shrink-0" />
-                      <div>
-                        <h4 className="font-extrabold text-slate-800 text-xs">Dr. {viewingPrescription.doctor.user?.firstName} {viewingPrescription.doctor.user?.lastName}</h4>
-                        <p className="text-emerald-650 font-bold text-[9px] uppercase tracking-wide leading-none mt-0.5">{viewingPrescription.doctor.specialization}</p>
-                        <p className="text-slate-500 font-medium text-[9px] mt-0.5">
-                          {viewingPrescription.doctor.qualification || 'MBBS, MD'} | LIC: {viewingPrescription.doctor.licenseNumber}
-                        </p>
-                      </div>
+                    <div className="space-y-0.5">
+                      <h4 className="font-extrabold text-slate-800 text-xs">Dr. {viewingPrescription.doctor.user?.firstName} {viewingPrescription.doctor.user?.lastName}</h4>
+                      <p className="text-emerald-650 font-bold text-[9px] uppercase tracking-wide leading-none mt-0.5">{viewingPrescription.doctor.specialization}</p>
+                      <p className="text-slate-500 font-medium text-[9px] mt-0.5">
+                        {viewingPrescription.doctor.qualification || 'MBBS, MD'} | LIC: {viewingPrescription.doctor.licenseNumber}
+                      </p>
                     </div>
                   </div>
 
                   {/* Patient Info */}
                   <div className="space-y-1.5 text-left text-[11px] font-semibold text-slate-500 border-l border-slate-200/80 pl-6 print:border-l print:pl-6">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Patient Details</p>
-                    <div className="flex items-center gap-3">
-                      <HealthAvatar avatarId={viewingPrescription.patient.user?.avatarId || 'patient_1'} className="w-10 h-10 rounded-full border border-slate-200 shadow-sm shrink-0" />
-                      <div>
-                        <h4 className="font-extrabold text-slate-800 text-xs">{viewingPrescription.patient.user?.firstName} {viewingPrescription.patient.user?.lastName}</h4>
-                        <p className="text-slate-600 font-medium text-[9px] mt-0.5">Patient ID: #{viewingPrescription.patient.id}</p>
-                        <p className="text-slate-500 font-medium text-[9px]">
-                          Age: {getAge(viewingPrescription.patient.dateOfBirth)} | Gender: {viewingPrescription.patient.gender}
-                        </p>
-                      </div>
+                    <div className="space-y-0.5">
+                      <h4 className="font-extrabold text-slate-800 text-xs">{viewingPrescription.patient.user?.firstName} {viewingPrescription.patient.user?.lastName}</h4>
+                      <p className="text-slate-600 font-medium text-[9px] mt-0.5">Patient ID: #{viewingPrescription.patient.id}</p>
+                      <p className="text-slate-500 font-medium text-[9px]">
+                        Age: {getAge(viewingPrescription.patient.dateOfBirth)} | Gender: {viewingPrescription.patient.gender}
+                      </p>
                     </div>
                   </div>
                 </div>
