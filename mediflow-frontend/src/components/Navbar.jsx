@@ -112,7 +112,7 @@ const Navbar = ({ title, onToggleSidebar }) => {
   };
 
   return (
-    <header className="h-16 bg-white/75 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between px-4 md:px-8 shadow-sm">
+    <header className="print:hidden h-16 bg-white/75 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between px-4 md:px-8 shadow-sm">
       {/* Left Section with Hamburger and Title */}
       <div className="flex items-center gap-3">
         <button

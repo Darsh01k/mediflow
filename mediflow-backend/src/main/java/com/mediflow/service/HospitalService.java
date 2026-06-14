@@ -96,7 +96,13 @@ public class HospitalService {
     public List<HospitalDto> searchHospitals(String name, String city, String state, String specialty, Double lat, Double lng) {
         logger.info("Searching hospitals with name: {}, city: {}, state: {}, specialty: {}, lat: {}, lng: {}", 
                 name, city, state, specialty, lat, lng);
-        List<Hospital> hospitals = hospitalRepository.searchHospitals(name, city, state, specialty);
+
+        String nameParam = (name == null || name.trim().isEmpty()) ? null : "%" + name.trim().toLowerCase() + "%";
+        String cityParam = (city == null || city.trim().isEmpty()) ? null : "%" + city.trim().toLowerCase() + "%";
+        String stateParam = (state == null || state.trim().isEmpty()) ? null : "%" + state.trim().toLowerCase() + "%";
+        String specParam = (specialty == null || specialty.trim().isEmpty()) ? null : "%" + specialty.trim().toLowerCase() + "%";
+
+        List<Hospital> hospitals = hospitalRepository.searchHospitals(nameParam, cityParam, stateParam, specParam);
         
         List<HospitalDto> dtos = hospitals.stream()
                 .map(h -> {

@@ -76,6 +76,11 @@ const MyMedicalRecords = () => {
                         Dr. {rec.doctor.user.firstName} {rec.doctor.user.lastName}
                       </span>
                       <Badge variant="primary">{rec.doctor.specialization}</Badge>
+                      {rec.doctor?.hospital && (
+                        <div className="w-full md:w-auto text-[10px] font-semibold text-slate-400 mt-1 md:mt-0 md:ml-2">
+                          Hospital: {rec.doctor.hospital.name} ({rec.doctor.hospital.city}) • Address: {rec.doctor.hospital.address} • Ph: {rec.doctor.hospital.phone}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 text-slate-400 font-semibold text-[11px]">
                       <Calendar className="w-3.5 h-3.5" />

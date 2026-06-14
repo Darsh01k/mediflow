@@ -17,7 +17,9 @@ import {
   Settings,
   Activity,
   Heart,
-  Clock
+  Clock,
+  Trash2,
+  HeartPulse
 } from 'lucide-react';
 import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -40,10 +42,26 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
   // Clinical record modal state
   const [activeAppointment, setActiveAppointment] = useState(null);
   const [diagnosis, setDiagnosis] = useState('');
-  const [prescription, setPrescription] = useState('');
+  const [rxMedicines, setRxMedicines] = useState([{ name: '', dosage: '', frequency: '', duration: '', instructions: '' }]);
+  const [dosageNotes, setDosageNotes] = useState('');
+  const [rxInstructions, setRxInstructions] = useState('');
   const [treatmentNotes, setTreatmentNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Medicine row helpers
+  const handleAddMedicineRow = () => {
+    setRxMedicines([...rxMedicines, { name: '', dosage: '', frequency: '', duration: '', instructions: '' }]);
+  };
+  const handleRemoveMedicineRow = (idx) => {
+    if (rxMedicines.length === 1) return;
+    setRxMedicines(rxMedicines.filter((_, i) => i !== idx));
+  };
+  const handleMedicineFieldChange = (idx, field, value) => {
+    const updated = [...rxMedicines];
+    updated[idx][field] = value;
+    setRxMedicines(updated);
+  };
 
   // Doctor Profile state
   const [doctorProfile, setDoctorProfile] = useState(null);
@@ -111,48 +129,38 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
 
   const handleRecordSubmit = async (e) => {
     e.preventDefault();
-    if (!diagnosis || !prescription) {
-      setError('Please write diagnosis and prescription');
+
+    // Filter out blank medicine rows
+    const activeMeds = rxMedicines.filter(m => m.name.trim() !== '');
+    if (!diagnosis || activeMeds.length === 0) {
+      setError('Please write a diagnosis and add at least one medicine.');
       return;
     }
 
     try {
       setSubmitting(true);
       setError('');
+
+      // Build human-readable prescription summary for MedicalRecord
+      const prescriptionSummary = activeMeds.map((m, i) => 
+        `${i + 1}. ${m.name}${m.dosage ? ' — ' + m.dosage : ''}${m.frequency ? ', ' + m.frequency : ''}${m.duration ? ' for ' + m.duration : ''}${m.instructions ? ' (' + m.instructions + ')' : ''}`
+      ).join('\n');
       
       const payload = {
         patientId: activeAppointment?.patient?.id,
         doctorId: activeAppointment?.doctor?.id,
         diagnosis,
-        prescription,
-        treatmentNotes
+        prescription: prescriptionSummary,
+        treatmentNotes,
+        medicinesJson: JSON.stringify(activeMeds),
+        dosage: dosageNotes || 'As directed',
+        instructions: rxInstructions || treatmentNotes || 'As directed'
       };
 
-      // 1. Save Medical Record
+      // 1. Save Medical Record (which automatically creates the prescription and notifies the patient)
       await API.post('/medical-records', payload);
 
-      // 2. Save Prescription
-      const rxPayload = {
-        patientId: activeAppointment?.patient?.id,
-        doctorId: activeAppointment?.doctor?.id,
-        hospitalId: activeAppointment?.doctor?.hospital?.id || doctorProfile?.hospital?.id || user?.hospital?.id || 1,
-        prescriptionDate: new Date().toISOString().split('T')[0],
-        medicinesJson: JSON.stringify([
-          {
-            name: prescription,
-            dosage: 'As directed',
-            frequency: 'As directed',
-            duration: 'As directed',
-            instructions: treatmentNotes || 'As directed'
-          }
-        ]),
-        dosage: 'As directed',
-        instructions: treatmentNotes || 'As directed',
-        notes: diagnosis
-      };
-      await API.post('/prescriptions', rxPayload);
-
-      // 3. Mark Appointment as Completed
+      // 2. Mark Appointment as Completed
       await API.put(`/appointments/${activeAppointment?.id}/status?status=COMPLETED&notes=Record saved`);
 
       toast.success('Clinical chart and prescription registered!');
@@ -162,7 +170,9 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
 
       // Clear & close
       setDiagnosis('');
-      setPrescription('');
+      setRxMedicines([{ name: '', dosage: '', frequency: '', duration: '', instructions: '' }]);
+      setDosageNotes('');
+      setRxInstructions('');
       setTreatmentNotes('');
       setActiveAppointment(null);
 
@@ -761,21 +771,21 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
       {/* Diagnosis & Prescription Modal Backdrop */}
       {activeAppointment && (
         <div className="fixed inset-0 bg-slate-900/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-lg shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
-            <CardHeader className="flex flex-row justify-between items-center border-b pb-3">
+          <Card className="w-full max-w-2xl shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh] flex flex-col">
+            <CardHeader className="flex flex-row justify-between items-center border-b pb-3 shrink-0">
               <div>
                 <CardTitle>New Clinical Record Entry</CardTitle>
                 <CardDescription>Prescribe medication and save diagnosis charts</CardDescription>
               </div>
               <button 
                 onClick={() => setActiveAppointment(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold text-sm shrink-0"
+                className="text-slate-400 hover:text-slate-600 font-bold text-sm shrink-0 cursor-pointer"
               >
                 ✕
               </button>
             </CardHeader>
 
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-6 space-y-4 overflow-y-auto flex-1">
               {error && (
                 <Alert variant="danger">
                   {error}
@@ -800,16 +810,111 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-500 uppercase tracking-wide">Prescription (Drugs & Dosage)</label>
-                  <textarea
-                    required
-                    rows="2"
-                    placeholder="e.g. Amoxicillin 500mg, 1 tablet 3x daily for 7 days."
-                    value={prescription}
-                    onChange={(e) => setPrescription(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 resize-none font-medium text-sm"
-                  />
+                {/* Structured Medicines Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <h4 className="font-extrabold text-slate-700 uppercase tracking-wide text-[10px] flex items-center gap-1.5">
+                      <HeartPulse className="w-4 h-4 text-emerald-500" />
+                      <span>Medicines & Dosage</span>
+                    </h4>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="xs"
+                      icon={Plus}
+                      onClick={handleAddMedicineRow}
+                    >
+                      Add Row
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {rxMedicines.map((med, idx) => (
+                      <div key={idx} className="grid grid-cols-1 sm:grid-cols-5 gap-2 items-end bg-slate-50/80 p-3 border border-slate-200/60 rounded-xl relative">
+                        <div className="space-y-1">
+                          <label className="block font-bold text-slate-400 uppercase tracking-wide text-[9px]">Medicine</label>
+                          <input
+                            required={idx === 0}
+                            value={med.name}
+                            onChange={(e) => handleMedicineFieldChange(idx, 'name', e.target.value)}
+                            placeholder="e.g. Amoxicillin 500mg"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 text-xs font-medium"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block font-bold text-slate-400 uppercase tracking-wide text-[9px]">Dosage</label>
+                          <input
+                            value={med.dosage}
+                            onChange={(e) => handleMedicineFieldChange(idx, 'dosage', e.target.value)}
+                            placeholder="e.g. 1 Tablet"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 text-xs font-medium"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block font-bold text-slate-400 uppercase tracking-wide text-[9px]">Frequency</label>
+                          <input
+                            value={med.frequency}
+                            onChange={(e) => handleMedicineFieldChange(idx, 'frequency', e.target.value)}
+                            placeholder="e.g. 3x daily"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 text-xs font-medium"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="block font-bold text-slate-400 uppercase tracking-wide text-[9px]">Duration</label>
+                          <input
+                            value={med.duration}
+                            onChange={(e) => handleMedicineFieldChange(idx, 'duration', e.target.value)}
+                            placeholder="e.g. 7 days"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 text-xs font-medium"
+                          />
+                        </div>
+                        <div className="flex items-end gap-1.5">
+                          <div className="flex-1 space-y-1">
+                            <label className="block font-bold text-slate-400 uppercase tracking-wide text-[9px]">Instructions</label>
+                            <input
+                              value={med.instructions}
+                              onChange={(e) => handleMedicineFieldChange(idx, 'instructions', e.target.value)}
+                              placeholder="e.g. After meals"
+                              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 text-xs font-medium"
+                            />
+                          </div>
+                          {rxMedicines.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveMedicineRow(idx)}
+                              className="p-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-transparent hover:border-rose-100 transition-all cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* General Dosage & Instructions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-500 uppercase tracking-wide">Dosage / Timing Guidelines</label>
+                    <textarea
+                      rows="2"
+                      placeholder="e.g. Take morning dose before breakfast..."
+                      value={dosageNotes}
+                      onChange={(e) => setDosageNotes(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 resize-none font-medium text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-500 uppercase tracking-wide">Additional Instructions</label>
+                    <textarea
+                      rows="2"
+                      placeholder="e.g. Avoid dairy, stay hydrated..."
+                      value={rxInstructions}
+                      onChange={(e) => setRxInstructions(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500/50 text-slate-800 placeholder-slate-400 resize-none font-medium text-sm"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">

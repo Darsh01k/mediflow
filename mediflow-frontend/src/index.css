@@ -41,24 +41,82 @@
 }
 
 @media print {
-  body * {
-    visibility: hidden;
+  /* Reset all structural wrappers to prevent clipping and hidden overflow */
+  html, body, #root, .min-h-screen, main, .flex-1, .flex-col, .flex {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
   }
-  #printable-prescription, #printable-prescription * {
-    visibility: visible;
-  }
-  #printable-prescription {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 0;
-    border: none;
-    box-shadow: none;
-    background: white;
-  }
-  .print\:hidden {
+
+  /* Hide non-printable elements */
+  aside, nav, header, footer, .print\:hidden, button, .print-hide {
     display: none !important;
+  }
+
+  /* Make sure the modal container doesn't overlay, but flows naturally */
+  div.fixed.inset-0 {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  div.fixed.inset-0 > div {
+    max-width: 100% !important;
+    max-height: none !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #printable-prescription {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+    overflow: visible !important;
+  }
+
+  /* Display print grid fields correctly */
+  .grid.grid-cols-2,
+  .grid-cols-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Ensure table inside prescription renders properly */
+  #printable-prescription table {
+    display: table !important;
+    width: 100% !important;
+  }
+
+  #printable-prescription thead,
+  #printable-prescription tbody,
+  #printable-prescription tr,
+  #printable-prescription th,
+  #printable-prescription td {
+    display: revert !important;
   }
 }
 

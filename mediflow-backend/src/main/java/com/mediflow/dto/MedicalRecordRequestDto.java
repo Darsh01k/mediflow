@@ -19,6 +19,10 @@ public class MedicalRecordRequestDto {
 
     private String treatmentNotes;
 
+    private String medicinesJson;
+    private String dosage;
+    private String instructions;
+
     public MedicalRecordRequestDto() {}
 
     public Long getPatientId() {
@@ -59,5 +63,29 @@ public class MedicalRecordRequestDto {
 
     public void setTreatmentNotes(String treatmentNotes) {
         this.treatmentNotes = treatmentNotes;
+    }
+
+    public String getMedicinesJson() {
+        return medicinesJson;
+    }
+
+    public void setMedicinesJson(String medicinesJson) {
+        this.medicinesJson = medicinesJson;
+    }
+
+    public String getDosage() {
+        return dosage;
+    }
+
+    public void setDosage(String dosage) {
+        this.dosage = dosage;
+    }
+
+    public String getInstructions() {
+        return instructions;
+    }
+
+    public void setInstructions(String instructions) {
+        this.instructions = instructions;
     }
 }

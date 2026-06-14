@@ -96,7 +96,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         />
       )}
 
-      <div className={`w-64 bg-slate-900 text-slate-100 flex flex-col h-screen fixed left-0 top-0 z-50 shadow-xl border-r border-slate-800 transition-transform duration-350 lg:translate-x-0 ${
+      <div className={`print:hidden w-64 bg-slate-900 text-slate-100 flex flex-col h-screen fixed left-0 top-0 z-50 shadow-xl border-r border-slate-800 transition-transform duration-350 lg:translate-x-0 ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         {/* Brand Header */}

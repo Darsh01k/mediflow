@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import Alert from '../components/ui/Alert';
 import Select from '../components/ui/Select';
+import { HealthAvatar } from '../components/ui/Avatar';
 import { 
   FileText, 
   Plus, 
@@ -45,6 +46,25 @@ const Prescriptions = () => {
 
   // Detail View Modal states
   const [viewingPrescription, setViewingPrescription] = useState(null);
+
+  // Deferred action triggers (print/download after modal renders)
+  const [pendingAction, setPendingAction] = useState(null); // 'print' | 'download' | null
+
+  // After the modal mounts with viewingPrescription, execute the pending action
+  useEffect(() => {
+    if (viewingPrescription && pendingAction) {
+      // Wait 150ms to ensure the React render and browser paint are complete
+      const timer = setTimeout(() => {
+        if (pendingAction === 'print') {
+          window.print();
+        } else if (pendingAction === 'download') {
+          downloadPDF(viewingPrescription);
+        }
+        setPendingAction(null);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [viewingPrescription, pendingAction]);
 
   useEffect(() => {
     loadData();
@@ -446,19 +466,19 @@ const Prescriptions = () => {
                     <Button 
                       onClick={() => {
                         setViewingPrescription(rx);
-                        setTimeout(() => downloadPDF(rx), 200);
+                        setPendingAction('download');
                       }}
                       variant="secondary" 
                       size="xs"
                       icon={Download}
-                      className="border border-slate-200 shadow-sm text-blue-655 hover:text-blue-700 hover:bg-blue-50"
+                      className="border border-slate-200 shadow-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                     >
                       Download PDF
                     </Button>
                     <Button 
                       onClick={() => {
                         setViewingPrescription(rx);
-                        setTimeout(() => window.print(), 100);
+                        setPendingAction('print');
                       }}
                       variant="secondary" 
                       size="xs"
@@ -492,12 +512,12 @@ const Prescriptions = () => {
                 >
                   Download PDF
                 </Button>
-                <Button 
+                 <Button 
                   onClick={handlePrint} 
                   size="xs" 
                   variant="secondary" 
                   icon={Printer}
-                  className="border border-slate-200 shadow-sm text-emerald-600 hover:text-emerald-705"
+                  className="border border-slate-200 shadow-sm text-emerald-600 hover:text-emerald-700"
                 >
                   Print
                 </Button>
@@ -519,7 +539,7 @@ const Prescriptions = () => {
                     <HealthAvatar avatarId={viewingPrescription.hospital.logoAvatar || 'hospital_1'} className="w-12 h-12 rounded-xl border border-slate-200 shadow-sm shrink-0" />
                     <div>
                       <h2 className="text-base font-black tracking-tight text-slate-900 uppercase font-sans leading-none">{viewingPrescription.hospital.name}</h2>
-                      <p className="text-[9px] text-emerald-605 font-bold uppercase tracking-wider mt-1.5">Registered Clinic & Hospital</p>
+                      <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-wider mt-1.5">Registered Clinic & Hospital</p>
                     </div>
                   </div>
                   <p className="text-[10px] text-slate-500 font-semibold max-w-sm leading-relaxed mt-2">
@@ -531,9 +551,9 @@ const Prescriptions = () => {
                 </div>
                 <div className="text-right space-y-1 shrink-0">
                   <span className="inline-block text-[8px] font-black tracking-wider uppercase bg-emerald-500 text-white px-2.5 py-0.5 rounded-full">PRESCRIPTION</span>
-                  <p className="text-[10px] text-slate-450 font-bold mt-1">RX-ID: #{viewingPrescription.id}</p>
-                  <p className="text-[10px] text-slate-450 font-bold">Date: {viewingPrescription.prescriptionDate}</p>
-                  <p className="text-[10px] text-slate-450 font-bold">
+                  <p className="text-[10px] text-slate-500 font-bold mt-1">RX-ID: #{viewingPrescription.id}</p>
+                  <p className="text-[10px] text-slate-500 font-bold">Date: {viewingPrescription.prescriptionDate}</p>
+                  <p className="text-[10px] text-slate-500 font-bold">
                     Time: {viewingPrescription.createdAt ? new Date(viewingPrescription.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -555,7 +575,7 @@ const Prescriptions = () => {
                 <div className="space-y-1 text-left text-[11px] font-semibold text-slate-500 border-l border-slate-200/80 pl-6 print:border-l print:pl-6">
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Patient Details</p>
                   <h4 className="font-extrabold text-slate-800 text-xs">{viewingPrescription.patient.user.firstName} {viewingPrescription.patient.user.lastName}</h4>
-                  <p className="text-slate-655 font-medium">
+                  <p className="text-slate-600 font-medium">
                     Patient ID: #{viewingPrescription.patient.id}
                   </p>
                   <p className="text-slate-500 font-medium">

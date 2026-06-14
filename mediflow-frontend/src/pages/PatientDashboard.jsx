@@ -275,6 +275,11 @@ const PatientDashboard = ({ stats, refreshStats }) => {
                               }) : 'N/A'}
                             </p>
                             <p className="text-xs text-slate-450 font-medium">Reason: {appt?.reason || 'N/A'}</p>
+                            {appt?.doctor?.hospital && (
+                              <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                Hospital: {appt.doctor.hospital.name} ({appt.doctor.hospital.city}) • Address: {appt.doctor.hospital.address} • Ph: {appt.doctor.hospital.phone}
+                              </p>
+                            )}
                           </div>
                           <div>
                             {getStatusBadge(appt?.status)}
@@ -314,6 +319,11 @@ const PatientDashboard = ({ stats, refreshStats }) => {
                               <h5 className="text-xs font-bold text-slate-800">
                                 Dr. {rec?.doctor?.user?.firstName || ''} {rec?.doctor?.user?.lastName || ''}
                               </h5>
+                              {rec?.doctor?.hospital && (
+                                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                  Hospital: {rec.doctor.hospital.name} ({rec.doctor.hospital.city}) • Address: {rec.doctor.hospital.address} • Ph: {rec.doctor.hospital.phone}
+                                </p>
+                              )}
                               <p className="text-[10px] text-slate-400 font-bold">{rec?.visitDate || 'N/A'}</p>
                             </div>
                             <span className="p-1 rounded bg-indigo-50 border border-indigo-100 text-indigo-605">

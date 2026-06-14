@@ -88,12 +88,15 @@ public class PatientService {
         // 1. Add Appointments
         List<Appointment> appointments = appointmentRepository.findByPatientIdOrderByAppointmentDateDesc(patientId);
         for (Appointment a : appointments) {
+            String hospitalDetails = a.getDoctor().getHospital() != null 
+                ? a.getDoctor().getHospital().getName() + " (" + a.getDoctor().getHospital().getCity() + ") • Address: " + a.getDoctor().getHospital().getAddress() + " • Phone: " + a.getDoctor().getHospital().getPhone() 
+                : "General Hospital";
             timeline.add(new TimelineItemDto(
                 "APPOINTMENT",
                 a.getId(),
                 a.getAppointmentDate(),
                 "Appointment with Dr. " + a.getDoctor().getUser().getFirstName() + " " + a.getDoctor().getUser().getLastName(),
-                a.getDoctor().getHospital() != null ? a.getDoctor().getHospital().getName() : "General Hospital",
+                hospitalDetails,
                 a.getReason() + (a.getNotes() != null && !a.getNotes().isBlank() ? " | Notes: " + a.getNotes() : ""),
                 a.getStatus().name()
             ));
@@ -102,12 +105,13 @@ public class PatientService {
         // 2. Add Prescriptions
         List<Prescription> prescriptions = prescriptionRepository.findByPatientIdOrderByPrescriptionDateDesc(patientId);
         for (Prescription p : prescriptions) {
+            String hospitalDetails = p.getHospital().getName() + " (" + p.getHospital().getCity() + ") • Address: " + p.getHospital().getAddress() + " • Phone: " + p.getHospital().getPhone();
             timeline.add(new TimelineItemDto(
                 "PRESCRIPTION",
                 p.getId(),
                 p.getPrescriptionDate().atStartOfDay(),
                 "Prescription from Dr. " + p.getDoctor().getUser().getFirstName() + " " + p.getDoctor().getUser().getLastName(),
-                p.getHospital().getName(),
+                hospitalDetails,
                 p.getDosage() != null ? p.getDosage() : "Medicines prescribed",
                 null
             ));
@@ -116,12 +120,15 @@ public class PatientService {
         // 3. Add Medical Records (Visits)
         List<MedicalRecord> records = medicalRecordRepository.findByPatientIdOrderByVisitDateDesc(patientId);
         for (MedicalRecord r : records) {
+            String hospitalDetails = r.getDoctor().getHospital() != null 
+                ? r.getDoctor().getHospital().getName() + " (" + r.getDoctor().getHospital().getCity() + ") • Address: " + r.getDoctor().getHospital().getAddress() + " • Phone: " + r.getDoctor().getHospital().getPhone() 
+                : "General Hospital";
             timeline.add(new TimelineItemDto(
                 "VISIT",
                 r.getId(),
                 r.getVisitDate().atStartOfDay(),
                 "Visit: " + r.getDiagnosis(),
-                "Dr. " + r.getDoctor().getUser().getFirstName() + " " + r.getDoctor().getUser().getLastName(),
+                "Dr. " + r.getDoctor().getUser().getFirstName() + " " + r.getDoctor().getUser().getLastName() + " | Hospital: " + hospitalDetails,
                 r.getTreatmentNotes(),
                 null
             ));
@@ -156,12 +163,15 @@ public class PatientService {
         List<Appointment> appointments = appointmentRepository.findByPatientIdOrderByAppointmentDateDesc(patientId);
         for (Appointment a : appointments) {
             if (a.getDoctor().getId().equals(doctorId)) {
+                String hospitalDetails = a.getDoctor().getHospital() != null 
+                    ? a.getDoctor().getHospital().getName() + " (" + a.getDoctor().getHospital().getCity() + ") • Address: " + a.getDoctor().getHospital().getAddress() + " • Phone: " + a.getDoctor().getHospital().getPhone() 
+                    : "General Hospital";
                 timeline.add(new TimelineItemDto(
                     "APPOINTMENT",
                     a.getId(),
                     a.getAppointmentDate(),
                     "Appointment with Dr. " + a.getDoctor().getUser().getFirstName() + " " + a.getDoctor().getUser().getLastName(),
-                    a.getDoctor().getHospital() != null ? a.getDoctor().getHospital().getName() : "General Hospital",
+                    hospitalDetails,
                     a.getReason() + (a.getNotes() != null && !a.getNotes().isBlank() ? " | Notes: " + a.getNotes() : ""),
                     a.getStatus().name()
                 ));
@@ -172,12 +182,13 @@ public class PatientService {
         List<Prescription> prescriptions = prescriptionRepository.findByPatientIdOrderByPrescriptionDateDesc(patientId);
         for (Prescription p : prescriptions) {
             if (p.getDoctor().getId().equals(doctorId)) {
+                String hospitalDetails = p.getHospital().getName() + " (" + p.getHospital().getCity() + ") • Address: " + p.getHospital().getAddress() + " • Phone: " + p.getHospital().getPhone();
                 timeline.add(new TimelineItemDto(
                     "PRESCRIPTION",
                     p.getId(),
                     p.getPrescriptionDate().atStartOfDay(),
                     "Prescription from Dr. " + p.getDoctor().getUser().getFirstName() + " " + p.getDoctor().getUser().getLastName(),
-                    p.getHospital().getName(),
+                    hospitalDetails,
                     p.getDosage() != null ? p.getDosage() : "Medicines prescribed",
                     null
                 ));
@@ -188,12 +199,15 @@ public class PatientService {
         List<MedicalRecord> records = medicalRecordRepository.findByPatientIdOrderByVisitDateDesc(patientId);
         for (MedicalRecord r : records) {
             if (r.getDoctor().getId().equals(doctorId)) {
+                String hospitalDetails = r.getDoctor().getHospital() != null 
+                    ? r.getDoctor().getHospital().getName() + " (" + r.getDoctor().getHospital().getCity() + ") • Address: " + r.getDoctor().getHospital().getAddress() + " • Phone: " + r.getDoctor().getHospital().getPhone() 
+                    : "General Hospital";
                 timeline.add(new TimelineItemDto(
                     "VISIT",
                     r.getId(),
                     r.getVisitDate().atStartOfDay(),
                     "Visit: " + r.getDiagnosis(),
-                    "Dr. " + r.getDoctor().getUser().getFirstName() + " " + r.getDoctor().getUser().getLastName(),
+                    "Dr. " + r.getDoctor().getUser().getFirstName() + " " + r.getDoctor().getUser().getLastName() + " | Hospital: " + hospitalDetails,
                     r.getTreatmentNotes(),
                     null
                 ));
@@ -213,12 +227,13 @@ public class PatientService {
         List<Appointment> appointments = appointmentRepository.findByPatientIdOrderByAppointmentDateDesc(patientId);
         for (Appointment a : appointments) {
             if (a.getDoctor().getHospital() != null && a.getDoctor().getHospital().getId().equals(hospitalId)) {
+                String hospitalDetails = a.getDoctor().getHospital().getName() + " (" + a.getDoctor().getHospital().getCity() + ") • Address: " + a.getDoctor().getHospital().getAddress() + " • Phone: " + a.getDoctor().getHospital().getPhone();
                 timeline.add(new TimelineItemDto(
                     "APPOINTMENT",
                     a.getId(),
                     a.getAppointmentDate(),
                     "Appointment with Dr. " + a.getDoctor().getUser().getFirstName() + " " + a.getDoctor().getUser().getLastName(),
-                    a.getDoctor().getHospital().getName(),
+                    hospitalDetails,
                     a.getReason() + (a.getNotes() != null && !a.getNotes().isBlank() ? " | Notes: " + a.getNotes() : ""),
                     a.getStatus().name()
                 ));
@@ -229,12 +244,13 @@ public class PatientService {
         List<Prescription> prescriptions = prescriptionRepository.findByPatientIdOrderByPrescriptionDateDesc(patientId);
         for (Prescription p : prescriptions) {
             if (p.getHospital().getId().equals(hospitalId)) {
+                String hospitalDetails = p.getHospital().getName() + " (" + p.getHospital().getCity() + ") • Address: " + p.getHospital().getAddress() + " • Phone: " + p.getHospital().getPhone();
                 timeline.add(new TimelineItemDto(
                     "PRESCRIPTION",
                     p.getId(),
                     p.getPrescriptionDate().atStartOfDay(),
                     "Prescription from Dr. " + p.getDoctor().getUser().getFirstName() + " " + p.getDoctor().getUser().getLastName(),
-                    p.getHospital().getName(),
+                    hospitalDetails,
                     p.getDosage() != null ? p.getDosage() : "Medicines prescribed",
                     null
                 ));
@@ -245,12 +261,13 @@ public class PatientService {
         List<MedicalRecord> records = medicalRecordRepository.findByPatientIdOrderByVisitDateDesc(patientId);
         for (MedicalRecord r : records) {
             if (r.getDoctor().getHospital() != null && r.getDoctor().getHospital().getId().equals(hospitalId)) {
+                String hospitalDetails = r.getDoctor().getHospital().getName() + " (" + r.getDoctor().getHospital().getCity() + ") • Address: " + r.getDoctor().getHospital().getAddress() + " • Phone: " + r.getDoctor().getHospital().getPhone();
                 timeline.add(new TimelineItemDto(
                     "VISIT",
                     r.getId(),
                     r.getVisitDate().atStartOfDay(),
                     "Visit: " + r.getDiagnosis(),
-                    "Dr. " + r.getDoctor().getUser().getFirstName() + " " + r.getDoctor().getUser().getLastName(),
+                    "Dr. " + r.getDoctor().getUser().getFirstName() + " " + r.getDoctor().getUser().getLastName() + " | Hospital: " + hospitalDetails,
                     r.getTreatmentNotes(),
                     null
                 ));

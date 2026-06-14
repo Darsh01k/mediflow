@@ -169,7 +169,14 @@ const Appointments = () => {
                 
                 return (
                   <TR key={appt.id}>
-                    <TD className="font-bold text-slate-800">{displayName}</TD>
+                    <TD className="font-bold text-slate-800">
+                      <div>{displayName}</div>
+                      {user.role === 'PATIENT' && appt.doctor?.hospital && (
+                        <div className="text-[10px] font-semibold text-slate-400 mt-0.5">
+                          Hospital: {appt.doctor.hospital.name} ({appt.doctor.hospital.city}) • Address: {appt.doctor.hospital.address} • Ph: {appt.doctor.hospital.phone}
+                        </div>
+                      )}
+                    </TD>
                     <TD className="text-slate-500 font-medium">{appt.doctor.specialization}</TD>
                     <TD className="text-slate-500 font-medium">
                       {new Date(appt.appointmentDate).toLocaleString('en-US', {

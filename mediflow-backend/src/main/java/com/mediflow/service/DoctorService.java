@@ -97,7 +97,13 @@ public class DoctorService {
     public List<DoctorDto> searchDoctors(String name, String specialization, String hospital, String city, Integer experience) {
         logger.info("Searching doctors by name: {}, specialization: {}, hospital: {}, city: {}, experience: {}", 
                 name, specialization, hospital, city, experience);
-        List<DoctorDto> doctors = doctorRepository.searchDoctors(name, specialization, hospital, city, experience).stream()
+        
+        String nameParam = (name == null || name.trim().isEmpty()) ? null : "%" + name.trim().toLowerCase() + "%";
+        String specParam = (specialization == null || specialization.trim().isEmpty()) ? null : "%" + specialization.trim().toLowerCase() + "%";
+        String hospParam = (hospital == null || hospital.trim().isEmpty()) ? null : "%" + hospital.trim().toLowerCase() + "%";
+        String cityParam = (city == null || city.trim().isEmpty()) ? null : "%" + city.trim().toLowerCase() + "%";
+
+        List<DoctorDto> doctors = doctorRepository.searchDoctors(nameParam, specParam, hospParam, cityParam, experience).stream()
                 .map(DtoMapper::toDto)
                 .collect(Collectors.toList());
         logger.info("Doctor search returned {} results", doctors.size());
