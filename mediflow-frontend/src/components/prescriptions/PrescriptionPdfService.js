@@ -1,5 +1,189 @@
 import html2pdf from 'html2pdf.js';
 
+const stripParentStylesheets = () => {
+  console.log('[PDF Service] Temporarily stripping parent window stylesheets to avoid oklch parsing crashes...');
+  const elements = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'));
+  const savedElements = [];
+  elements.forEach(el => {
+    const parent = el.parentNode;
+    const nextSibling = el.nextSibling;
+    if (parent) {
+      parent.removeChild(el);
+      savedElements.push({ element: el, parent, nextSibling });
+    }
+  });
+
+  // Backup and clear adoptedStyleSheets
+  let savedAdopted = [];
+  if (document.adoptedStyleSheets) {
+    savedAdopted = [...document.adoptedStyleSheets];
+    try {
+      document.adoptedStyleSheets = [];
+    } catch (e) {
+      console.warn('[PDF Service] Failed to clear document.adoptedStyleSheets:', e);
+    }
+  }
+
+  // Backup and clean inline style attributes on html and body tags
+  const savedHtmlStyle = document.documentElement.getAttribute('style');
+  const savedBodyStyle = document.body.getAttribute('style');
+
+  const cleanInlineStyle = (el) => {
+    if (!el || !el.style) return;
+    for (let i = el.style.length - 1; i >= 0; i--) {
+      const prop = el.style[i];
+      if (prop) {
+        const val = el.style.getPropertyValue(prop);
+        if (val && (val.includes('oklch') || val.includes('var(') || val.includes('color-mix') || prop.startsWith('--'))) {
+          el.style.removeProperty(prop);
+        }
+      }
+    }
+  };
+
+  cleanInlineStyle(document.documentElement);
+  cleanInlineStyle(document.body);
+
+  return {
+    savedElements,
+    savedAdopted,
+    savedHtmlStyle,
+    savedBodyStyle
+  };
+};
+
+const restoreParentStylesheets = (savedData) => {
+  console.log('[PDF Service] Restoring parent window stylesheets...');
+  if (!savedData) return;
+
+  // Restore elements
+  if (savedData.savedElements) {
+    savedData.savedElements.forEach(item => {
+      if (item.nextSibling && item.nextSibling.parentNode === item.parent) {
+        item.parent.insertBefore(item.element, item.nextSibling);
+      } else {
+        item.parent.appendChild(item.element);
+      }
+    });
+  }
+
+  // Restore adoptedStyleSheets
+  if (document.adoptedStyleSheets && savedData.savedAdopted && savedData.savedAdopted.length > 0) {
+    try {
+      document.adoptedStyleSheets = savedData.savedAdopted;
+    } catch (e) {
+      console.warn('[PDF Service] Failed to restore document.adoptedStyleSheets:', e);
+    }
+  }
+
+  // Restore html/body style attributes
+  if (savedData.savedHtmlStyle !== null && savedData.savedHtmlStyle !== undefined) {
+    document.documentElement.setAttribute('style', savedData.savedHtmlStyle);
+  } else {
+    document.documentElement.removeAttribute('style');
+  }
+
+  if (savedData.savedBodyStyle !== null && savedData.savedBodyStyle !== undefined) {
+    document.body.setAttribute('style', savedData.savedBodyStyle);
+  } else {
+    document.body.removeAttribute('style');
+  }
+};
+
+export const sanitizeColorsForPdf = (rootElement) => {
+  console.log('[PDF SANITIZER] Starting oklch and CSS custom property cleanup sweep...');
+  const doc = rootElement.ownerDocument;
+  const win = doc.defaultView || window;
+  
+  let elementsSanitized = 0;
+
+  const walkElement = (el) => {
+    if (el.nodeType !== 1) return; // Process only element nodes
+
+    const computedStyle = win.getComputedStyle(el);
+
+    // Common color-related properties
+    const colorProps = [
+      'color',
+      'backgroundColor',
+      'borderColor',
+      'borderTopColor',
+      'borderRightColor',
+      'borderBottomColor',
+      'borderLeftColor',
+      'outlineColor',
+      'fill',
+      'stroke'
+    ];
+
+    colorProps.forEach(prop => {
+      const val = computedStyle[prop];
+      if (val) {
+        const hasOklch = val.includes('oklch');
+        const hasLch = val.includes('lch');
+        const hasLab = val.includes('lab');
+        const hasColorMix = val.includes('color-mix');
+
+        if (hasOklch || hasLch || hasLab || hasColorMix) {
+          console.log(`[PDF AUDIT] Found unsupported style in element ${el.tagName}.${el.className || ''}: ${prop} = ${val}`);
+          
+          let fallback = '#0f172a'; // text color fallback
+          if (prop.toLowerCase().includes('background')) {
+            fallback = '#ffffff'; // background color fallback
+          } else if (prop.toLowerCase().includes('border') || prop === 'outlineColor') {
+            fallback = '#cbd5e1'; // border color fallback
+          } else if (prop === 'fill' || prop === 'stroke') {
+            fallback = prop === 'fill' ? 'none' : '#0f766e';
+          }
+
+          console.log(`[PDF COLOR FIX] Replacing color for ${prop}: ${val} => ${fallback}`);
+          el.style[prop] = fallback;
+          elementsSanitized++;
+        } else {
+          // Explicitly lock in the standard resolved color to prevent inheritance of variables
+          el.style[prop] = val;
+        }
+      }
+    });
+
+    // Clear unsupported layout filters, shadows, and backdrop filters
+    const stylesToClear = ['backdropFilter', 'webkitBackdropFilter', 'filter', 'boxShadow', 'textShadow'];
+    stylesToClear.forEach(styleProp => {
+      const val = computedStyle[styleProp];
+      if (val && val !== 'none' && val !== 'initial') {
+        console.log(`[PDF SANITIZER] Clearing unsupported style ${styleProp} for ${el.tagName}: ${val}`);
+        el.style[styleProp] = 'none';
+      }
+    });
+
+    // Strip complex gradient backgrounds
+    const backgroundImage = computedStyle.backgroundImage;
+    if (backgroundImage && (backgroundImage.includes('gradient') || backgroundImage.includes('url'))) {
+      console.log(`[PDF SANITIZER] Clearing gradient background for ${el.tagName}: ${backgroundImage}`);
+      el.style.backgroundImage = 'none';
+    }
+
+    // Strip CSS Custom variables directly from inline style attribute
+    if (el.style) {
+      for (let i = el.style.length - 1; i >= 0; i--) {
+        const propName = el.style[i];
+        if (propName && propName.startsWith('--')) {
+          console.log(`[PDF SANITIZER] Stripping custom variable: ${propName}`);
+          el.style.removeProperty(propName);
+        }
+      }
+    }
+
+    // Recurse children
+    for (let i = 0; i < el.children.length; i++) {
+      walkElement(el.children[i]);
+    }
+  };
+
+  walkElement(rootElement);
+  console.log(`[PDF SANITIZER] Color sanitization sweep completed. Total elements processed: ${elementsSanitized}`);
+};
+
 export const generatePrescriptionDocument = async (prescription, elementId = 'printable-prescription') => {
   console.log('[PDF Service] Triggered isolated document generation for element:', elementId);
   const element = document.getElementById(elementId);
@@ -96,84 +280,12 @@ export const generatePrescriptionDocument = async (prescription, elementId = 'pr
   const clone = element.cloneNode(true);
   target.appendChild(clone);
 
-  // Perform computed styles copy and oklch sweep
-  const logStats = {
-    elementCount: 0,
-    unsupportedStyles: []
-  };
-
-  const sanitizeAndResolveStyles = (originalEl, cloneEl, stats) => {
-    const computedStyle = window.getComputedStyle(originalEl);
-    
-    // Properties that might contain unsupported oklch(), color-mix() or var()
-    const colorProperties = [
-      'color',
-      'backgroundColor',
-      'borderColor',
-      'borderTopColor',
-      'borderRightColor',
-      'borderBottomColor',
-      'borderLeftColor',
-      'outlineColor'
-    ];
-
-    colorProperties.forEach(prop => {
-      let val = computedStyle[prop];
-      if (val) {
-        // Resolve unsupported values
-        if (val.includes('oklch') || val.includes('color-mix') || val.includes('var(')) {
-          console.log('[PDF Service] Found oklch/color-mix/var in style:', val);
-          stats.unsupportedStyles.push(`${originalEl.tagName} - ${prop}: ${val}`);
-          if (prop.toLowerCase().includes('border')) {
-            val = '#cbd5e1';
-          } else if (prop.toLowerCase().includes('background')) {
-            val = '#ffffff';
-          } else {
-            val = '#111827';
-          }
-        }
-        cloneEl.style[prop] = val;
-      }
-    });
-
-    // Clear unsupported layout filters, shadows, transitions, and backdrop filters
-    const stylesToClear = ['backdropFilter', 'webkitBackdropFilter', 'filter', 'boxShadow', 'textShadow'];
-    stylesToClear.forEach(styleProp => {
-      const val = computedStyle[styleProp];
-      if (val && val !== 'none' && val !== 'initial') {
-        stats.unsupportedStyles.push(`${originalEl.tagName} - ${styleProp}: ${val}`);
-        cloneEl.style[styleProp] = 'none';
-      }
-    });
-
-    // Strip complex gradient backgrounds
-    const backgroundImage = computedStyle.backgroundImage;
-    if (backgroundImage && (backgroundImage.includes('gradient') || backgroundImage.includes('url'))) {
-      stats.unsupportedStyles.push(`${originalEl.tagName} - backgroundImage: ${backgroundImage}`);
-      cloneEl.style.backgroundImage = 'none';
-    }
-
-    // Recursively sanitize children
-    stats.elementCount++;
-    for (let i = 0; i < originalEl.children.length; i++) {
-      if (originalEl.children[i] && cloneEl.children[i]) {
-        sanitizeAndResolveStyles(originalEl.children[i], cloneEl.children[i], stats);
-      }
-    }
-  };
-
-  sanitizeAndResolveStyles(element, clone, logStats);
-
-  console.log(`[PDF Service] Sandbox compilation complete. ${logStats.elementCount} elements sanitized.`);
-  if (logStats.unsupportedStyles.length > 0) {
-    console.log('[PDF Service] Resolved oklch or variables inside DOM:', logStats.unsupportedStyles.length, 'occurrences');
-  }
-
   return { iframe, target: clone };
 };
 
 export const downloadPrescriptionPdf = async (prescription, elementId = 'printable-prescription') => {
   let sandbox = null;
+  let savedStyles = [];
   try {
     const patientName = `${prescription.patient.user?.firstName || ''}${prescription.patient.user?.lastName || ''}`.replace(/[^a-zA-Z0-9]/g, '');
     const dateObj = prescription.createdAt ? new Date(prescription.createdAt) : new Date();
@@ -188,7 +300,11 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
     const filename = `MediFlow_Prescription_${patientName}_${formattedDateTime}.pdf`;
     console.log('[PDF Service] Downloading PDF:', filename);
 
+    // Create sandbox iframe
     sandbox = await generatePrescriptionDocument(prescription, elementId);
+
+    // Sanitize all colors inside the clone
+    sanitizeColorsForPdf(sandbox.target);
 
     const opt = {
       margin:       0.3,
@@ -204,13 +320,20 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
       jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
 
-    console.log('[PDF Service] Initiating download conversion inside isolated sandbox...');
+    // Temporarily remove parent window stylesheets
+    savedStyles = stripParentStylesheets();
+
+    console.log('[PDF Service] Running html2pdf generator...');
     await html2pdf().from(sandbox.target).set(opt).save();
     console.log('[PDF Service] PDF download complete successfully.');
   } catch (err) {
     console.error('[PDF Service] PDF download failed:', err);
     throw err;
   } finally {
+    // Restore parent stylesheets
+    restoreParentStylesheets(savedStyles);
+    
+    // Cleanup sandbox iframe
     if (sandbox && sandbox.iframe && sandbox.iframe.parentNode) {
       sandbox.iframe.parentNode.removeChild(sandbox.iframe);
       console.log('[PDF Service] Sandbox iframe cleaned up.');
@@ -220,6 +343,7 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
 
 export const printPrescription = async (prescription, elementId = 'printable-prescription') => {
   let sandbox = null;
+  let savedStyles = [];
   try {
     const patientName = `${prescription.patient.user?.firstName || ''}${prescription.patient.user?.lastName || ''}`.replace(/[^a-zA-Z0-9]/g, '');
     const dateObj = prescription.createdAt ? new Date(prescription.createdAt) : new Date();
@@ -230,9 +354,13 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
     const mm = String(dateObj.getMinutes()).padStart(2, '0');
     const formattedDateTime = `${YYYY}-${MM}-${DD}_${HH}-${mm}`;
     const filename = `MediFlow_Prescription_${patientName}_${formattedDateTime}.pdf`;
-    console.log('[PDF Service] Printing prescription PDF:', filename);
+    console.log('[PDF Service] Printing PDF:', filename);
 
+    // Create sandbox iframe
     sandbox = await generatePrescriptionDocument(prescription, elementId);
+
+    // Sanitize colors inside the clone
+    sanitizeColorsForPdf(sandbox.target);
 
     const opt = {
       margin:       0.3,
@@ -248,16 +376,22 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
       jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
 
-    console.log('[PDF Service] Initiating print blob conversion inside isolated sandbox...');
+    // Temporarily remove parent window stylesheets
+    savedStyles = stripParentStylesheets();
+
+    console.log('[PDF Service] Running html2pdf print generator...');
     const pdfBlob = await html2pdf().from(sandbox.target).set(opt).output('blob');
-    console.log('[PDF Service] PDF print blob created. Size:', pdfBlob.size, 'bytes');
     const blobUrl = URL.createObjectURL(pdfBlob);
     window.open(blobUrl, '_blank');
-    console.log('[PDF Service] Print PDF blob opened in new tab.');
+    console.log('[PDF Service] Print PDF blob opened.');
   } catch (err) {
-    console.error('[PDF Service] PDF print generation failed:', err);
+    console.error('[PDF Service] Print failed:', err);
     throw err;
   } finally {
+    // Restore parent stylesheets
+    restoreParentStylesheets(savedStyles);
+    
+    // Cleanup sandbox iframe
     if (sandbox && sandbox.iframe && sandbox.iframe.parentNode) {
       sandbox.iframe.parentNode.removeChild(sandbox.iframe);
       console.log('[PDF Service] Sandbox iframe cleaned up.');
