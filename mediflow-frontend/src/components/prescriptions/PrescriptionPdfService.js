@@ -1,50 +1,74 @@
 import html2pdf from 'html2pdf.js';
 
-const sanitizeImagesForPdf = (clone) => {
-  const images = clone.getElementsByTagName('img');
-  for (let i = 0; i < images.length; i++) {
-    const img = images[i];
-    
-    // Log the image audit
-    console.log('[PDF Service] Sanitizing image styles:', img.src || 'inline');
-
-    // Force fixed dimensions inside the PDF clone
-    img.style.width = '56px';
-    img.style.height = '56px';
-    img.style.minWidth = '56px';
-    img.style.minHeight = '56px';
-    img.style.maxWidth = '56px';
-    img.style.maxHeight = '56px';
-    img.style.objectFit = 'cover';
-    img.style.display = 'block';
-
-    // Prevent image stretching
-    img.style.transform = 'none';
-    img.style.scale = '1';
-    img.style.position = 'static';
-
-    // Strip class names to ensure no CSS rules or utility classes can override inline size
-    img.className = '';
-
-    // Direct attributes to ensure fallback is 56x56
-    img.setAttribute('width', '56');
-    img.setAttribute('height', '56');
+export const convertUnsupportedColors = (val, prop) => {
+  if (!val) return val;
+  const lower = val.toLowerCase();
+  
+  // Return standard colors immediately
+  if (!lower.includes('oklch') && !lower.includes('oklab') && !lower.includes('lch') && !lower.includes('lab') && !lower.includes('color-mix')) {
+    return val;
   }
+
+  // Handle color-mix fallback
+  if (lower.includes('color-mix')) {
+    if (prop === 'backgroundColor') return '#f8fafc';
+    if (prop.toLowerCase().includes('border') || prop === 'outlineColor') return '#e2e8f0';
+    return '#0f172a';
+  }
+
+  // Parse oklch(L C H)
+  const match = lower.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+  if (match) {
+    const l = parseFloat(match[1]);
+    const c = parseFloat(match[2]);
+    const h = parseFloat(match[3]);
+
+    // Chroma check for neutral colors (grays/slates/whites)
+    if (c < 0.04) {
+      if (l > 0.9) return '#ffffff';
+      if (l > 0.8) return '#f1f5f9';
+      if (l > 0.6) return '#cbd5e1';
+      if (l > 0.4) return '#64748b';
+      return '#111827';
+    }
+
+    // Hue criteria mapping
+    // 0 - 50: red / pink
+    // 50 - 100: orange / yellow
+    // 100 - 160: green
+    // 160 - 220: teal / cyan
+    // 220 - 280: blue / indigo
+    // 280 - 360: purple / pink / red
+    if (h >= 100 && h < 160) {
+      return '#16a34a'; // Success green
+    }
+    if (h >= 160 && h < 220) {
+      return '#0f766e'; // Teal / Hospital brand color
+    }
+    if (h >= 220 && h < 280) {
+      return '#2563eb'; // Brand blue
+    }
+    if ((h >= 0 && h < 50) || h >= 280) {
+      return '#dc2626'; // Danger red
+    }
+    if (h >= 50 && h < 100) {
+      return '#d97706'; // Warning orange/yellow
+    }
+  }
+
+  // Fallback defaults if parser match misses
+  if (prop === 'backgroundColor') return '#ffffff';
+  if (prop.toLowerCase().includes('border') || prop === 'outlineColor') return '#cbd5e1';
+  return '#0f172a';
 };
 
-export const sanitizeColorsForPdf = (rootElement) => {
-  console.log('[PDF SANITIZER] Starting oklch and CSS custom property cleanup sweep...');
-  const doc = rootElement.ownerDocument;
-  const win = doc.defaultView || window;
-  
-  let elementsSanitized = 0;
+export const copyComputedStylesToClone = (original, clone) => {
+  const walk = (origNode, cloneNode) => {
+    if (origNode.nodeType !== 1 || cloneNode.nodeType !== 1) return;
 
-  const walkElement = (el) => {
-    if (el.nodeType !== 1) return; // Process only element nodes
-
-    const computedStyle = win.getComputedStyle(el);
-
-    // Common color-related properties
+    const computedStyle = window.getComputedStyle(origNode);
+    
+    // Core styling properties to compute, resolve and write inline
     const colorProps = [
       'color',
       'backgroundColor',
@@ -59,71 +83,33 @@ export const sanitizeColorsForPdf = (rootElement) => {
     ];
 
     colorProps.forEach(prop => {
-      const val = computedStyle[prop];
+      let val = computedStyle[prop];
       if (val) {
-        const hasOklch = val.includes('oklch');
-        const hasLch = val.includes('lch');
-        const hasLab = val.includes('lab');
-        const hasColorMix = val.includes('color-mix');
-
-        if (hasOklch || hasLch || hasLab || hasColorMix) {
-          console.log(`[PDF AUDIT] Found unsupported style in element ${el.tagName}.${el.className || ''}: ${prop} = ${val}`);
-          
-          let fallback = '#0f172a'; // text color fallback
-          if (prop.toLowerCase().includes('background')) {
-            fallback = '#ffffff'; // background color fallback
-          } else if (prop.toLowerCase().includes('border') || prop === 'outlineColor') {
-            fallback = '#cbd5e1'; // border color fallback
-          } else if (prop === 'fill' || prop === 'stroke') {
-            fallback = prop === 'fill' ? 'none' : '#0f766e';
-          }
-
-          console.log(`[PDF COLOR FIX] Replacing color for ${prop}: ${val} => ${fallback}`);
-          el.style[prop] = fallback;
-          elementsSanitized++;
-        } else {
-          // Explicitly lock in the standard resolved color to prevent inheritance of variables
-          el.style[prop] = val;
-        }
+        // Resolve oklch values to safe hex codes
+        val = convertUnsupportedColors(val, prop);
+        cloneNode.style[prop] = val;
       }
     });
 
-    // Clear unsupported layout filters, shadows, and backdrop filters
-    const stylesToClear = ['backdropFilter', 'webkitBackdropFilter', 'filter', 'boxShadow', 'textShadow'];
-    stylesToClear.forEach(styleProp => {
-      const val = computedStyle[styleProp];
-      if (val && val !== 'none' && val !== 'initial') {
-        console.log(`[PDF SANITIZER] Clearing unsupported style ${styleProp} for ${el.tagName}: ${val}`);
-        el.style[styleProp] = 'none';
-      }
-    });
-
-    // Strip complex gradient backgrounds
-    const backgroundImage = computedStyle.backgroundImage;
-    if (backgroundImage && (backgroundImage.includes('gradient') || backgroundImage.includes('url'))) {
-      console.log(`[PDF SANITIZER] Clearing gradient background for ${el.tagName}: ${backgroundImage}`);
-      el.style.backgroundImage = 'none';
-    }
-
-    // Strip CSS Custom variables directly from inline style attribute
-    if (el.style) {
-      for (let i = el.style.length - 1; i >= 0; i--) {
-        const propName = el.style[i];
+    // Strip CSS variables directly from clone inline style attribute
+    if (cloneNode.style) {
+      for (let i = cloneNode.style.length - 1; i >= 0; i--) {
+        const propName = cloneNode.style[i];
         if (propName && propName.startsWith('--')) {
-          console.log(`[PDF SANITIZER] Stripping custom variable: ${propName}`);
-          el.style.removeProperty(propName);
+          cloneNode.style.removeProperty(propName);
         }
       }
     }
 
-    // Recurse children
-    for (let i = 0; i < el.children.length; i++) {
-      walkElement(el.children[i]);
+    // Recurse children in parallel
+    const origChildren = origNode.children;
+    const cloneChildren = cloneNode.children;
+    for (let i = 0; i < origChildren.length && i < cloneChildren.length; i++) {
+      walk(origChildren[i], cloneChildren[i]);
     }
   };
 
-  walkElement(rootElement);
-  console.log(`[PDF SANITIZER] Color sanitization sweep completed. Total elements processed: ${elementsSanitized}`);
+  walk(original, clone);
 };
 
 const stripParentStylesheets = () => {
@@ -307,15 +293,10 @@ export const scanForUnsupportedColors = () => {
 export const downloadPrescriptionPdf = async (prescription, elementId = 'printable-prescription') => {
   let container = null;
   let tempStyle = null;
-  let pdfModeStyle = null;
   let loadingOverlay = null;
   let savedStyles = null;
   
   try {
-    // Enable PDF Safe Mode
-    document.documentElement.classList.add("pdf-mode");
-    console.log("[PDF SAFE MODE] enabled");
-
     // Diagnostic scan
     scanForUnsupportedColors();
 
@@ -353,13 +334,12 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
       throw new Error('Prescription template element not found in DOM.');
     }
 
-    // Render the cloned prescription only inside this hidden container
+    // Render the cloned prescription inside this hidden container
     const clone = element.cloneNode(true);
     container.appendChild(clone);
 
-    // Sanitize colors and images inside the clone
-    sanitizeColorsForPdf(clone);
-    sanitizeImagesForPdf(clone);
+    // Lock in parent computed styles with Hex fallbacks to clone nodes *before* stripping sheets
+    copyComputedStylesToClone(element, clone);
 
     // Create temporary style tag inside the container
     tempStyle = document.createElement('style');
@@ -421,29 +401,12 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
     `;
     container.appendChild(tempStyle);
 
-    // Inject PDF-safe styles tag inside document.head
-    pdfModeStyle = document.createElement('style');
-    pdfModeStyle.id = 'pdf-safe-style';
-    pdfModeStyle.textContent = `
-      .pdf-mode,
-      .pdf-mode * {
-        color: #000000 !important;
-        background-color: #ffffff !important;
-        border-color: #d1d5db !important;
-        box-shadow: none !important;
-        filter: none !important;
-      }
-    `;
-    document.head.appendChild(pdfModeStyle);
-
     // Intercept document.styleSheets
     const cleanSheet = tempStyle.sheet;
-    const pdfModeSheet = pdfModeStyle.sheet;
     Object.defineProperty(document, 'styleSheets', {
       get: () => {
         const sheets = [];
         if (cleanSheet) sheets.push(cleanSheet);
-        if (pdfModeSheet) sheets.push(pdfModeSheet);
         return sheets;
       },
       configurable: true
@@ -485,11 +448,6 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
     // Restore document.styleSheets getter
     delete document.styleSheets;
     
-    // Remove PDF safe style tag
-    if (pdfModeStyle && pdfModeStyle.parentNode) {
-      pdfModeStyle.parentNode.removeChild(pdfModeStyle);
-    }
-
     // Cleanup container
     if (container && container.parentNode) {
       container.parentNode.removeChild(container);
@@ -498,26 +456,17 @@ export const downloadPrescriptionPdf = async (prescription, elementId = 'printab
 
     // Hide loading overlay
     hideLoadingOverlay(loadingOverlay);
-
-    // Disable PDF Safe Mode
-    document.documentElement.classList.remove("pdf-mode");
-    console.log("[PDF SAFE MODE] disabled");
   }
 };
 
 export const printPrescription = async (prescription, elementId = 'printable-prescription') => {
   let container = null;
   let tempStyle = null;
-  let pdfModeStyle = null;
   let loadingOverlay = null;
   let savedStyles = null;
   let blobUrl = null;
   
   try {
-    // Enable PDF Safe Mode
-    document.documentElement.classList.add("pdf-mode");
-    console.log("[PDF SAFE MODE] enabled");
-
     // Diagnostic scan
     scanForUnsupportedColors();
 
@@ -553,13 +502,12 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
       throw new Error('Prescription template element not found in DOM.');
     }
 
-    // Render the cloned prescription only inside this hidden container
+    // Render the cloned prescription inside this hidden container
     const clone = element.cloneNode(true);
     container.appendChild(clone);
 
-    // Sanitize colors and images inside the clone
-    sanitizeColorsForPdf(clone);
-    sanitizeImagesForPdf(clone);
+    // Lock in parent computed styles with Hex fallbacks to clone nodes *before* stripping sheets
+    copyComputedStylesToClone(element, clone);
 
     // Create temporary style tag inside the container
     tempStyle = document.createElement('style');
@@ -621,29 +569,12 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
     `;
     container.appendChild(tempStyle);
 
-    // Inject PDF-safe styles tag inside document.head
-    pdfModeStyle = document.createElement('style');
-    pdfModeStyle.id = 'pdf-safe-style';
-    pdfModeStyle.textContent = `
-      .pdf-mode,
-      .pdf-mode * {
-        color: #000000 !important;
-        background-color: #ffffff !important;
-        border-color: #d1d5db !important;
-        box-shadow: none !important;
-        filter: none !important;
-      }
-    `;
-    document.head.appendChild(pdfModeStyle);
-
     // Intercept document.styleSheets
     const cleanSheet = tempStyle.sheet;
-    const pdfModeSheet = pdfModeStyle.sheet;
     Object.defineProperty(document, 'styleSheets', {
       get: () => {
         const sheets = [];
         if (cleanSheet) sheets.push(cleanSheet);
-        if (pdfModeSheet) sheets.push(pdfModeSheet);
         return sheets;
       },
       configurable: true
@@ -699,11 +630,6 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
     // Restore document.styleSheets
     delete document.styleSheets;
     
-    // Remove PDF safe style tag
-    if (pdfModeStyle && pdfModeStyle.parentNode) {
-      pdfModeStyle.parentNode.removeChild(pdfModeStyle);
-    }
-
     // Cleanup container
     if (container && container.parentNode) {
       container.parentNode.removeChild(container);
@@ -712,9 +638,5 @@ export const printPrescription = async (prescription, elementId = 'printable-pre
 
     // Hide loading overlay
     hideLoadingOverlay(loadingOverlay);
-
-    // Disable PDF Safe Mode
-    document.documentElement.classList.remove("pdf-mode");
-    console.log("[PDF SAFE MODE] disabled");
   }
 };
