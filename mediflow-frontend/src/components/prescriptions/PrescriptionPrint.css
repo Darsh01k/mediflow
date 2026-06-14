@@ -1,0 +1,105 @@
+@media print {
+  /* Force background graphics printing */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Reset all structural wrappers to prevent clipping and hidden overflow */
+  html, body, #root, .min-h-screen, main, .flex-1, .flex-col, .flex {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+
+  /* Hide non-printable elements */
+  aside, nav, header, footer, .print-hidden, button, .print\:hidden {
+    display: none !important;
+  }
+
+  /* Modal container styles for printing */
+  div.fixed.inset-0 {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  div.fixed.inset-0 > div {
+    max-width: 100% !important;
+    max-height: none !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Prescription layout container print overrides */
+  .prescription-print-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+    overflow: visible !important;
+  }
+
+  /* Vector & initials fallback styles when backgrounds are disabled */
+  .prescription-print-container svg *[stroke="#ffffff"],
+  .prescription-print-container svg *[stroke="white"] {
+    stroke: #0f766e !important;
+  }
+  .prescription-print-container .fallback-initials {
+    color: #0f766e !important;
+  }
+
+  /* Ensure grid columns are formatted correctly */
+  .prescription-grid-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Tables */
+  .prescription-table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .prescription-table thead {
+    display: table-header-group !important;
+  }
+
+  .prescription-table tbody {
+    display: table-row-group !important;
+  }
+
+  .prescription-table tr {
+    display: table-row !important;
+    page-break-inside: avoid !important;
+  }
+
+  .prescription-table th,
+  .prescription-table td {
+    display: table-cell !important;
+  }
+}
