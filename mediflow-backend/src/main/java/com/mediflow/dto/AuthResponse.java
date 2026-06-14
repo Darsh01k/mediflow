@@ -34,6 +34,21 @@ public class AuthResponse {
         this.avatarId = avatarId;
     }
 
+    public AuthResponse(String token, Long userId, String username, String email, String role, Long profileId, String firstName, String lastName, String avatarId, String city, String state, String country) {
+        this.token = token;
+        this.userId = userId;
+        this.username = username;
+        this.email = email;
+        this.role = role;
+        this.profileId = profileId;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.avatarId = avatarId;
+        this.city = city;
+        this.state = state;
+        this.country = country;
+    }
+
     public String getToken() {
         return token;
     }
@@ -104,6 +119,34 @@ public class AuthResponse {
 
     public void setAvatarId(String avatarId) {
         this.avatarId = avatarId;
+    }
+
+    private String city;
+    private String state;
+    private String country;
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 }
 

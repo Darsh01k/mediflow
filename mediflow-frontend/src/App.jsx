@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { LocationProvider } from './context/LocationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './layouts/Layout';
 import Login from './pages/Login';
@@ -26,6 +27,7 @@ function App() {
     <Router>
       <ToastProvider>
         <AuthProvider>
+          <LocationProvider>
           <Routes>
             {/* Public Authentication Views */}
             <Route path="/login" element={<Login />} />
@@ -110,6 +112,7 @@ function App() {
             {/* Fallback Redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </LocationProvider>
         </AuthProvider>
       </ToastProvider>
     </Router>

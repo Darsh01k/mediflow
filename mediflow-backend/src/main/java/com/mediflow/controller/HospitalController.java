@@ -34,6 +34,28 @@ public class HospitalController {
         return ResponseEntity.ok(hospitals);
     }
 
+    @GetMapping("/nearby")
+    public ResponseEntity<List<com.mediflow.dto.NearbyHospitalDto>> getNearbyHospitals(
+            @RequestParam(value = "lat", required = false) Double lat,
+            @RequestParam(value = "lng", required = false) Double lng,
+            @RequestParam(value = "city", required = false) String city) {
+        
+        String searchCity = city;
+        if (lat == null && lng == null && (searchCity == null || searchCity.trim().isEmpty())) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof UserDetailsImpl) {
+                UserDetailsImpl userPrincipal = (UserDetailsImpl) auth.getPrincipal();
+                User user = userRepository.findById(userPrincipal.getId()).orElse(null);
+                if (user != null) {
+                    searchCity = user.getCity();
+                }
+            }
+        }
+        
+        List<com.mediflow.dto.NearbyHospitalDto> nearby = hospitalService.getNearbyHospitals(lat, lng, searchCity);
+        return ResponseEntity.ok(nearby);
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<HospitalDto>> searchHospitals(
             @RequestParam(value = "name", required = false) String name,

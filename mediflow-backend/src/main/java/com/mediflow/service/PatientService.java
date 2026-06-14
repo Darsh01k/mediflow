@@ -75,6 +75,9 @@ public class PatientService {
             if (userDto.getAvatarId() != null) {
                 user.setAvatarId(userDto.getAvatarId());
             }
+            user.setCity(userDto.getCity());
+            user.setState(userDto.getState());
+            user.setCountry(userDto.getCountry());
             userRepository.save(user);
         }
 

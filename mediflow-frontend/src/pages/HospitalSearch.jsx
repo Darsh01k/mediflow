@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../services/api';
+import { useLocation2, formatDistance } from '../context/LocationContext';
 import { HealthAvatar } from '../components/ui/Avatar';
 import { Card, CardContent } from '../components/ui/Card';
 import Input from '../components/ui/Input';
@@ -20,6 +21,7 @@ import { useNavigate } from 'react-router-dom';
 
 const HospitalSearch = () => {
   const navigate = useNavigate();
+  const { coords } = useLocation2();
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
@@ -42,7 +44,10 @@ const HospitalSearch = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await API.get('/hospitals/search');
+      const params = new URLSearchParams();
+      if (coords?.lat) params.append('lat', coords.lat);
+      if (coords?.lng) params.append('lng', coords.lng);
+      const response = await API.get(`/hospitals/search?${params.toString()}`);
       setHospitals(response.data);
     } catch (err) {
       setError('Failed to fetch hospital records.');
@@ -61,6 +66,8 @@ const HospitalSearch = () => {
       if (city) params.append('city', city);
       if (state) params.append('state', state);
       if (specialty) params.append('specialty', specialty);
+      if (coords?.lat) params.append('lat', coords.lat);
+      if (coords?.lng) params.append('lng', coords.lng);
 
       const response = await API.get(`/hospitals/search?${params.toString()}`);
       setHospitals(response.data);
@@ -225,10 +232,18 @@ const HospitalSearch = () => {
 
               {/* Action Footer */}
               <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
-                <span className="text-[11px] font-black text-emerald-600 flex items-center gap-1">
-                  <Users className="w-4 h-4 shrink-0" />
-                  <span>{hosp.doctorCount || 0} Doctors</span>
-                </span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[11px] font-black text-emerald-600 flex items-center gap-1">
+                    <Users className="w-4 h-4 shrink-0" />
+                    <span>{hosp.doctorCount || 0} Doctors</span>
+                  </span>
+                  {hosp.distance !== null && hosp.distance !== undefined && (
+                    <span className="text-[10px] font-bold text-blue-600 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 shrink-0" />
+                      <span>{formatDistance(hosp.distance)}</span>
+                    </span>
+                  )}
+                </div>
                 <Button 
                   onClick={() => openDoctorsModal(hosp)}
                   variant="secondary" 

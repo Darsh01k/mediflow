@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
+import { useLocation2, formatDistance } from '../context/LocationContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -19,17 +20,22 @@ import {
   Clock,
   DollarSign,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  LocateFixed,
+  Building2,
+  RefreshCw,
+  Satellite
 } from 'lucide-react';
 
 const NearbyHospitals = () => {
   const navigate = useNavigate();
-  const [city, setCity] = useState('');
-  const [coords, setCoords] = useState(null);
+  const { coords, locationSource, geoStatus, refreshLocation } = useLocation2();
+
+  const [cityInput, setCityInput] = useState('');
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false);
   const [error, setError] = useState('');
+  const [activeSource, setActiveSource] = useState(null); // 'gps' | 'city-search' | 'all'
 
   const [selectedHospitalForDoctors, setSelectedHospitalForDoctors] = useState(null);
   const [hospitalDoctors, setHospitalDoctors] = useState([]);
@@ -49,13 +55,20 @@ const NearbyHospitals = () => {
     }
   };
 
-  // Initial load showing all hospitals
+  // On mount or when coords change from LocationContext, auto-fetch nearby
   useEffect(() => {
-    loadAllHospitals();
-  }, []);
+    if (coords && coords.lat && coords.lng) {
+      fetchWithCoords(coords.lat, coords.lng);
+      setActiveSource(locationSource === 'gps' ? 'gps' : 'city');
+    } else {
+      loadAllHospitals();
+    }
+  }, [coords]);
 
   const loadAllHospitals = async () => {
     setLoading(true);
+    setError('');
+    setActiveSource('all');
     try {
       const response = await API.get('/hospitals/search');
       setHospitals(response.data);
@@ -66,108 +79,136 @@ const NearbyHospitals = () => {
     }
   };
 
-  const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setError('HTML5 Geolocation is not supported by your browser.');
-      return;
-    }
-    setGeoLoading(true);
-    setError('');
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setCoords({ lat: latitude, lng: longitude });
-        fetchNearby(latitude, longitude, '');
-      },
-      (err) => {
-        console.error(err);
-        setError('Location permission denied. Please enter a city manually.');
-        setGeoLoading(false);
-      }
-    );
-  };
-
-  const fetchNearby = async (lat, lng, cityName) => {
+  const fetchWithCoords = async (lat, lng) => {
     setLoading(true);
     setError('');
     try {
-      const params = new URLSearchParams();
-      if (lat) params.append('lat', lat);
-      if (lng) params.append('lng', lng);
-      if (cityName) params.append('city', cityName);
-
-      const response = await API.get(`/hospitals/search?${params.toString()}`);
+      const response = await API.get(`/hospitals/search?lat=${lat}&lng=${lng}`);
       setHospitals(response.data);
     } catch (err) {
-      setError('Failed to calculate nearby distances.');
+      setError('Failed to fetch nearby hospitals.');
     } finally {
       setLoading(false);
-      setGeoLoading(false);
     }
+  };
+
+  const handleUseGPS = () => {
+    refreshLocation();
   };
 
   const handleCitySearch = (e) => {
     e.preventDefault();
-    if (!city) {
-      setError('Please type a city name.');
+    if (!cityInput.trim()) {
+      setError('Please enter a city name.');
       return;
     }
-    setCoords(null);
-    fetchNearby(null, null, city);
+    setActiveSource('city-search');
+    fetchWithCity(cityInput.trim());
+  };
+
+  const fetchWithCity = async (cityName) => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await API.get(`/hospitals/search?city=${encodeURIComponent(cityName)}`);
+      setHospitals(response.data);
+    } catch (err) {
+      setError('Failed to search hospitals by city.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClear = () => {
-    setCity('');
-    setCoords(null);
+    setCityInput('');
     setError('');
-    loadAllHospitals();
+    if (coords && coords.lat && coords.lng) {
+      fetchWithCoords(coords.lat, coords.lng);
+      setActiveSource(locationSource === 'gps' ? 'gps' : 'city');
+    } else {
+      loadAllHospitals();
+    }
+  };
+
+  // Location source badge
+  const LocationBadge = () => {
+    if (activeSource === 'gps') {
+      return (
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 rounded-full border border-emerald-200 uppercase tracking-wider">
+          <Satellite className="w-3 h-3" />
+          GPS Location
+        </div>
+      );
+    }
+    if (activeSource === 'city' || activeSource === 'city-search') {
+      return (
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-blue-700 bg-blue-50 rounded-full border border-blue-200 uppercase tracking-wider">
+          <Building2 className="w-3 h-3" />
+          City-Based
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-slate-800">Find Nearby Hospitals</h2>
-        <p className="text-xs text-slate-500 font-semibold mt-1">Locate active healthcare clinics closest to your current location</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Find Nearby Hospitals</h2>
+          <p className="text-xs text-slate-500 font-semibold mt-1">Locate active healthcare clinics closest to your current location</p>
+        </div>
+        <LocationBadge />
       </div>
 
       {/* Geolocation selector cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Current Location Button Card */}
-        <Card className="border-slate-200/60 shadow-sm overflow-hidden bg-gradient-to-br from-emerald-50/40 to-teal-50/40 backdrop-blur-md">
+        <Card className="border-slate-200/60 shadow-sm overflow-hidden bg-gradient-to-br from-emerald-50/40 to-teal-50/40">
           <CardContent className="p-6 flex flex-col justify-between h-full space-y-4">
             <div className="space-y-1">
               <h4 className="font-bold text-slate-700 text-xs">GPS Geolocation</h4>
               <p className="text-[10px] text-slate-400 font-semibold">Instantly retrieve hospitals closest to your exact coordinates</p>
             </div>
-            <div>
+            <div className="space-y-2">
               <Button 
-                onClick={handleUseCurrentLocation} 
-                loading={geoLoading}
+                onClick={handleUseGPS} 
+                loading={geoStatus === 'requesting'}
                 variant="primary"
                 className="w-full flex items-center justify-center gap-2"
               >
-                <Compass className="w-4 h-4 animate-spin-slow" />
-                <span>Use Current Location</span>
+                <LocateFixed className="w-4 h-4" />
+                <span>{geoStatus === 'requesting' ? 'Locating...' : 'Use Current Location'}</span>
               </Button>
+              {geoStatus === 'denied' && (
+                <p className="text-[10px] text-amber-600 font-semibold text-center">
+                  Location denied — using your registered city as fallback
+                </p>
+              )}
+              {geoStatus === 'granted' && coords && (
+                <p className="text-[10px] text-emerald-600 font-semibold text-center">
+                  📍 {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* City Filter Card */}
-        <Card className="border-slate-200/60 shadow-sm overflow-hidden bg-white/70 backdrop-blur-md">
+        <Card className="border-slate-200/60 shadow-sm overflow-hidden bg-white/70">
           <CardContent className="p-6">
             <form onSubmit={handleCitySearch} className="space-y-4 text-xs font-semibold text-slate-500">
               <Input
                 label="Search by City"
                 id="city"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="e.g. Los Angeles"
+                value={cityInput}
+                onChange={(e) => setCityInput(e.target.value)}
+                placeholder="e.g. Ahmedabad, Mumbai, Surat"
                 icon={MapPin}
                 className="bg-white"
               />
               <div className="flex justify-end gap-3 pt-1">
-                {(city || coords) && (
+                {(cityInput || activeSource === 'city-search') && (
                   <Button type="button" variant="secondary" size="sm" onClick={handleClear}>
                     Clear
                   </Button>
@@ -187,9 +228,15 @@ const NearbyHospitals = () => {
         </Alert>
       )}
 
-      {coords && (
-        <Alert variant="success" title="Location Retrieved">
-          Showing hospitals sorted by distance from coordinates: {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
+      {activeSource === 'gps' && coords && (
+        <Alert variant="success" title="GPS Location Active">
+          Showing hospitals sorted by distance from your GPS coordinates: {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
+        </Alert>
+      )}
+
+      {activeSource === 'city' && (
+        <Alert variant="info" title="City Fallback Active">
+          Showing hospitals sorted by distance from your registered city location.
         </Alert>
       )}
 
@@ -205,6 +252,9 @@ const NearbyHospitals = () => {
         </div>
       ) : (
         <div className="space-y-4">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            {hospitals.length} Hospital{hospitals.length !== 1 ? 's' : ''} Found
+          </p>
           {hospitals.map((hosp) => (
             <Card key={hosp.id} className="border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden bg-white">
               <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -236,13 +286,15 @@ const NearbyHospitals = () => {
                     <div className="text-right">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Estimated Distance</span>
                       <p className="text-base font-black text-emerald-600 mt-0.5">
-                        {hosp.distance} km
+                        {formatDistance(hosp.distance)}
                       </p>
                     </div>
                   ) : (
                     <div className="text-right">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Distance</span>
-                      <p className="text-xs font-bold text-slate-400 mt-0.5">N/A</p>
+                      <p className="text-xs font-bold text-slate-400 mt-0.5">
+                        Use GPS or search a city
+                      </p>
                     </div>
                   )}
 
@@ -311,6 +363,12 @@ const NearbyHospitals = () => {
                     <p className="text-[11px] text-slate-400 font-bold flex items-center gap-1.5">
                       <Phone className="w-3.5 h-3.5" />
                       <span>{selectedHospitalForDoctors.phone}</span>
+                    </p>
+                  )}
+                  {selectedHospitalForDoctors.distance !== null && selectedHospitalForDoctors.distance !== undefined && (
+                    <p className="text-[11px] text-emerald-600 font-bold flex items-center gap-1.5">
+                      <Navigation2 className="w-3.5 h-3.5" />
+                      <span>{formatDistance(selectedHospitalForDoctors.distance)} away</span>
                     </p>
                   )}
                 </div>

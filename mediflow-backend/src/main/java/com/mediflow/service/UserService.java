@@ -119,7 +119,10 @@ public class UserService {
                     profileId,
                     firstName,
                     lastName,
-                    avatarId
+                    avatarId,
+                    user.getCity(),
+                    user.getState(),
+                    user.getCountry()
             );
         } catch (Exception e) {
             logger.error("Authentication exception for user {}: {}", loginRequest.getUsername(), e.getMessage());
@@ -150,6 +153,9 @@ public class UserService {
                 registerRequest.getFirstName(),
                 registerRequest.getLastName()
         );
+        user.setCity(registerRequest.getCity());
+        user.setState(registerRequest.getState());
+        user.setCountry(registerRequest.getCountry());
         
         // Save avatar ID
         if (registerRequest.getAvatarId() != null) {

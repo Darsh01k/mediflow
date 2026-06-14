@@ -104,12 +104,28 @@ public class HospitalService {
 
         List<Hospital> hospitals = hospitalRepository.searchHospitals(nameParam, cityParam, stateParam, specParam);
         
+        Double resolvedLat = lat;
+        Double resolvedLng = lng;
+        
+        if (resolvedLat == null || resolvedLng == null) {
+            if (city != null && !city.trim().isEmpty()) {
+                com.mediflow.utils.GeocodingUtils.Coordinates coords = com.mediflow.utils.GeocodingUtils.geocode(city);
+                if (coords != null) {
+                    resolvedLat = coords.getLatitude();
+                    resolvedLng = coords.getLongitude();
+                }
+            }
+        }
+
+        final Double finalLat = resolvedLat;
+        final Double finalLng = resolvedLng;
+
         List<HospitalDto> dtos = hospitals.stream()
                 .map(h -> {
                     HospitalDto dto = DtoMapper.toDto(h);
                     dto.setDoctorCount(doctorRepository.findByHospitalIdAndStatus(h.getId(), DoctorStatus.APPROVED).size());
-                    if (lat != null && lng != null && h.getLatitude() != null && h.getLongitude() != null) {
-                        double dist = calculateDistance(lat, lng, h.getLatitude(), h.getLongitude());
+                    if (finalLat != null && finalLng != null && h.getLatitude() != null && h.getLongitude() != null) {
+                        double dist = calculateDistance(finalLat, finalLng, h.getLatitude(), h.getLongitude());
                         // round to 2 decimal places
                         dto.setDistance(Math.round(dist * 100.0) / 100.0);
                     }
@@ -117,7 +133,7 @@ public class HospitalService {
                 })
                 .collect(Collectors.toList());
 
-        if (lat != null && lng != null) {
+        if (finalLat != null && finalLng != null) {
             dtos.sort((h1, h2) -> {
                 if (h1.getDistance() == null) return 1;
                 if (h2.getDistance() == null) return -1;
@@ -127,6 +143,49 @@ public class HospitalService {
         
         logger.info("Hospital search returned {} results", dtos.size());
         return dtos;
+    }
+
+    public List<com.mediflow.dto.NearbyHospitalDto> getNearbyHospitals(Double lat, Double lng, String city) {
+        logger.info("Fetching nearby hospitals list for lat: {}, lng: {}, city: {}", lat, lng, city);
+
+        Double resolvedLat = lat;
+        Double resolvedLng = lng;
+
+        if (resolvedLat == null || resolvedLng == null) {
+            if (city != null && !city.trim().isEmpty()) {
+                com.mediflow.utils.GeocodingUtils.Coordinates coords = com.mediflow.utils.GeocodingUtils.geocode(city);
+                if (coords != null) {
+                    resolvedLat = coords.getLatitude();
+                    resolvedLng = coords.getLongitude();
+                }
+            }
+        }
+
+        final Double finalLat = resolvedLat;
+        final Double finalLng = resolvedLng;
+
+        List<Hospital> hospitals = hospitalRepository.findAll();
+
+        List<com.mediflow.dto.NearbyHospitalDto> nearbyList = hospitals.stream()
+                .map(h -> {
+                    Double dist = null;
+                    if (finalLat != null && finalLng != null && h.getLatitude() != null && h.getLongitude() != null) {
+                        double calculatedDist = calculateDistance(finalLat, finalLng, h.getLatitude(), h.getLongitude());
+                        dist = Math.round(calculatedDist * 100.0) / 100.0;
+                    }
+                    return new com.mediflow.dto.NearbyHospitalDto(h.getId(), h.getName(), dist);
+                })
+                .collect(Collectors.toList());
+
+        if (finalLat != null && finalLng != null) {
+            nearbyList.sort((h1, h2) -> {
+                if (h1.getDistanceKm() == null) return 1;
+                if (h2.getDistanceKm() == null) return -1;
+                return h1.getDistanceKm().compareTo(h2.getDistanceKm());
+            });
+        }
+
+        return nearbyList;
     }
 
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {

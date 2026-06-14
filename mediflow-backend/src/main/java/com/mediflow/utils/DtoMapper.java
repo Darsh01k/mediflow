@@ -7,7 +7,7 @@ public class DtoMapper {
 
     public static UserDto toDto(User user) {
         if (user == null) return null;
-        return new UserDto(
+        UserDto dto = new UserDto(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
@@ -17,6 +17,10 @@ public class DtoMapper {
                 user.getAvatarId(),
                 toDto(user.getHospital())
         );
+        dto.setCity(user.getCity());
+        dto.setState(user.getState());
+        dto.setCountry(user.getCountry());
+        return dto;
     }
 
     public static HospitalDto toDto(Hospital hospital) {

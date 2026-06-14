@@ -83,5 +83,38 @@ public class DatabaseMigrationService implements CommandLineRunner {
         } catch (Exception e) {
             logger.error("Failed to update status for legacy doctors: {}", e.getMessage());
         }
+
+        // Add columns city, state, country to users table safely
+        try {
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(100)");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS state VARCHAR(100)");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR(100)");
+            logger.info("Checked/Added columns city, state, country to users table.");
+        } catch (Exception e) {
+            logger.warn("Failed to check/add location columns to users: {}", e.getMessage());
+        }
+
+        // Add columns latitude, longitude to hospitals table safely
+        try {
+            jdbcTemplate.execute("ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION");
+            jdbcTemplate.execute("ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION");
+            logger.info("Checked/Added columns latitude, longitude to hospitals table.");
+        } catch (Exception e) {
+            logger.warn("Failed to check/add coordinates columns to hospitals: {}", e.getMessage());
+        }
+
+        // Seed coordinates for existing hospitals based on their city
+        try {
+            jdbcTemplate.update("UPDATE hospitals SET latitude = 23.0225, longitude = 72.5714 WHERE LOWER(city) = 'ahmedabad'");
+            jdbcTemplate.update("UPDATE hospitals SET latitude = 21.1702, longitude = 72.8311 WHERE LOWER(city) = 'surat'");
+            jdbcTemplate.update("UPDATE hospitals SET latitude = 22.3039, longitude = 70.8022 WHERE LOWER(city) = 'rajkot'");
+            jdbcTemplate.update("UPDATE hospitals SET latitude = 22.3072, longitude = 73.1812 WHERE LOWER(city) = 'vadodara'");
+            jdbcTemplate.update("UPDATE hospitals SET latitude = 19.0760, longitude = 72.8777 WHERE LOWER(city) = 'mumbai'");
+            jdbcTemplate.update("UPDATE hospitals SET latitude = 28.7041, longitude = 77.1025 WHERE LOWER(city) = 'delhi'");
+            logger.info("Seeded coordinates for existing hospitals based on city names.");
+        } catch (Exception e) {
+            logger.error("Failed to seed coordinates for hospitals: {}", e.getMessage());
+        }
     }
 }
+

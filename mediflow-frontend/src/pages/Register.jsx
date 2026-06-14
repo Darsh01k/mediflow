@@ -26,6 +26,15 @@ import {
   GraduationCap
 } from 'lucide-react';
 
+const locationsList = [
+  { city: 'Ahmedabad', state: 'Gujarat', country: 'India' },
+  { city: 'Surat', state: 'Gujarat', country: 'India' },
+  { city: 'Rajkot', state: 'Gujarat', country: 'India' },
+  { city: 'Vadodara', state: 'Gujarat', country: 'India' },
+  { city: 'Mumbai', state: 'Maharashtra', country: 'India' },
+  { city: 'Delhi', state: 'Delhi', country: 'India' },
+];
+
 const Register = () => {
   const { register } = useAuth();
   const toast = useToast();
@@ -41,6 +50,9 @@ const Register = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [avatarId, setAvatarId] = useState('patient_1');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [country, setCountry] = useState('');
 
   // Patient fields
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -101,8 +113,8 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
-    if (!username || !password || !email || !firstName || !lastName) {
-      setError('Please fill in all basic credentials');
+    if (!username || !password || !email || !firstName || !lastName || !city) {
+      setError('Please fill in all basic credentials and select a city');
       return;
     }
 
@@ -113,7 +125,10 @@ const Register = () => {
       role,
       firstName,
       lastName,
-      avatarId
+      avatarId,
+      city,
+      state,
+      country
     };
 
     if (role === 'PATIENT') {
@@ -327,6 +342,36 @@ const Register = () => {
                   disabled={loading}
                   className="bg-slate-800/40 border-slate-800 text-white placeholder-slate-500"
                 />
+
+                <div className="space-y-1.5 text-xs font-semibold text-slate-600 md:col-span-2">
+                  <label htmlFor="userCity" className="block font-bold text-slate-500 uppercase tracking-wide">Select Your City Location (for hospital distance calculation)</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                    <select
+                      id="userCity"
+                      required
+                      value={city}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCity(val);
+                        const loc = locationsList.find(l => l.city === val);
+                        if (loc) {
+                          setState(loc.state);
+                          setCountry(loc.country);
+                        }
+                      }}
+                      disabled={loading}
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-800/40 border border-slate-800 focus:outline-none focus:border-emerald-500/50 rounded-xl text-white text-sm font-medium"
+                    >
+                      <option value="" className="bg-slate-900 text-slate-400">Select Location</option>
+                      {locationsList.map((loc) => (
+                        <option key={loc.city} value={loc.city} className="bg-slate-900 text-white">
+                          {loc.city}, {loc.state}, {loc.country}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
