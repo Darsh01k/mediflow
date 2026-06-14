@@ -39,24 +39,51 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
           src={logoId} 
           alt={prescription.hospital.name} 
           crossOrigin="anonymous"
-          className="w-14 h-14 rounded-xl border border-slate-200 shadow-sm shrink-0 object-cover"
+          style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '12px',
+            border: '1px solid #e5e7eb',
+            objectFit: 'cover',
+            flexShrink: 0
+          }}
           onError={() => setLogoError(true)}
         />
       );
     }
     
-    // Fallback initials component
+    // Fallback initials component (pure CSS, oklch/gradient free for printing)
     const initials = prescription.hospital.name
       ? prescription.hospital.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
       : 'H';
 
     return (
-      <div className="w-14 h-14 rounded-xl bg-gradient-to-r from-emerald-650 to-teal-700 p-0.5 flex items-center justify-center shadow-md shrink-0 border border-slate-200">
-        <div className="w-full h-full rounded-xl flex items-center justify-center bg-slate-950/10">
-          <span className="fallback-initials text-white font-black text-sm uppercase tracking-tight select-none">
-            {initials}
-          </span>
-        </div>
+      <div 
+        style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '12px',
+          backgroundColor: '#0f766e',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          border: '1px solid #cbd5e1'
+        }}
+      >
+        <span 
+          className="fallback-initials" 
+          style={{
+            color: '#ffffff',
+            fontWeight: 900,
+            fontSize: '14px',
+            textTransform: 'uppercase',
+            letterSpacing: '-0.025em',
+            userSelect: 'none'
+          }}
+        >
+          {initials}
+        </span>
       </div>
     );
   };
@@ -64,36 +91,87 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
   return (
     <div 
       id={elementId} 
-      className="prescription-print-container p-8 md:p-10 space-y-6 text-slate-800 bg-white text-left max-w-[800px] mx-auto print:p-0 print:max-w-none"
+      className="prescription-print-container print-safe"
+      style={{
+        padding: '32px',
+        backgroundColor: '#ffffff',
+        color: '#111827',
+        textAlign: 'left',
+        maxWidth: '800px',
+        margin: '0 auto',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        lineHeight: 1.5
+      }}
     >
       {/* Header Letterhead */}
-      <div className="flex justify-between items-start border-b-2 border-emerald-600 pb-5 gap-6">
-        <div className="space-y-1.5 text-left flex-1 font-sans">
-          <div className="flex items-center gap-3">
+      <div 
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'start',
+          borderBottom: '2px solid #0f766e',
+          paddingBottom: '20px',
+          gap: '24px'
+        }}
+        className="print-safe"
+      >
+        <div style={{ textAlign: 'left', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {renderHospitalLogo()}
             <div>
-              <h2 className="text-lg font-black tracking-tight text-slate-900 uppercase leading-none">
+              <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#111827', textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>
                 {prescription.hospital.name}
               </h2>
-              <p className="text-[9px] text-emerald-650 font-bold uppercase tracking-wider mt-1">
+              <p style={{ fontSize: '9px', color: '#0f766e', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '4px', margin: 0 }}>
                 Registered Clinic & Hospital
               </p>
             </div>
           </div>
-          <p className="text-[10px] text-slate-500 font-semibold max-w-sm leading-relaxed mt-2">
+          <p style={{ fontSize: '10px', color: '#4b5563', fontWeight: 600, maxWidth: '384px', lineHeight: 1.625, marginTop: '8px', margin: 0 }}>
             {prescription.hospital.address}, {prescription.hospital.city}, {prescription.hospital.state} - {prescription.hospital.pincode || ''}
           </p>
-          <p className="text-[9px] text-slate-400 font-semibold leading-none pt-0.5">
+          <p style={{ fontSize: '9px', color: '#6b7280', fontWeight: 600, margin: 0 }}>
             Phone: {prescription.hospital.phone} | Email: {prescription.hospital.email || 'contact@hosp.com'}
           </p>
         </div>
-        <div className="text-right space-y-1 shrink-0 bg-slate-50 p-3 rounded-xl border border-slate-200/50 print:bg-white print:border-none print:p-0 font-sans">
-          <span className="inline-block text-[8px] font-black tracking-wider uppercase bg-emerald-500 text-white px-2.5 py-0.5 rounded-full font-sans">
+
+        <div 
+          style={{
+            textAlign: 'right',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            flexShrink: 0,
+            backgroundColor: '#f9fafb',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            padding: '12px'
+          }}
+          className="print-safe"
+        >
+          <span 
+            style={{
+              display: 'inline-block',
+              alignSelf: 'end',
+              fontSize: '8px',
+              fontWeight: 900,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              backgroundColor: '#10b981',
+              color: '#ffffff',
+              padding: '2px 10px',
+              borderRadius: '9999px'
+            }}
+          >
             PRESCRIPTION
           </span>
-          <p className="text-[10px] text-slate-600 font-bold mt-1.5">RX-ID: #{prescription.id}</p>
-          <p className="text-[10px] text-slate-500 font-bold">Date: {prescription.prescriptionDate}</p>
-          <p className="text-[10px] text-slate-500 font-bold">
+          <p style={{ fontSize: '10px', color: '#374151', fontWeight: 'bold', marginTop: '6px', margin: 0 }}>
+            RX-ID: #{prescription.id}
+          </p>
+          <p style={{ fontSize: '10px', color: '#4b5563', fontWeight: 'bold', margin: 0 }}>
+            Date: {prescription.prescriptionDate}
+          </p>
+          <p style={{ fontSize: '10px', color: '#4b5563', fontWeight: 'bold', margin: 0 }}>
             Time: {prescription.createdAt 
               ? new Date(prescription.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
               : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -102,33 +180,64 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
         </div>
       </div>
 
-      {/* Doctor and Patient particulars (No Avatars, only details) */}
-      <div className="prescription-grid-2 grid grid-cols-2 gap-6 bg-slate-50/50 p-4 border border-slate-200/60 rounded-xl print:bg-white print:p-0 print:border-none">
+      {/* Doctor and Patient particulars (No Avatars) */}
+      <div 
+        className="prescription-grid-2 print-safe"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '24px',
+          backgroundColor: '#fafafa',
+          padding: '16px',
+          border: '1px solid #f3f4f6',
+          borderRadius: '12px',
+          marginTop: '24px'
+        }}
+      >
         {/* Doctor Info */}
-        <div className="space-y-1.5 text-left text-[11px] font-semibold text-slate-500 font-sans">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-sans">Practitioner Details</p>
-          <div className="space-y-0.5">
-            <h4 className="font-extrabold text-slate-800 text-xs">
+        <div style={{ textAlign: 'left', fontSize: '11px', fontWeight: 600, color: '#4b5563', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <p style={{ fontSize: '9px', fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+            Practitioner Details
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <h4 style={{ fontWeight: 800, color: '#1f2937', fontSize: '12px', margin: 0 }}>
               Dr. {prescription.doctor.user?.firstName} {prescription.doctor.user?.lastName}
             </h4>
-            <p className="text-emerald-650 font-bold text-[9px] uppercase tracking-wide leading-none mt-0.5">
+            <p style={{ color: '#0f766e', fontWeight: 'bold', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.025em', lineHeight: 1, margin: 0 }}>
               {prescription.doctor.specialization}
             </p>
-            <p className="text-slate-500 font-medium text-[9px] mt-0.5">
+            <p style={{ color: '#6b7280', fontWeight: 500, fontSize: '9px', margin: 0 }}>
               {prescription.doctor.qualification || 'MBBS, MD'} | LIC: {prescription.doctor.licenseNumber}
             </p>
           </div>
         </div>
 
         {/* Patient Info */}
-        <div className="space-y-1.5 text-left text-[11px] font-semibold text-slate-500 border-l border-slate-200/80 pl-6 print:border-l print:pl-6 font-sans">
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1 font-sans">Patient Details</p>
-          <div className="space-y-0.5">
-            <h4 className="font-extrabold text-slate-800 text-xs">
+        <div 
+          style={{
+            textAlign: 'left',
+            fontSize: '11px',
+            fontWeight: 600,
+            color: '#4b5563',
+            borderLeft: '1px solid #e5e7eb',
+            paddingLeft: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}
+          className="print-safe"
+        >
+          <p style={{ fontSize: '9px', fontWeight: 'bold', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+            Patient Details
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <h4 style={{ fontWeight: 800, color: '#1f2937', fontSize: '12px', margin: 0 }}>
               {prescription.patient.user?.firstName} {prescription.patient.user?.lastName}
             </h4>
-            <p className="text-slate-600 font-medium text-[9px] mt-0.5">Patient ID: #{prescription.patient.id}</p>
-            <p className="text-slate-500 font-medium text-[9px]">
+            <p style={{ color: '#374151', fontWeight: 500, fontSize: '9px', margin: 0 }}>
+              Patient ID: #{prescription.patient.id}
+            </p>
+            <p style={{ color: '#4b5563', fontWeight: 500, fontSize: '9px', margin: 0 }}>
               Age: {getAge(prescription.patient.dateOfBirth)} | Gender: {prescription.patient.gender}
             </p>
           </div>
@@ -137,42 +246,63 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
 
       {/* Diagnosis */}
       {prescription.notes && (
-        <div className="space-y-1.5 text-[11px] pt-1 text-left font-sans">
-          <h4 className="font-extrabold text-slate-800 uppercase text-[9px] tracking-wider flex items-center gap-1.5">
-            <HeartPulse className="w-4 h-4 text-emerald-500" />
+        <div style={{ paddingTop: '4px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '24px' }}>
+          <h4 style={{ color: '#1f2937', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+            <HeartPulse style={{ width: '16px', height: '16px', color: '#10b981' }} />
             <span>Clinical Assessment / Diagnosis</span>
           </h4>
-          <p className="text-slate-700 font-medium bg-slate-50/50 p-3 rounded-lg border border-slate-200/50 leading-relaxed print:bg-white print:p-0 print:border-none">
+          <p 
+            style={{
+              color: '#374151',
+              fontSize: '11px',
+              fontWeight: 500,
+              backgroundColor: '#fafafa',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #f3f4f6',
+              lineHeight: 1.625,
+              margin: 0
+            }}
+            className="print-safe"
+          >
             {prescription.notes}
           </p>
         </div>
       )}
 
       {/* Rx Medicines List */}
-      <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1.5 flex items-center gap-1.5 text-left font-sans">
-          <span className="font-serif italic text-base text-emerald-600 font-black">℞</span>
+      <div style={{ paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
+        <h3 style={{ color: '#111827', fontSize: '12px', fontWeight: 900, letterSpacing: '0.05em', borderBottom: '1px solid #e5e7eb', paddingBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0, textAlign: 'left' }}>
+          <span style={{ color: '#059669', fontSize: '16px', fontWeight: 900, fontFamily: 'Georgia, serif' }}>℞</span>
           <span>Prescribed Medications</span>
         </h3>
         
-        <table className="prescription-table w-full border-collapse text-left text-[11px] font-sans">
+        <table 
+          className="prescription-table"
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: '11px',
+            textAlign: 'left'
+          }}
+        >
           <thead>
-            <tr className="border-b border-slate-250 bg-slate-100/50 print:bg-slate-50">
-              <th className="py-2.5 px-3 font-extrabold text-slate-700 w-1/3">Drug Name</th>
-              <th className="py-2.5 px-3 font-extrabold text-slate-700">Dosage</th>
-              <th className="py-2.5 px-3 font-extrabold text-slate-700">Frequency</th>
-              <th className="py-2.5 px-3 font-extrabold text-slate-700">Duration</th>
-              <th className="py-2.5 px-3 font-extrabold text-slate-700">Instructions</th>
+            <tr style={{ borderBottom: '2px solid #d1d5db', backgroundColor: '#f3f4f6' }} className="print-safe">
+              <th style={{ padding: '10px 12px', fontWeight: 800, color: '#374151', width: '33.33%' }}>Drug Name</th>
+              <th style={{ padding: '10px 12px', fontWeight: 800, color: '#374151' }}>Dosage</th>
+              <th style={{ padding: '10px 12px', fontWeight: 800, color: '#374151' }}>Frequency</th>
+              <th style={{ padding: '10px 12px', fontWeight: 800, color: '#374151' }}>Duration</th>
+              <th style={{ padding: '10px 12px', fontWeight: 800, color: '#374151' }}>Instructions</th>
             </tr>
           </thead>
           <tbody>
             {medicines.map((med, idx) => (
-              <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/50">
-                <td className="py-2.5 px-3 font-bold text-slate-800">{med.name}</td>
-                <td className="py-2.5 px-3 text-slate-600 font-medium">{med.dosage || 'As directed'}</td>
-                <td className="py-2.5 px-3 text-slate-600 font-medium">{med.frequency || 'N/A'}</td>
-                <td className="py-2.5 px-3 text-slate-600 font-medium">{med.duration || 'N/A'}</td>
-                <td className="py-2.5 px-3 text-slate-500 font-medium italic">{med.instructions || 'N/A'}</td>
+              <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }} className="print-safe">
+                <td style={{ padding: '10px 12px', fontWeight: 'bold', color: '#1f2937' }}>{med.name}</td>
+                <td style={{ padding: '10px 12px', color: '#4b5563', fontWeight: 500 }}>{med.dosage || 'As directed'}</td>
+                <td style={{ padding: '10px 12px', color: '#4b5563', fontWeight: 500 }}>{med.frequency || 'N/A'}</td>
+                <td style={{ padding: '10px 12px', color: '#4b5563', fontWeight: 500 }}>{med.duration || 'N/A'}</td>
+                <td style={{ padding: '10px 12px', color: '#6b7280', fontStyle: 'italic', fontWeight: 500 }}>{med.instructions || 'N/A'}</td>
               </tr>
             ))}
           </tbody>
@@ -180,41 +310,113 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
       </div>
 
       {/* Instructions and notes */}
-      <div className="prescription-grid-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-200 print:grid-cols-2 text-left font-sans">
-        <div className="space-y-1.5 text-[11px]">
-          <h4 className="font-extrabold text-slate-800 uppercase text-[9px] tracking-wider">General Timing Guidelines</h4>
-          <p className="text-slate-600 font-medium bg-slate-50/50 p-3 rounded-lg border border-slate-200/50 leading-relaxed print:bg-white print:p-0 print:border-none">
+      <div 
+        className="prescription-grid-2 print-safe"
+        style={{
+          borderTop: '1px solid #e5e7eb',
+          paddingTop: '16px',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '24px',
+          marginTop: '24px',
+          textAlign: 'left'
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <h4 style={{ color: '#1f2937', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+            General Timing Guidelines
+          </h4>
+          <p 
+            style={{
+              color: '#4b5563',
+              fontSize: '11px',
+              fontWeight: 500,
+              backgroundColor: '#fafafa',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #f3f4f6',
+              lineHeight: 1.625,
+              margin: 0
+            }}
+            className="print-safe"
+          >
             {prescription.dosage || 'Follow detailed medicines chart timings.'}
           </p>
         </div>
 
-        <div className="space-y-1.5 text-[11px]">
-          <h4 className="font-extrabold text-slate-800 uppercase text-[9px] tracking-wider">Additional Doctor Instructions</h4>
-          <p className="text-slate-600 font-medium bg-slate-50/50 p-3 rounded-lg border border-slate-200/50 leading-relaxed print:bg-white print:p-0 print:border-none">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <h4 style={{ color: '#1f2937', fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+            Additional Doctor Instructions
+          </h4>
+          <p 
+            style={{
+              color: '#4b5563',
+              fontSize: '11px',
+              fontWeight: 500,
+              backgroundColor: '#fafafa',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #f3f4f6',
+              lineHeight: 1.625,
+              margin: 0
+            }}
+            className="print-safe"
+          >
             {prescription.instructions || 'Keep out of reach of children. Store in dry place.'}
           </p>
         </div>
       </div>
 
       {/* Doctor Signature Block */}
-      <div className="pt-10 flex justify-between items-end gap-6 text-[10px] font-semibold text-slate-400 text-left font-sans">
-        <div className="flex items-center gap-6">
-          <div className="space-y-0.5">
-            <p className="text-slate-500 font-bold">Generated by MediFlow</p>
-            <p className="text-slate-400 italic">Secure Transaction Signature Authenticated</p>
+      <div 
+        style={{
+          paddingTop: '40px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          gap: '24px',
+          fontSize: '10px',
+          color: '#9ca3af',
+          fontWeight: 600,
+          marginTop: '24px'
+        }}
+        className="print-safe"
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>
+            <p style={{ color: '#4b5563', fontWeight: 'bold', margin: 0 }}>Generated by MediFlow</p>
+            <p style={{ color: '#9ca3af', fontStyle: 'italic', margin: 0 }}>Secure Transaction Signature Authenticated</p>
           </div>
           {/* Hospital Seal */}
-          <div className="w-16 h-16 border-2 border-dashed border-slate-350 rounded-full flex flex-col items-center justify-center text-center shrink-0 p-1 bg-slate-50/50 print:bg-white">
-            <span className="text-[8px] font-black text-slate-400 tracking-wider uppercase leading-none">HOSPITAL</span>
-            <span className="text-[8px] font-black text-slate-400 tracking-wider uppercase leading-none mt-0.5">SEAL</span>
+          <div 
+            style={{
+              width: '64px',
+              height: '64px',
+              border: '2px dashed #cbd5e1',
+              borderRadius: '9999px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              padding: '4px',
+              backgroundColor: '#fafafa',
+              flexShrink: 0
+            }}
+            className="print-safe"
+          >
+            <span style={{ fontSize: '8px', fontWeight: 900, color: '#9ca3af', letterSpacing: '0.05em', lineHeight: 1 }}>HOSPITAL</span>
+            <span style={{ fontSize: '8px', fontWeight: 900, color: '#9ca3af', letterSpacing: '0.05em', lineHeight: 1, marginTop: '2px' }}>SEAL</span>
           </div>
         </div>
-        <div className="text-center space-y-1 w-44 shrink-0 font-sans">
-          <div className="h-0.5 bg-slate-300 w-full" />
-          <p className="font-extrabold text-slate-700 text-xs">
+        <div style={{ textAlign: 'center', width: '176px', flexShrink: 0 }}>
+          <div style={{ height: '2px', backgroundColor: '#cbd5e1', width: '100%', marginBottom: '4px' }} className="print-safe" />
+          <p style={{ color: '#374151', fontSize: '12px', fontWeight: 800, margin: 0 }}>
             Dr. {prescription.doctor.user?.firstName} {prescription.doctor.user?.lastName}
           </p>
-          <p className="text-[9px] text-slate-400 uppercase font-black font-sans font-sans">Authorized Signature</p>
+          <p style={{ color: '#9ca3af', fontSize: '9px', fontWeight: 950, letterSpacing: '0.05em', textTransform: 'uppercase', margin: 0 }}>
+            Authorized Signature
+          </p>
         </div>
       </div>
     </div>
