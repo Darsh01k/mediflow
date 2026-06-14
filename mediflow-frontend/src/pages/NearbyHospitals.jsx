@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
-import { Card, CardContent } from '../components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
@@ -13,16 +14,40 @@ import {
   Navigation2, 
   Search, 
   Map, 
-  Compass
+  Compass,
+  Users,
+  Clock,
+  DollarSign,
+  Briefcase,
+  GraduationCap
 } from 'lucide-react';
 
 const NearbyHospitals = () => {
+  const navigate = useNavigate();
   const [city, setCity] = useState('');
   const [coords, setCoords] = useState(null);
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const [selectedHospitalForDoctors, setSelectedHospitalForDoctors] = useState(null);
+  const [hospitalDoctors, setHospitalDoctors] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+
+  const handleViewDoctors = async (hosp) => {
+    setSelectedHospitalForDoctors(hosp);
+    setLoadingDoctors(true);
+    try {
+      const response = await API.get(`/doctors/hospital/${hosp.id}`);
+      setHospitalDoctors(response.data);
+    } catch (err) {
+      console.error("Failed to load approved doctors", err);
+      setHospitalDoctors([]);
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
 
   // Initial load showing all hospitals
   useEffect(() => {
@@ -221,29 +246,142 @@ const NearbyHospitals = () => {
                     </div>
                   )}
 
-                  {hosp.latitude && hosp.longitude ? (
-                    <a 
-                      href={`https://www.google.com/maps/search/?api=1&query=${hosp.latitude},${hosp.longitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 rounded-lg transition-colors border border-emerald-100 cursor-pointer"
+                  <div className="flex flex-wrap md:flex-col gap-2 w-full md:w-auto">
+                    {hosp.latitude && hosp.longitude ? (
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${hosp.latitude},${hosp.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 rounded-lg transition-colors border border-emerald-100 cursor-pointer w-full"
+                      >
+                        <Map className="w-3.5 h-3.5" />
+                        <span>Open in Maps</span>
+                      </a>
+                    ) : (
+                      <button 
+                        disabled
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-slate-400 bg-slate-50 rounded-lg border border-slate-150 cursor-not-allowed w-full"
+                      >
+                        <Map className="w-3.5 h-3.5" />
+                        <span>No Coordinates</span>
+                      </button>
+                    )}
+
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      icon={Users}
+                      onClick={() => handleViewDoctors(hosp)}
+                      className="w-full justify-center"
                     >
-                      <Map className="w-3.5 h-3.5" />
-                      <span>Open in Maps</span>
-                    </a>
-                  ) : (
-                    <button 
-                      disabled
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-slate-400 bg-slate-50 rounded-lg border border-slate-150 cursor-not-allowed"
-                    >
-                      <Map className="w-3.5 h-3.5" />
-                      <span>No Coordinates</span>
-                    </button>
-                  )}
+                      View Doctors
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Hospital Doctors View Modal */}
+      {selectedHospitalForDoctors && (
+        <div className="fixed inset-0 bg-slate-900/55 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-3xl shadow-xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh] flex flex-col">
+            <CardHeader className="flex flex-row justify-between items-center border-b pb-3 shrink-0">
+              <div>
+                <CardTitle className="text-base font-bold text-slate-800">{selectedHospitalForDoctors.name}</CardTitle>
+                <CardDescription className="text-xs font-semibold">Available Medical Practitioners & Booking</CardDescription>
+              </div>
+              <button 
+                onClick={() => setSelectedHospitalForDoctors(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-sm shrink-0 cursor-pointer"
+              >
+                ✕
+              </button>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4 overflow-y-auto flex-1 bg-slate-50/50">
+              {/* Hospital Mini Header */}
+              <div className="flex items-start gap-4 bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm">
+                <HealthAvatar avatarId={selectedHospitalForDoctors.logoAvatar || 'hospital_1'} className="w-16 h-16 rounded-xl border border-slate-200" />
+                <div className="space-y-1">
+                  <h3 className="font-extrabold text-slate-800 text-sm">{selectedHospitalForDoctors.name}</h3>
+                  <p className="text-xs text-slate-500 font-semibold">{selectedHospitalForDoctors.address}, {selectedHospitalForDoctors.city}, {selectedHospitalForDoctors.state}</p>
+                  {selectedHospitalForDoctors.phone && (
+                    <p className="text-[11px] text-slate-400 font-bold flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{selectedHospitalForDoctors.phone}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Doctors Section */}
+              <div>
+                <h4 className="text-[11px] font-black tracking-wider text-slate-400 uppercase mb-3">Approved Doctors</h4>
+                {loadingDoctors ? (
+                  <div className="py-12 flex flex-col items-center justify-center gap-2 bg-white rounded-xl border border-slate-200/60">
+                    <Spinner />
+                    <p className="text-xs text-slate-400 font-semibold text-center">Retrieving practitioners list...</p>
+                  </div>
+                ) : hospitalDoctors.length === 0 ? (
+                  <div className="p-8 text-center bg-white rounded-xl border border-slate-200 border-dashed">
+                    <p className="text-slate-500 font-bold text-xs">No approved doctors found in this hospital.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {hospitalDoctors.map((doc) => (
+                      <div key={doc.id} className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm hover:border-slate-300 transition-all">
+                        <div className="flex items-start gap-4">
+                          <HealthAvatar avatarId={doc.user?.avatarId || 'doctor_1'} className="w-12 h-12 rounded-full border border-slate-200" />
+                          <div className="space-y-1 text-xs">
+                            <h5 className="font-bold text-slate-800">Dr. {doc.user?.firstName} {doc.user?.lastName}</h5>
+                            <span className="inline-block text-[9px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase tracking-wider">{doc.specialization}</span>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 pt-1.5 font-semibold text-slate-500">
+                              {doc.qualification && (
+                                <p className="flex items-center gap-1">
+                                  <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span>{doc.qualification}</span>
+                                </p>
+                              )}
+                              {doc.experience !== undefined && (
+                                <p className="flex items-center gap-1">
+                                  <Briefcase className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span>{doc.experience} Years Exp</span>
+                                </p>
+                              )}
+                              <p className="flex items-center gap-1 text-emerald-650">
+                                <DollarSign className="w-3.5 h-3.5 shrink-0" />
+                                <span>Fee: ${doc.consultationFee}</span>
+                              </p>
+                              {doc.availability && (
+                                <p className="col-span-1 md:col-span-2 flex items-start gap-1">
+                                  <Clock className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
+                                  <span className="leading-relaxed">{doc.availability}</span>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="shrink-0 flex items-center">
+                          <Button 
+                            variant="primary" 
+                            size="sm" 
+                            onClick={() => navigate(`/book-appointment?doctorId=${doc.id}`)}
+                            className="w-full sm:w-auto"
+                          >
+                            Book Appointment
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
