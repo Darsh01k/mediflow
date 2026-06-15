@@ -28,12 +28,48 @@ import {
   Zap,
   CheckCircle,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Clock
 } from 'lucide-react';
 
 import CityAutocomplete from '../components/ui/CityAutocomplete';
 import { formatINR } from '../utils/currency';
 
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-center space-y-4 my-8">
+          <h3 className="text-sm font-bold text-rose-800">Something went wrong with the registration form</h3>
+          <p className="text-xs text-rose-600 font-semibold">{this.state.error?.message || "An unexpected rendering error occurred."}</p>
+          <button 
+            type="button"
+            onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
+            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors"
+          >
+            Reload Registration Page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const Register = () => {
   const { register } = useAuth();
@@ -813,16 +849,16 @@ const Register = () => {
                   <label className="block font-bold text-slate-500 uppercase tracking-wide">Available Days</label>
                   <div className="flex flex-wrap gap-2">
                     {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
-                      const selected = availDays.includes(day);
+                      const selected = (availDays || []).includes(day);
                       return (
                         <button
                           key={day}
                           type="button"
                           onClick={() => {
                             if (selected) {
-                              setAvailDays(availDays.filter(d => d !== day));
+                              setAvailDays((availDays || []).filter(d => d !== day));
                             } else {
-                              setAvailDays([...availDays, day]);
+                              setAvailDays([...(availDays || []), day]);
                             }
                           }}
                           className={`px-3 py-1.5 rounded-xl border font-bold text-xs cursor-pointer transition-all ${
@@ -1057,7 +1093,7 @@ const Register = () => {
                     <div className="col-span-2">
                       <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Availability</span>
                       <span className="text-slate-800 font-bold">
-                        {availDays.join(', ') && availTime ? `${availDays.join(', ')}: ${availTime}` : availDays.join(', ') || availTime || 'Not specified'}
+                        {(availDays || []).join(', ') && availTime ? `${(availDays || []).join(', ')}: ${availTime}` : (availDays || []).join(', ') || availTime || 'Not specified'}
                       </span>
                     </div>
                   </>
@@ -1280,46 +1316,48 @@ const Register = () => {
             )}
 
             {/* Step Content */}
-            <form onSubmit={(e) => { e.preventDefault(); if (step === 4) { handleSubmit(e); } else { handleNext(); } }} className="flex flex-col flex-grow relative">
-              
-              <div className="pb-16 flex-grow">
-                {renderStepContent()}
-              </div>
-
-              {/* Action Buttons (Sticky Footer) */}
-              <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-slate-150 py-4 px-8 sm:px-10 -mx-8 sm:-mx-10 z-20 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.05)] flex items-center justify-between rounded-b-2xl">
-                {step > 1 && (
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    disabled={loading}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all cursor-pointer border border-slate-200 disabled:opacity-50"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Back</span>
-                  </button>
-                )}
+            <ErrorBoundary>
+              <form onSubmit={(e) => { e.preventDefault(); if (step === 4) { handleSubmit(e); } else { handleNext(); } }} className="flex flex-col flex-grow relative">
                 
-                {step < 4 ? (
-                  <button
-                    type="button"
-                    onClick={handleNext}
-                    className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-500 to-indigo-650 hover:from-emerald-450 hover:to-indigo-550 rounded-xl transition-all cursor-pointer shadow-md shadow-indigo-500/10 hover:-translate-y-0.5 ml-auto"
-                  >
-                    <span>Continue</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                ) : (
-                  <Button
-                    type="submit"
-                    loading={loading}
-                    className="rounded-xl from-emerald-500 to-primary-600 hover:from-emerald-450 hover:to-primary-550 text-white font-bold text-xs py-2.5 px-6 shadow-md shadow-primary-500/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ml-auto"
-                  >
-                    {role === 'PATIENT' ? 'Create Account' : role === 'DOCTOR' ? 'Register Doctor' : 'Register Hospital'}
-                  </Button>
-                )}
-              </div>
-            </form>
+                <div className="pb-16 flex-grow">
+                  {renderStepContent()}
+                </div>
+
+                {/* Action Buttons (Sticky Footer) */}
+                <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-slate-150 py-4 px-8 sm:px-10 -mx-8 sm:-mx-10 z-20 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.05)] flex items-center justify-between rounded-b-2xl">
+                  {step > 1 && (
+                    <button
+                      type="button"
+                      onClick={handleBack}
+                      disabled={loading}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all cursor-pointer border border-slate-200 disabled:opacity-50"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back</span>
+                    </button>
+                  )}
+                  
+                  {step < 4 ? (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-500 to-indigo-655 hover:from-emerald-450 hover:to-indigo-555 rounded-xl transition-all cursor-pointer shadow-md shadow-indigo-505/10 hover:-translate-y-0.5 ml-auto"
+                    >
+                      <span>Continue</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      loading={loading}
+                      className="rounded-xl from-emerald-500 to-primary-600 hover:from-emerald-450 hover:to-primary-550 text-white font-bold text-xs py-2.5 px-6 shadow-md shadow-primary-500/10 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ml-auto"
+                    >
+                      {role === 'PATIENT' ? 'Create Account' : role === 'DOCTOR' ? 'Register Doctor' : 'Register Hospital'}
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </ErrorBoundary>
 
             {/* Return to Login link (Step 1 only) */}
             {step === 1 && (
