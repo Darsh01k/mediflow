@@ -14,7 +14,7 @@ import {
   Lock, 
   Mail, 
   CreditCard, 
-  DollarSign, 
+  IndianRupee, 
   Calendar, 
   MapPin, 
   Phone,
@@ -31,14 +31,9 @@ import {
   ArrowLeft
 } from 'lucide-react';
 
-const locationsList = [
-  { city: 'Ahmedabad', state: 'Gujarat', country: 'India' },
-  { city: 'Surat', state: 'Gujarat', country: 'India' },
-  { city: 'Rajkot', state: 'Gujarat', country: 'India' },
-  { city: 'Vadodara', state: 'Gujarat', country: 'India' },
-  { city: 'Mumbai', state: 'Maharashtra', country: 'India' },
-  { city: 'Delhi', state: 'Delhi', country: 'India' },
-];
+import CityAutocomplete from '../components/ui/CityAutocomplete';
+import { formatINR } from '../utils/currency';
+
 
 const Register = () => {
   const { register } = useAuth();
@@ -346,33 +341,17 @@ const Register = () => {
 
               {/* Location City Selector */}
               <div className="space-y-1.5 text-xs font-semibold text-slate-655 md:col-span-2">
-                <label htmlFor="userCity" className="block font-bold text-slate-500 uppercase tracking-wide">Registered City Location</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
-                  <select
-                    id="userCity"
-                    required
-                    value={city}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setCity(val);
-                      const loc = locationsList.find(l => l.city === val);
-                      if (loc) {
-                        setState(loc.state);
-                        setCountry(loc.country);
-                      }
-                    }}
-                    disabled={loading}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 rounded-xl text-slate-800 text-sm font-medium"
-                  >
-                    <option value="" className="text-slate-400">Select City Location</option>
-                    {locationsList.map((loc) => (
-                      <option key={loc.city} value={loc.city}>
-                        {loc.city}, {loc.state}, {loc.country}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <label className="block font-bold text-slate-500 uppercase tracking-wide">Registered City Location</label>
+                <CityAutocomplete
+                  value={city ? `${city}, ${state}, ${country}` : ''}
+                  onChange={(loc) => {
+                    setCity(loc.city);
+                    setState(loc.state);
+                    setCountry(loc.country);
+                  }}
+                  disabled={loading}
+                  required
+                />
               </div>
             </div>
           </div>
@@ -766,15 +745,15 @@ const Register = () => {
 
                 {/* Consultation Fee */}
                 <div className="space-y-1.5 text-xs font-semibold text-slate-655">
-                  <label className="block font-bold text-slate-500 uppercase tracking-wide">Consultation Fee (USD)</label>
+                  <label className="block font-bold text-slate-500 uppercase tracking-wide">Consultation Fee (INR)</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <IndianRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="number"
                       required
                       min="0"
-                      step="0.01"
-                      placeholder="75.00"
+                      step="1"
+                      placeholder="500"
                       value={consultationFee}
                       onChange={(e) => setConsultationFee(e.target.value)}
                       disabled={loading}
@@ -938,7 +917,7 @@ const Register = () => {
                     </div>
                     <div>
                       <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Consultation Fee</span>
-                      <span className="text-slate-800 font-bold">${consultationFee}</span>
+                      <span className="text-slate-800 font-bold">{formatINR(consultationFee)}</span>
                     </div>
                   </>
                 )}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import { useLocation2, formatDistance } from '../context/LocationContext';
+import { formatINR } from '../utils/currency';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -18,7 +19,7 @@ import {
   Compass,
   Users,
   Clock,
-  DollarSign,
+  IndianRupee,
   Briefcase,
   GraduationCap,
   LocateFixed,
@@ -410,8 +411,8 @@ const NearbyHospitals = () => {
                                 </p>
                               )}
                               <p className="flex items-center gap-1 text-emerald-650">
-                                <DollarSign className="w-3.5 h-3.5 shrink-0" />
-                                <span>Fee: ${doc.consultationFee}</span>
+                                <IndianRupee className="w-3.5 h-3.5 shrink-0" />
+                                <span>Fee: {formatINR(doc.consultationFee)}</span>
                               </p>
                               {doc.availability && (
                                 <p className="col-span-1 md:col-span-2 flex items-start gap-1">

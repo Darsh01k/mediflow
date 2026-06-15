@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import API from '../services/api';
+import { formatINR } from '../utils/currency';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
@@ -14,7 +15,7 @@ import {
   Calendar, 
   User, 
   Stethoscope, 
-  DollarSign, 
+  IndianRupee, 
   FileQuestion,
   Hospital
 } from 'lucide-react';
@@ -255,8 +256,8 @@ const BookAppointment = () => {
                   
                   {selectedDoctorDetails.bio && <p className="text-[10px] text-slate-500 italic mt-1 font-semibold leading-normal">"{selectedDoctorDetails.bio}"</p>}
                   <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 mt-2">
-                    <DollarSign className="w-4 h-4 shrink-0" />
-                    <span>Consultation Fee: ${selectedDoctorDetails.consultationFee}</span>
+                    <IndianRupee className="w-4 h-4 shrink-0" />
+                    <span>Consultation Fee: {formatINR(selectedDoctorDetails.consultationFee)}</span>
                   </div>
                 </div>
               </div>

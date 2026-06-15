@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { Card, CardContent } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
-import { HeartPulse, Lock, User, Eye, EyeOff, ShieldCheck, Zap, CheckCircle } from 'lucide-react';
+import API from '../services/api';
+import { HeartPulse, Lock, User, Eye, EyeOff, ShieldCheck, Zap, CheckCircle, Mail } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -13,6 +14,13 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Forgot Password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [sendingForgot, setSendingForgot] = useState(false);
+  const [forgotSuccessMessage, setForgotSuccessMessage] = useState('');
+  const [forgotErrorMessage, setForgotErrorMessage] = useState('');
   
   const { login } = useAuth();
   const toast = useToast();
@@ -214,9 +222,18 @@ const Login = () => {
 
               {/* Password field with show/hide toggle */}
               <div className="space-y-1.5 w-full text-xs font-semibold text-slate-650">
-                <label htmlFor="password" className="block font-bold text-slate-500 uppercase tracking-wide">
-                  Password
-                </label>
+                <div className="flex justify-between items-center">
+                  <label htmlFor="password" className="block font-bold text-slate-500 uppercase tracking-wide">
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-[11px] font-black text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
                 <div className="relative">
                   <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                     <Lock className="w-4 h-4" />
@@ -264,6 +281,117 @@ const Login = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <CardHeader className="pb-3 border-b flex justify-between items-center bg-slate-50">
+              <div>
+                <CardTitle>Recover Password</CardTitle>
+                <CardDescription>Enter your email to verify your account</CardDescription>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForgotModal(false);
+                  setForgotEmail('');
+                  setForgotSuccessMessage('');
+                  setForgotErrorMessage('');
+                }}
+                className="text-slate-400 hover:text-slate-600 font-bold text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {forgotErrorMessage && (
+                <Alert variant="danger">
+                  {forgotErrorMessage}
+                </Alert>
+              )}
+              {forgotSuccessMessage ? (
+                <div className="space-y-4 text-center">
+                  <Alert variant="success">
+                    {forgotSuccessMessage}
+                  </Alert>
+                  <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                    Check your backend server logs to view the formatted reset email outbox!
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setShowForgotModal(false);
+                      setForgotEmail('');
+                      setForgotSuccessMessage('');
+                      setForgotErrorMessage('');
+                    }}
+                    variant="primary"
+                    className="w-full rounded-xl"
+                  >
+                    Done
+                  </Button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!forgotEmail) return;
+                    try {
+                      setSendingForgot(true);
+                      setForgotErrorMessage('');
+                      const res = await API.post('/auth/forgot-password', { email: forgotEmail });
+                      setForgotSuccessMessage(res.data.message || 'Password reset email sent successfully.');
+                    } catch (err) {
+                      setForgotErrorMessage(err.response?.data?.message || 'Failed to submit recovery request.');
+                    } finally {
+                      setSendingForgot(false);
+                    }
+                  }}
+                  className="space-y-4 text-xs font-semibold text-slate-600"
+                >
+                  <div className="space-y-1.5">
+                    <label className="block font-bold text-slate-500 uppercase tracking-wide">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="john.doe@example.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        disabled={sendingForgot}
+                        className="w-full px-4 py-2.5 pl-10 border border-slate-200 bg-white rounded-xl focus:outline-none text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end pt-3 border-t">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setShowForgotModal(false);
+                        setForgotEmail('');
+                        setForgotErrorMessage('');
+                      }}
+                      disabled={sendingForgot}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      loading={sendingForgot}
+                    >
+                      Send Reset Link
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

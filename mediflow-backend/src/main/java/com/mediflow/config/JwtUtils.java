@@ -27,10 +27,15 @@ public class JwtUtils {
     }
 
     public String generateJwtToken(Authentication authentication) {
+        return generateJwtToken(authentication, java.util.UUID.randomUUID().toString());
+    }
+
+    public String generateJwtToken(Authentication authentication, String sessionToken) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
         return Jwts.builder()
                 .subject(userPrincipal.getUsername())
+                .claim("sessionToken", sessionToken)
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key())
@@ -44,6 +49,19 @@ public class JwtUtils {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    public String getSessionTokenFromJwtToken(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(key())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("sessionToken", String.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public boolean validateJwtToken(String authToken) {

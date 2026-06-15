@@ -33,6 +33,7 @@ import Alert from '../components/ui/Alert';
 import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import { HealthAvatar, AvatarPicker } from '../components/ui/Avatar';
+import SecuritySettings from '../components/SecuritySettings';
 
 const DoctorDashboard = ({ stats, refreshStats }) => {
   const { user, updateUser } = useAuth();
@@ -388,6 +389,16 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
         >
           Modify Profile
         </button>
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+            activeTab === 'security'
+              ? 'border-emerald-500 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Security Settings
+        </button>
       </div>
 
       {/* Dynamic Tab Panels */}
@@ -714,11 +725,11 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                       onChange={(e) => setExp(e.target.value)}
                     />
                     <Input
-                      label="Consultation Fee (USD)"
+                      label="Consultation Fee (INR)"
                       required
                       type="number"
-                      step="0.01"
-                      placeholder="80.00"
+                      step="1"
+                      placeholder="500"
                       value={fee}
                       onChange={(e) => setFee(e.target.value)}
                     />
@@ -764,6 +775,10 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {activeTab === 'security' && (
+          <SecuritySettings />
         )}
 
       </div>

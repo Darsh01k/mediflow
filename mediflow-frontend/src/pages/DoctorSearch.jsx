@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import { HealthAvatar } from '../components/ui/Avatar';
+import { formatINR } from '../utils/currency';
 import { Card, CardContent } from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -13,7 +14,7 @@ import {
   Stethoscope, 
   MapPin, 
   Award, 
-  DollarSign, 
+  IndianRupee, 
   Calendar,
   Layers,
   ChevronRight
@@ -229,8 +230,8 @@ const DoctorSearch = () => {
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Consultation Fee: <strong className="text-slate-800">${doc.consultationFee}</strong></span>
+                    <IndianRupee className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Consultation Fee: <strong className="text-slate-800">{formatINR(doc.consultationFee)}</strong></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-slate-400 shrink-0" />

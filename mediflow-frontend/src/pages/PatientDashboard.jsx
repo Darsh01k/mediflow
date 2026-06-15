@@ -24,6 +24,7 @@ import Select from '../components/ui/Select';
 import Alert from '../components/ui/Alert';
 import Spinner from '../components/ui/Spinner';
 import { AvatarPicker } from '../components/ui/Avatar';
+import SecuritySettings from '../components/SecuritySettings';
 
 const PatientDashboard = ({ stats, refreshStats }) => {
   const navigate = useNavigate();
@@ -161,6 +162,16 @@ const PatientDashboard = ({ stats, refreshStats }) => {
           }`}
         >
           Modify Profile
+        </button>
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+            activeTab === 'security'
+              ? 'border-emerald-500 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Security Settings
         </button>
       </div>
 
@@ -460,6 +471,10 @@ const PatientDashboard = ({ stats, refreshStats }) => {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {activeTab === 'security' && (
+          <SecuritySettings />
         )}
 
       </div>

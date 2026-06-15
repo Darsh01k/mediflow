@@ -25,6 +25,9 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
 
+    @Autowired
+    private com.mediflow.repository.UserSessionRepository userSessionRepository;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -38,16 +41,29 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             if (jwt != null) {
                 if (jwtUtils.validateJwtToken(jwt)) {
                     String username = jwtUtils.getUserNameFromJwtToken(jwt);
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    logger.info("[AuthTokenFilter] Successfully set authentication for user: {}", username);
+                    String sessionToken = jwtUtils.getSessionTokenFromJwtToken(jwt);
+                    
+                    boolean isSessionActive = true;
+                    if (sessionToken != null) {
+                        isSessionActive = userSessionRepository.findByToken(sessionToken)
+                                .map(com.mediflow.entity.UserSession::isActive)
+                                .orElse(false);
+                    }
+
+                    if (isSessionActive) {
+                        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        logger.info("[AuthTokenFilter] Successfully set authentication for user: {} with session active: {}", username, isSessionActive);
+                    } else {
+                        logger.warn("[AuthTokenFilter] Session token {} is inactive/revoked in database for user: {}", sessionToken, username);
+                    }
                 } else {
                     logger.warn("[AuthTokenFilter] Invalid JWT token for request: {}", requestURI);
                 }

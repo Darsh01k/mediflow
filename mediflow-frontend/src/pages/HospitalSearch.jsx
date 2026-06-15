@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import API from '../services/api';
 import { useLocation2, formatDistance } from '../context/LocationContext';
+import { formatINR } from '../utils/currency';
 import { HealthAvatar } from '../components/ui/Avatar';
 import { Card, CardContent } from '../components/ui/Card';
 import Input from '../components/ui/Input';
@@ -299,7 +300,7 @@ const HospitalSearch = () => {
                           Dr. {doc.user.firstName} {doc.user.lastName}
                         </h4>
                         <p className="text-[10px] text-emerald-600 font-bold">{doc.specialization}</p>
-                        <p className="text-[9px] text-slate-400 font-semibold">{doc.experience || 0} yrs exp • Fee: ${doc.consultationFee}</p>
+                        <p className="text-[9px] text-slate-400 font-semibold">{doc.experience || 0} yrs exp • Fee: {formatINR(doc.consultationFee)}</p>
                         <button
                           onClick={() => {
                             setSelectedHospital(null);

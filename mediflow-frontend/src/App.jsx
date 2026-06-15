@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './layouts/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import DoctorManagement from './pages/DoctorManagement';
 import PatientManagement from './pages/PatientManagement';
@@ -32,6 +33,7 @@ function App() {
             {/* Public Authentication Views */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Private Portal Views */}
             <Route path="/" element={

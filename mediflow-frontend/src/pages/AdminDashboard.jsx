@@ -17,6 +17,7 @@ import {
   CreditCard
 } from 'lucide-react';
 import API from '../services/api';
+import { formatINR } from '../utils/currency';
 import { useToast } from '../context/ToastContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Table, THead, TBody, TR, TH, TD } from '../components/ui/Table';
@@ -24,6 +25,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Alert from '../components/ui/Alert';
+import SecuritySettings from '../components/SecuritySettings';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 
@@ -31,6 +33,7 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 
 const AdminDashboard = ({ stats, refreshStats }) => {
   const toast = useToast();
+  const [activeTab, setActiveTab] = useState('overview');
   const [doctors, setDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
   const [showAddDoctor, setShowAddDoctor] = useState(false);
@@ -170,8 +173,34 @@ const AdminDashboard = ({ stats, refreshStats }) => {
 
   return (
     <div className="space-y-8">
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+            activeTab === 'overview'
+              ? 'border-emerald-500 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          System Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+            activeTab === 'security'
+              ? 'border-emerald-500 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Security Settings
+        </button>
+      </div>
+
+      {activeTab === 'overview' && (
+        <>
+          {/* Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-650 shrink-0">
@@ -304,7 +333,7 @@ const AdminDashboard = ({ stats, refreshStats }) => {
                     onChange={(e) => setLicenseNumber(e.target.value)}
                   />
                   <Input
-                    type="number" placeholder="Consultation Fee ($)" required value={consultationFee}
+                    type="number" placeholder="Consultation Fee (INR)" required value={consultationFee}
                     onChange={(e) => setConsultationFee(e.target.value)}
                     className="col-span-2"
                   />
@@ -344,7 +373,7 @@ const AdminDashboard = ({ stats, refreshStats }) => {
                       Dr. {doc.user?.firstName} {doc.user?.lastName}
                     </TD>
                     <TD className="text-slate-500 font-medium">{doc.specialization}</TD>
-                    <TD className="text-right font-bold text-slate-700">${doc.consultationFee}</TD>
+                    <TD className="text-right font-bold text-slate-700">{formatINR(doc.consultationFee)}</TD>
                     <TD className="text-center">
                       <button
                         onClick={() => handleDeleteDoctor(doc.id)}
@@ -402,6 +431,12 @@ const AdminDashboard = ({ stats, refreshStats }) => {
         </Card>
 
       </div>
+      </>
+      )}
+
+      {activeTab === 'security' && (
+        <SecuritySettings />
+      )}
     </div>
   );
 };

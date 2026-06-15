@@ -19,6 +19,7 @@ import {
 import API from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { formatINR } from '../utils/currency';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Table, THead, TBody, TR, TH, TD } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
@@ -29,6 +30,7 @@ import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import { HealthAvatar, AvatarPicker } from '../components/ui/Avatar';
 import AddressAutocomplete from '../components/ui/AddressAutocomplete';
+import SecuritySettings from '../components/SecuritySettings';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title as ChartTitle } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 
@@ -288,6 +290,16 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
         >
           Manage Profile
         </button>
+        <button
+          onClick={() => setActiveTab('security')}
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+            activeTab === 'security'
+              ? 'border-emerald-500 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Security Settings
+        </button>
       </div>
 
       {/* Tab Content */}
@@ -440,7 +452,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                         <TD className="text-xs font-medium text-slate-500">
                           {doc.experience ? `${doc.experience} Years` : 'N/A'}
                         </TD>
-                        <TD className="font-bold text-slate-700">${doc.consultationFee}</TD>
+                        <TD className="font-bold text-slate-700">{formatINR(doc.consultationFee)}</TD>
                         <TD className="text-center">
                           <Badge variant={getStatusBadgeVariant(doc.status)}>{doc.status}</Badge>
                         </TD>
@@ -681,6 +693,10 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {activeTab === 'security' && (
+          <SecuritySettings />
         )}
 
       </div>

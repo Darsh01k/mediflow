@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import API from '../services/api';
+import { formatINR } from '../utils/currency';
 import { useToast } from '../context/ToastContext';
 import { 
   Stethoscope, 
@@ -8,7 +9,7 @@ import {
   Mail, 
   User, 
   Lock,
-  DollarSign, 
+  IndianRupee, 
   CreditCard,
   AlertCircle
 } from 'lucide-react';
@@ -227,15 +228,15 @@ const DoctorManagement = () => {
               />
 
               <Input
-                label="Consultation Fee (USD)"
+                label="Consultation Fee (INR)"
                 type="number"
                 required
                 min="0"
-                step="0.01"
-                placeholder="75.00"
+                step="1"
+                placeholder="500"
                 value={consultationFee}
                 onChange={(e) => setConsultationFee(e.target.value)}
-                icon={DollarSign}
+                icon={IndianRupee}
               />
 
               <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
@@ -299,7 +300,7 @@ const DoctorManagement = () => {
                   </TD>
                   <TD className="text-slate-500 font-medium">{doc.specialization}</TD>
                   <TD className="text-slate-500 font-mono font-medium">{doc.licenseNumber}</TD>
-                  <TD className="text-right font-bold text-slate-700">${doc.consultationFee}</TD>
+                  <TD className="text-right font-bold text-slate-700">{formatINR(doc.consultationFee)}</TD>
                   <TD className="text-center">
                     <Button
                       variant="ghost"
