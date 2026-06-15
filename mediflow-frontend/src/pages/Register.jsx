@@ -1146,7 +1146,7 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-gradient-to-tr from-indigo-50/60 via-slate-50 to-blue-50/50 relative overflow-hidden select-none">
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-gradient-to-tr from-indigo-50/60 via-slate-50 to-blue-50/50 relative overflow-y-auto md:overflow-hidden select-none">
       
       {/* Blurred background circles */}
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-300/10 rounded-full blur-3xl pointer-events-none animate-float" />
@@ -1154,7 +1154,7 @@ const Register = () => {
       <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-indigo-300/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* LEFT COLUMN: Hero Panel */}
-      <div className="flex-1 hidden md:flex flex-col justify-between p-12 lg:p-16 relative z-10 border-r border-slate-200/50 bg-white/25 backdrop-blur-[1px] animate-fade-in">
+      <div className="w-full md:w-[35%] lg:w-[30%] flex flex-col justify-between gap-8 md:gap-0 p-8 md:p-12 lg:p-16 relative z-10 border-b md:border-b-0 md:border-r border-slate-200/50 bg-white/25 backdrop-blur-[1px] animate-fade-in shrink-0 md:h-screen md:sticky md:top-0">
         
         {/* Top Branding */}
         <div className="flex items-center gap-3">
@@ -1210,27 +1210,11 @@ const Register = () => {
       </div>
 
       {/* RIGHT COLUMN: Onboarding Wizard */}
-      <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 relative z-10 overflow-y-auto max-h-screen">
+      <div className="flex-grow w-full md:flex-grow flex flex-col justify-center items-center p-4 sm:p-8 md:p-12 lg:p-16 relative z-10 md:overflow-y-auto md:h-screen">
         
-        {/* Mobile Header (Hidden on Desktop) */}
-        <div className="flex flex-col items-center text-center md:hidden mb-6 max-w-sm px-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-sm">
-              <HeartPulse className="w-5 h-5 text-emerald-600 animate-pulse" />
-            </div>
-            <span className="text-lg font-black text-slate-800 tracking-tight">MediFlow</span>
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
-            Join the Next-Gen <span className="bg-gradient-to-r from-emerald-500 to-indigo-655 bg-clip-text text-transparent">Healthcare Hub</span>
-          </h1>
-          <p className="text-slate-500 text-xs font-semibold mt-1">
-            Create an account to manage your profile.
-          </p>
-        </div>
-
         {/* Wizard Card Wrapper */}
-        <Card className="w-full max-w-2xl bg-white/75 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl shadow-slate-200/40 overflow-hidden animate-fade-in-up">
-          <CardContent className="p-8 sm:p-10">
+        <Card className="w-full max-w-2xl bg-white/75 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl shadow-slate-200/40 animate-fade-in-up relative my-6 md:my-10">
+          <CardContent className="pt-8 sm:pt-10 px-8 sm:px-10 pb-0 flex flex-col relative h-full">
             
             {/* Form Role Selector (Step 1 only) */}
             {step === 1 && (
@@ -1296,18 +1280,20 @@ const Register = () => {
             )}
 
             {/* Step Content */}
-            <form onSubmit={(e) => { e.preventDefault(); if (step === 4) { handleSubmit(e); } else { handleNext(); } }} className="space-y-6">
+            <form onSubmit={(e) => { e.preventDefault(); if (step === 4) { handleSubmit(e); } else { handleNext(); } }} className="flex flex-col flex-grow relative">
               
-              {renderStepContent()}
+              <div className="pb-16 flex-grow">
+                {renderStepContent()}
+              </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+              {/* Action Buttons (Sticky Footer) */}
+              <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-slate-150 py-4 px-8 sm:px-10 -mx-8 sm:-mx-10 z-20 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.05)] flex items-center justify-between rounded-b-2xl">
                 {step > 1 && (
                   <button
                     type="button"
                     onClick={handleBack}
                     disabled={loading}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-505 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all cursor-pointer border border-slate-200 disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all cursor-pointer border border-slate-200 disabled:opacity-50"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back</span>

@@ -288,18 +288,18 @@ export const AvatarPicker = ({ selectedId, onSelect, category }) => {
   const filteredAvatars = AVATARS.filter(a => a.category === targetCategory && !a.id.startsWith('avatar_'));
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4 p-4 bg-slate-800/40 rounded-xl border border-slate-750">
-        <HealthAvatar avatarId={selectedId} className="w-16 h-16" />
+    <div className="space-y-2">
+      <div className="flex items-center gap-3 p-2 bg-slate-800/30 rounded-xl border border-slate-750/50">
+        <HealthAvatar avatarId={selectedId} className="w-10 h-10" />
         <div>
-          <h4 className="text-sm font-bold text-white">Selected Avatar</h4>
-          <p className="text-xs text-slate-400 font-semibold mt-0.5">
-            This image will represent the profile across the application.
+          <h4 className="text-xs font-bold text-white leading-tight">Selected Avatar</h4>
+          <p className="text-[10px] text-slate-400 font-semibold leading-normal mt-0.5">
+            This image will represent the profile.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-5 gap-2">
         {filteredAvatars.map((avatar) => {
           const isSelected = selectedId === avatar.id;
           return (
@@ -307,14 +307,14 @@ export const AvatarPicker = ({ selectedId, onSelect, category }) => {
               key={avatar.id}
               type="button"
               onClick={() => onSelect(avatar.id)}
-              className={`relative p-1 rounded-full cursor-pointer hover:scale-105 hover:rotate-2 transition-all duration-200 border-2 ${
+              className={`relative p-0.5 rounded-full cursor-pointer hover:scale-105 transition-all duration-200 border-2 ${
                 isSelected ? 'border-emerald-500 scale-105 bg-slate-800' : 'border-transparent'
               }`}
             >
-              <HealthAvatar avatarId={avatar.id} className="w-12 h-12" />
+              <HealthAvatar avatarId={avatar.id} className="w-9 h-9" />
               {isSelected && (
-                <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-0.5 border border-slate-900">
-                  <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />
+                <div className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 rounded-full p-0.5 border border-slate-900">
+                  <Check className="w-1.5 h-1.5 text-white" strokeWidth={5} />
                 </div>
               )}
             </button>
