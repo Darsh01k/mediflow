@@ -246,11 +246,13 @@ const HospitalSearch = () => {
                 </div>
                 <Button 
                   onClick={() => openDoctorsModal(hosp)}
-                  variant="secondary" 
-                  size="xs"
-                  className="rounded-lg shadow-sm border border-slate-200"
+                  variant="primary" 
+                  size="sm"
+                  className="rounded-lg from-emerald-600 to-emerald-600 hover:from-emerald-500 hover:to-emerald-500 hover:scale-[1.01] text-white font-semibold text-xs py-1.5 px-3.5 shadow-md shadow-emerald-600/10 hover:shadow-emerald-600/20 hover:-translate-y-0.5 transition-all duration-200"
                 >
-                  View Doctors
+                  <span className="flex items-center gap-1">
+                    View Doctors <span className="text-xs font-light">→</span>
+                  </span>
                 </Button>
               </div>
             </Card>

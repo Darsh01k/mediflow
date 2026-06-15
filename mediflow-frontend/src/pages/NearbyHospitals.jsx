@@ -256,10 +256,10 @@ const NearbyHospitals = () => {
             {hospitals.length} Hospital{hospitals.length !== 1 ? 's' : ''} Found
           </p>
           {hospitals.map((hosp) => (
-            <Card key={hosp.id} className="border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden bg-white">
-              <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <Card key={hosp.id} className="border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-300 overflow-hidden bg-white">
+              <CardContent className="p-5 flex flex-col md:flex-row justify-between gap-5">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 font-bold shrink-0 shadow-sm">
                     {hosp.logoAvatar ? (
                       <HealthAvatar avatarId={hosp.logoAvatar} className="w-10 h-10 rounded-lg" />
                     ) : (
@@ -267,13 +267,18 @@ const NearbyHospitals = () => {
                     )}
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-bold text-slate-800 text-sm">{hosp.name}</h3>
+                    <h3 
+                      onClick={() => handleViewDoctors(hosp)}
+                      className="font-extrabold text-slate-800 text-sm tracking-tight hover:text-emerald-600 transition-colors cursor-pointer"
+                    >
+                      {hosp.name}
+                    </h3>
                     <p className="text-[11px] text-slate-500 font-medium leading-relaxed max-w-xl">
                       {hosp.address}, {hosp.city}, {hosp.state} - {hosp.pincode}
                     </p>
                     {hosp.phone && (
                       <p className="text-[10px] text-slate-400 font-bold flex items-center gap-1.5 pt-0.5">
-                        <Phone className="w-3.5 h-3.5" />
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
                         <span>{hosp.phone}</span>
                       </p>
                     )}
@@ -281,52 +286,47 @@ const NearbyHospitals = () => {
                 </div>
 
                 {/* Right side Actions / Distances */}
-                <div className="flex md:flex-col items-end justify-between md:justify-center gap-4 border-t md:border-t-0 border-slate-100 pt-4 md:pt-0 shrink-0">
-                  {hosp.distance !== null && hosp.distance !== undefined ? (
-                    <div className="text-right">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Estimated Distance</span>
-                      <p className="text-base font-black text-emerald-600 mt-0.5">
-                        {formatDistance(hosp.distance)}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="text-right">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Distance</span>
-                      <p className="text-xs font-bold text-slate-400 mt-0.5">
-                        Use GPS or search a city
-                      </p>
-                    </div>
+                <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end justify-between md:justify-center gap-4 border-t md:border-t-0 border-slate-100 pt-4 md:pt-0 shrink-0 w-full md:w-auto">
+                  {hosp.latitude && hosp.longitude && (
+                    hosp.distance !== null && hosp.distance !== undefined ? (
+                      <div className="text-left md:text-right">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estimated Distance</span>
+                        <p className="text-base font-extrabold text-emerald-600 mt-0.5">
+                          {formatDistance(hosp.distance)}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-left md:text-right">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Distance</span>
+                        <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                          Use GPS or search a city
+                        </p>
+                      </div>
+                    )
                   )}
 
-                  <div className="flex flex-wrap md:flex-col gap-2 w-full md:w-auto">
-                    {hosp.latitude && hosp.longitude ? (
+                  <div className="flex flex-row md:flex-col gap-2 w-full md:w-auto">
+                    {hosp.latitude && hosp.longitude && (
                       <a 
                         href={`https://www.google.com/maps/search/?api=1&query=${hosp.latitude},${hosp.longitude}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100/80 rounded-lg transition-colors border border-emerald-100 cursor-pointer w-full"
+                        className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-[11px] font-bold text-emerald-650 hover:text-emerald-705 bg-emerald-50/50 hover:bg-emerald-50 rounded-lg border border-emerald-100/60 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex-1 md:flex-none md:w-44"
                       >
-                        <Map className="w-3.5 h-3.5" />
+                        <Map className="w-3.5 h-3.5 text-emerald-500" />
                         <span>Open in Maps</span>
                       </a>
-                    ) : (
-                      <button 
-                        disabled
-                        className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[11px] font-bold text-slate-400 bg-slate-50 rounded-lg border border-slate-150 cursor-not-allowed w-full"
-                      >
-                        <Map className="w-3.5 h-3.5" />
-                        <span>No Coordinates</span>
-                      </button>
                     )}
 
                     <Button
                       variant="primary"
-                      size="xs"
-                      icon={Users}
+                      size="sm"
                       onClick={() => handleViewDoctors(hosp)}
-                      className="w-full justify-center"
+                      className="rounded-lg from-emerald-600 to-emerald-600 hover:from-emerald-500 hover:to-emerald-500 hover:scale-[1.01] text-white font-semibold text-xs tracking-wide shadow-md shadow-emerald-600/10 hover:shadow-emerald-600/20 hover:-translate-y-0.5 transition-all duration-200 flex-1 md:flex-none md:w-44 py-2"
                     >
-                      View Doctors
+                      <span className="flex items-center gap-1 justify-center">
+                        View Available Doctors <span className="ml-1 text-sm font-light">→</span>
+                      </span>
                     </Button>
                   </div>
                 </div>
