@@ -25,7 +25,7 @@ public class DtoMapper {
 
     public static HospitalDto toDto(Hospital hospital) {
         if (hospital == null) return null;
-        return new HospitalDto(
+        HospitalDto dto = new HospitalDto(
                 hospital.getId(),
                 hospital.getName(),
                 hospital.getEmail(),
@@ -41,6 +41,15 @@ public class DtoMapper {
                 hospital.getLogoAvatar(),
                 hospital.getCreatedAt()
         );
+        dto.setHospitalType(hospital.getHospitalType());
+        dto.setFacilities(hospital.getFacilities());
+        dto.setNumberOfBeds(hospital.getNumberOfBeds());
+        dto.setEmergencyServicesAvailable(
+                hospital.getEmergencyServicesAvailable() != null ? 
+                hospital.getEmergencyServicesAvailable() : false
+        );
+        dto.setWebsite(hospital.getWebsite());
+        return dto;
     }
 
     public static PatientDto toDto(Patient patient) {

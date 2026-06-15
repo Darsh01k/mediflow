@@ -78,6 +78,10 @@ const Register = () => {
   const [hospitalId, setHospitalId] = useState('');
   const [hospitalsList, setHospitalsList] = useState([]);
 
+  // Doctor availability
+  const [availDays, setAvailDays] = useState([]);
+  const [availTime, setAvailTime] = useState('09:00 AM - 05:00 PM');
+
   // Hospital Admin fields
   const [hospitalName, setHospitalName] = useState('');
   const [hospitalEmail, setHospitalEmail] = useState('');
@@ -90,6 +94,13 @@ const Register = () => {
   const [hospitalLng, setHospitalLng] = useState('');
   const [hospitalLicense, setHospitalLicense] = useState('');
   const [hospitalDesc, setHospitalDesc] = useState('');
+
+  // Hospital operational details
+  const [hospitalType, setHospitalType] = useState('General Hospital');
+  const [hospitalFacilities, setHospitalFacilities] = useState('');
+  const [hospitalNumberOfBeds, setHospitalNumberOfBeds] = useState('');
+  const [hospitalEmergencyServicesAvailable, setHospitalEmergencyServicesAvailable] = useState(false);
+  const [hospitalWebsite, setHospitalWebsite] = useState('');
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -140,7 +151,6 @@ const Register = () => {
     if (s === 3) {
       if (role === 'PATIENT') {
         if (!phone.trim()) return 'Contact phone is required';
-        if (!emergencyContact.trim()) return 'Emergency contact information is required';
       } else if (role === 'DOCTOR') {
         if (!specialization.trim()) return 'Specialization is required';
         if (!licenseNumber.trim()) return 'Medical license number is required';
@@ -212,6 +222,9 @@ const Register = () => {
       payload.experience = parseInt(experience);
       payload.languages = languages;
       payload.phone = docPhone;
+      // Combine availDays and availTime into availability
+      const selectedDaysStr = availDays.join(', ');
+      payload.availability = selectedDaysStr && availTime ? `${selectedDaysStr}: ${availTime}` : selectedDaysStr || availTime || '';
     } else if (role === 'HOSPITAL_ADMIN') {
       payload.hospitalName = hospitalName;
       payload.hospitalEmail = hospitalEmail;
@@ -225,6 +238,11 @@ const Register = () => {
       payload.hospitalLicenseNumber = hospitalLicense;
       payload.hospitalDescription = hospitalDesc;
       payload.hospitalLogoAvatar = avatarId;
+      payload.hospitalType = hospitalType;
+      payload.hospitalFacilities = hospitalFacilities;
+      payload.hospitalNumberOfBeds = hospitalNumberOfBeds ? parseInt(hospitalNumberOfBeds) : null;
+      payload.hospitalEmergencyServicesAvailable = hospitalEmergencyServicesAvailable;
+      payload.hospitalWebsite = hospitalWebsite;
     }
 
     try {
@@ -631,12 +649,11 @@ const Register = () => {
 
                 {/* Emergency Contact */}
                 <div className="space-y-1.5 text-xs font-semibold text-slate-655">
-                  <label className="block font-bold text-slate-500 uppercase tracking-wide">Emergency Contact Details</label>
+                  <label className="block font-bold text-slate-500 uppercase tracking-wide">Emergency Contact Details (Optional)</label>
                   <div className="relative">
                     <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
-                      required
                       placeholder="Jane Doe (Spouse) - +1 (555) 111-2222"
                       value={emergencyContact}
                       onChange={(e) => setEmergencyContact(e.target.value)}
@@ -790,6 +807,52 @@ const Register = () => {
                     className="w-full px-4 py-2.5 border border-slate-200 bg-white rounded-xl focus:outline-none text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 hover:border-slate-350 resize-none"
                   />
                 </div>
+
+                {/* Available Days */}
+                <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-655">
+                  <label className="block font-bold text-slate-500 uppercase tracking-wide">Available Days</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                      const selected = availDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => {
+                            if (selected) {
+                              setAvailDays(availDays.filter(d => d !== day));
+                            } else {
+                              setAvailDays([...availDays, day]);
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-xl border font-bold text-xs cursor-pointer transition-all ${
+                            selected 
+                              ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm' 
+                              : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Available Time Slots */}
+                <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-655">
+                  <label className="block font-bold text-slate-500 uppercase tracking-wide">Available Time Slots</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="e.g. 09:00 AM - 05:00 PM"
+                      value={availTime}
+                      onChange={(e) => setAvailTime(e.target.value)}
+                      disabled={loading}
+                      className="w-full pl-10 pr-4 py-2.5 border border-slate-200 bg-white rounded-xl focus:outline-none text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 hover:border-slate-350"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           );
@@ -831,6 +894,78 @@ const Register = () => {
                     disabled={loading}
                     className="w-full px-4 py-2.5 border border-slate-200 bg-white rounded-xl focus:outline-none text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 hover:border-slate-350 resize-none"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  {/* Hospital Type */}
+                  <div className="space-y-1.5 text-xs font-semibold text-slate-655">
+                    <label className="block font-bold text-slate-500 uppercase tracking-wide">Hospital Type</label>
+                    <select
+                      value={hospitalType}
+                      onChange={(e) => setHospitalType(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-slate-200 bg-white rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
+                    >
+                      <option>General Hospital</option>
+                      <option>Multi-Specialty Hospital</option>
+                      <option>Clinic</option>
+                      <option>Emergency Care</option>
+                    </select>
+                  </div>
+
+                  {/* Number of Beds */}
+                  <div className="space-y-1.5 text-xs font-semibold text-slate-655">
+                    <label className="block font-bold text-slate-500 uppercase tracking-wide">Number of Beds</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 150"
+                      value={hospitalNumberOfBeds}
+                      onChange={(e) => setHospitalNumberOfBeds(e.target.value)}
+                      disabled={loading}
+                      className="w-full px-4 py-2.5 border border-slate-200 bg-white rounded-xl focus:outline-none text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 hover:border-slate-300"
+                    />
+                  </div>
+
+                  {/* Facilities */}
+                  <div className="space-y-1.5 text-xs font-semibold text-slate-655 md:col-span-2">
+                    <label className="block font-bold text-slate-500 uppercase tracking-wide">Facilities</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. ICU, OPD, Emergency, Pharmacy, Diagnostics"
+                      value={hospitalFacilities}
+                      onChange={(e) => setHospitalFacilities(e.target.value)}
+                      disabled={loading}
+                      className="w-full px-4 py-2.5 border border-slate-200 bg-white rounded-xl focus:outline-none text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 hover:border-slate-300"
+                    />
+                  </div>
+
+                  {/* Website */}
+                  <div className="space-y-1.5 text-xs font-semibold text-slate-655 md:col-span-2">
+                    <label className="block font-bold text-slate-500 uppercase tracking-wide">Website (Optional)</label>
+                    <input
+                      type="url"
+                      placeholder="e.g. https://www.saintgrace.org"
+                      value={hospitalWebsite}
+                      onChange={(e) => setHospitalWebsite(e.target.value)}
+                      disabled={loading}
+                      className="w-full px-4 py-2.5 border border-slate-200 bg-white rounded-xl focus:outline-none text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 hover:border-slate-300"
+                    />
+                  </div>
+
+                  {/* Emergency services toggle */}
+                  <div className="space-y-1.5 text-xs font-semibold text-slate-655 md:col-span-2 flex items-center gap-2.5 pt-2">
+                    <input
+                      type="checkbox"
+                      id="emergCheckbox"
+                      checked={hospitalEmergencyServicesAvailable}
+                      onChange={(e) => setHospitalEmergencyServicesAvailable(e.target.checked)}
+                      disabled={loading}
+                      className="w-4.5 h-4.5 accent-emerald-500 border border-slate-200 rounded-md cursor-pointer focus:ring-2 focus:ring-indigo-500/15"
+                    />
+                    <label htmlFor="emergCheckbox" className="font-bold text-slate-655 cursor-pointer select-none">
+                      24/7 Emergency Services Available
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -919,6 +1054,12 @@ const Register = () => {
                       <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Consultation Fee</span>
                       <span className="text-slate-800 font-bold">{formatINR(consultationFee)}</span>
                     </div>
+                    <div className="col-span-2">
+                      <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Availability</span>
+                      <span className="text-slate-800 font-bold">
+                        {availDays.join(', ') && availTime ? `${availDays.join(', ')}: ${availTime}` : availDays.join(', ') || availTime || 'Not specified'}
+                      </span>
+                    </div>
                   </>
                 )}
 
@@ -939,6 +1080,28 @@ const Register = () => {
                     <div className="col-span-2">
                       <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Street Address</span>
                       <span className="text-slate-855 font-bold leading-normal block">{hospitalAddress}, {hospitalCity}, {hospitalState}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Hospital Type</span>
+                      <span className="text-slate-855 font-bold">{hospitalType}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Number of Beds</span>
+                      <span className="text-slate-855 font-bold">{hospitalNumberOfBeds || '0'}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Facilities</span>
+                      <span className="text-slate-855 font-bold">{hospitalFacilities || 'None'}</span>
+                    </div>
+                    {hospitalWebsite && (
+                      <div className="col-span-2">
+                        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Website</span>
+                        <span className="text-slate-855 font-bold">{hospitalWebsite}</span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider block">Emergency Services</span>
+                      <span className="text-slate-855 font-bold">{hospitalEmergencyServicesAvailable ? 'Available 24/7' : 'Not Available'}</span>
                     </div>
                   </>
                 )}

@@ -82,6 +82,14 @@ public class HospitalService {
         hospital.setLongitude(hospitalDto.getLongitude());
         hospital.setLicenseNumber(hospitalDto.getLicenseNumber());
         hospital.setDescription(hospitalDto.getDescription());
+        hospital.setHospitalType(hospitalDto.getHospitalType());
+        hospital.setFacilities(hospitalDto.getFacilities());
+        hospital.setNumberOfBeds(hospitalDto.getNumberOfBeds());
+        hospital.setEmergencyServicesAvailable(
+                hospitalDto.getEmergencyServicesAvailable() != null ? 
+                hospitalDto.getEmergencyServicesAvailable() : false
+        );
+        hospital.setWebsite(hospitalDto.getWebsite());
         if (hospitalDto.getLogoAvatar() != null) {
             hospital.setLogoAvatar(hospitalDto.getLogoAvatar());
         }

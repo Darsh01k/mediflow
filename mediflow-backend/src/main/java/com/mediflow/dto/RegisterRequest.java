@@ -49,6 +49,7 @@ public class RegisterRequest {
     private Integer experience;
     private String languages;
     private String avatarId;
+    private String availability;
 
     // Hospital Admin registration fields (to create a Hospital upon registration)
     private String hospitalName;
@@ -234,6 +235,14 @@ public class RegisterRequest {
         this.avatarId = avatarId;
     }
 
+    public String getAvailability() {
+        return availability;
+    }
+
+    public void setAvailability(String availability) {
+        this.availability = availability;
+    }
+
     public String getHospitalName() {
         return hospitalName;
     }
@@ -356,5 +365,51 @@ public class RegisterRequest {
 
     public void setCountry(String country) {
         this.country = country;
+    }
+
+    private String hospitalType;
+    private String hospitalFacilities;
+    private Integer hospitalNumberOfBeds;
+    private Boolean hospitalEmergencyServicesAvailable;
+    private String hospitalWebsite;
+
+    public String getHospitalType() {
+        return hospitalType;
+    }
+
+    public void setHospitalType(String hospitalType) {
+        this.hospitalType = hospitalType;
+    }
+
+    public String getHospitalFacilities() {
+        return hospitalFacilities;
+    }
+
+    public void setHospitalFacilities(String hospitalFacilities) {
+        this.hospitalFacilities = hospitalFacilities;
+    }
+
+    public Integer getHospitalNumberOfBeds() {
+        return hospitalNumberOfBeds;
+    }
+
+    public void setHospitalNumberOfBeds(Integer hospitalNumberOfBeds) {
+        this.hospitalNumberOfBeds = hospitalNumberOfBeds;
+    }
+
+    public Boolean getHospitalEmergencyServicesAvailable() {
+        return hospitalEmergencyServicesAvailable;
+    }
+
+    public void setHospitalEmergencyServicesAvailable(Boolean hospitalEmergencyServicesAvailable) {
+        this.hospitalEmergencyServicesAvailable = hospitalEmergencyServicesAvailable;
+    }
+
+    public String getHospitalWebsite() {
+        return hospitalWebsite;
+    }
+
+    public void setHospitalWebsite(String hospitalWebsite) {
+        this.hospitalWebsite = hospitalWebsite;
     }
 }

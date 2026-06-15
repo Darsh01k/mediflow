@@ -185,4 +185,50 @@ public class HospitalDto {
     public void setDistance(Double distance) {
         this.distance = distance;
     }
+
+    private String hospitalType;
+    private String facilities;
+    private Integer numberOfBeds;
+    private Boolean emergencyServicesAvailable;
+    private String website;
+
+    public String getHospitalType() {
+        return hospitalType;
+    }
+
+    public void setHospitalType(String hospitalType) {
+        this.hospitalType = hospitalType;
+    }
+
+    public String getFacilities() {
+        return facilities;
+    }
+
+    public void setFacilities(String facilities) {
+        this.facilities = facilities;
+    }
+
+    public Integer getNumberOfBeds() {
+        return numberOfBeds;
+    }
+
+    public void setNumberOfBeds(Integer numberOfBeds) {
+        this.numberOfBeds = numberOfBeds;
+    }
+
+    public Boolean getEmergencyServicesAvailable() {
+        return emergencyServicesAvailable;
+    }
+
+    public void setEmergencyServicesAvailable(Boolean emergencyServicesAvailable) {
+        this.emergencyServicesAvailable = emergencyServicesAvailable;
+    }
+
+    public String getWebsite() {
+        return website;
+    }
+
+    public void setWebsite(String website) {
+        this.website = website;
+    }
 }

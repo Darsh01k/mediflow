@@ -24,6 +24,7 @@ import {
 import API from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { formatINR } from '../utils/currency';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Table, THead, TBody, TR, TH, TD } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
@@ -34,6 +35,18 @@ import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import { HealthAvatar, AvatarPicker } from '../components/ui/Avatar';
 import SecuritySettings from '../components/SecuritySettings';
+
+const calculateAge = (dobString) => {
+  if (!dobString) return 'N/A';
+  const birthDate = new Date(dobString);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
 
 const DoctorDashboard = ({ stats, refreshStats }) => {
   const { user, updateUser } = useAuth();
@@ -440,7 +453,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                                 {appt?.patient?.user?.firstName || ''} {appt?.patient?.user?.lastName || ''}
                               </div>
                               <div className="text-[10px] font-semibold text-slate-400">
-                                Gender: {appt?.patient?.gender || 'N/A'} • Blood: {appt?.patient?.bloodType || 'N/A'}
+                                Age: {calculateAge(appt?.patient?.dateOfBirth)} • Gender: {appt?.patient?.gender || 'N/A'} • City: {appt?.patient?.user?.city || 'N/A'}
                               </div>
                             </div>
                           </div>
@@ -600,11 +613,9 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                   <THead>
                     <TR>
                       <TH>Patient</TH>
-                      <TH>Date of Birth</TH>
-                      <TH>Gender & Blood Type</TH>
-                      <TH>Phone Number</TH>
-                      <TH>Emergency Contact</TH>
-                      <TH>Medical Notes</TH>
+                      <TH>Age</TH>
+                      <TH>Gender</TH>
+                      <TH>City</TH>
                     </TR>
                   </THead>
                   <TBody>
@@ -613,27 +624,14 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                         <TD>
                           <div className="flex items-center gap-3">
                             <HealthAvatar avatarId={pat?.user?.avatarId || 'avatar_1'} className="w-8 h-8" />
-                            <div>
-                              <div className="font-bold text-slate-800">
-                                {pat?.user?.firstName || ''} {pat?.user?.lastName || ''}
-                              </div>
-                              <div className="text-[10px] font-semibold text-slate-400">
-                                {pat?.user?.email || ''}
-                              </div>
+                            <div className="font-bold text-slate-800">
+                              {pat?.user?.firstName || ''} {pat?.user?.lastName || ''}
                             </div>
                           </div>
                         </TD>
-                        <TD className="text-xs font-semibold text-slate-600">{pat?.dateOfBirth || 'N/A'}</TD>
-                        <TD className="text-xs font-semibold text-slate-600">
-                          {pat?.gender || 'N/A'} • <Badge variant="neutral">{pat?.bloodType || 'N/A'}</Badge>
-                        </TD>
-                        <TD className="text-xs font-semibold text-slate-655">{pat?.phone || 'N/A'}</TD>
-                        <TD className="text-xs font-semibold text-slate-400 max-w-[150px] truncate" title={pat?.emergencyContact || ''}>
-                          {pat?.emergencyContact || 'N/A'}
-                        </TD>
-                        <TD className="max-w-xs text-xs text-slate-500 font-medium italic truncate" title={pat?.medicalNotes || 'No notes'}>
-                          {pat?.medicalNotes || 'None logged'}
-                        </TD>
+                        <TD className="text-xs font-semibold text-slate-600">{calculateAge(pat?.dateOfBirth)} Years</TD>
+                        <TD className="text-xs font-semibold text-slate-600">{pat?.gender || 'N/A'}</TD>
+                        <TD className="text-xs font-semibold text-slate-655">{pat?.user?.city || 'N/A'}</TD>
                       </TR>
                     ))}
                   </TBody>
@@ -657,121 +655,193 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                   <p className="text-xs text-slate-400 font-semibold">Retrieving profile...</p>
                 </div>
               ) : (
-                <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-4xl">
-                  {/* Avatar Picker Section */}
-                  <div className="space-y-3">
-                    <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Healthcare Avatar</span>
-                    <AvatarPicker selectedId={avId} onSelect={setAvId} category="DOCTOR" />
-                  </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start text-slate-700">
+                  {/* Left Column: Certified Practitioner Card */}
+                  <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-gradient-to-br from-blue-600 to-indigo-800 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden border border-white/10">
+                      {/* Grid background effect */}
+                      <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
+                      
+                      <div className="relative z-10 space-y-5">
+                        {/* Title bar */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-black uppercase bg-white/20 border border-white/20 px-2.5 py-1 rounded-md tracking-wider">
+                            Certified Practitioner
+                          </span>
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-emerald-500 rounded-md tracking-wide">
+                            {doctorProfile?.status || 'APPROVED'}
+                          </span>
+                        </div>
 
-                  {/* Basic Form Attributes */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="First Name"
-                      required
-                      placeholder="Doctor First Name"
-                      value={fname}
-                      onChange={(e) => setFname(e.target.value)}
-                    />
-                    <Input
-                      label="Last Name"
-                      required
-                      placeholder="Doctor Last Name"
-                      value={lname}
-                      onChange={(e) => setLname(e.target.value)}
-                    />
-                    <Input
-                      label="Email Address"
-                      required
-                      type="email"
-                      placeholder="dr.name@example.com"
-                      value={mail}
-                      onChange={(e) => setMail(e.target.value)}
-                    />
-                    <Input
-                      label="Practice Phone"
-                      required
-                      placeholder="+1 (555) 000-1111"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                    <Input
-                      label="Medical Specialization"
-                      required
-                      placeholder="Cardiology, General, etc."
-                      value={spec}
-                      onChange={(e) => setSpec(e.target.value)}
-                    />
-                    <Input
-                      label="License Number"
-                      required
-                      placeholder="LIC-12345"
-                      value={lic}
-                      onChange={(e) => setLic(e.target.value)}
-                    />
-                    <Input
-                      label="Academic Qualification"
-                      required
-                      placeholder="MD, MBBS, PhD"
-                      value={qual}
-                      onChange={(e) => setQual(e.target.value)}
-                    />
-                    <Input
-                      label="Years of Experience"
-                      required
-                      type="number"
-                      placeholder="10"
-                      value={exp}
-                      onChange={(e) => setExp(e.target.value)}
-                    />
-                    <Input
-                      label="Consultation Fee (INR)"
-                      required
-                      type="number"
-                      step="1"
-                      placeholder="500"
-                      value={fee}
-                      onChange={(e) => setFee(e.target.value)}
-                    />
-                    <Input
-                      label="Languages Spoken"
-                      placeholder="English, Spanish"
-                      value={lang}
-                      onChange={(e) => setLang(e.target.value)}
-                    />
-                    
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
-                      <label className="block font-bold text-slate-500 uppercase tracking-wide">Availability Schedule</label>
-                      <textarea
-                        rows="2"
-                        placeholder="Mon-Fri: 9:00 AM - 5:00 PM, Sat: 10:00 AM - 2:00 PM"
-                        value={avail}
-                        onChange={(e) => setAvail(e.target.value)}
-                        className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
-                      />
-                    </div>
+                        {/* Avatar & Name */}
+                        <div className="flex flex-col items-center text-center space-y-3 pt-2">
+                          <div className="p-1.5 bg-white/10 rounded-full border border-white/20 shadow-md">
+                            <HealthAvatar avatarId={avId} className="w-20 h-20" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-black tracking-tight leading-none">Dr. {fname} {lname}</h3>
+                            <p className="text-xs font-black text-indigo-200 bg-white/10 border border-white/10 rounded-full px-3.5 py-1 mt-2 inline-block">
+                              {spec || 'General Practice'}
+                            </p>
+                          </div>
+                        </div>
 
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
-                      <label className="block font-bold text-slate-500 uppercase tracking-wide">Professional Biography</label>
-                      <textarea
-                        rows="3"
-                        placeholder="Doctor's credentials and clinical history details..."
-                        value={bio}
-                        onChange={(e) => setBio(e.target.value)}
-                        className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
-                      />
+                        <hr className="border-white/15" />
+
+                        {/* Key Info List */}
+                        <div className="space-y-3.5 text-xs font-semibold text-indigo-100">
+                          <div className="flex justify-between items-center">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">Hospital</span>
+                            <span className="text-white font-extrabold truncate max-w-[150px]">{doctorProfile?.hospital?.name || 'Unassociated'}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">Qualification</span>
+                            <span className="text-white font-extrabold">{qual || 'MBBS'}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">Experience</span>
+                            <span className="text-white font-extrabold">{exp || '0'} Years</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">Consultation Fee</span>
+                            <span className="text-white font-extrabold">{formatINR(fee)}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">Rating</span>
+                            <span className="text-white font-extrabold flex items-center gap-1">★ 4.8 <span className="opacity-50 text-[10px]">(Verified)</span></span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">Registered City</span>
+                            <span className="text-white font-extrabold">{user?.city || 'Boston'}</span>
+                          </div>
+                        </div>
+
+                        {/* Availability Schedule Info */}
+                        <div className="bg-white/10 border border-white/10 rounded-2xl p-3.5 text-xs font-semibold">
+                          <span className="block opacity-60 font-bold uppercase text-[8px] tracking-wider mb-1">Availability Schedule</span>
+                          <p className="text-white leading-normal text-[11px] font-medium">{avail || 'Schedule on Consultation Booking'}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 justify-end pt-3 border-t">
-                    <Button
-                      type="submit"
-                      loading={savingProfile}
-                    >
-                      Save Changes
-                    </Button>
-                  </div>
-                </form>
+                  {/* Right Column: Modify Profile Form */}
+                  <form onSubmit={handleUpdateProfile} className="lg:col-span-2 space-y-6 bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm text-slate-700">
+                    {/* Avatar Picker Section */}
+                    <div className="space-y-3">
+                      <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Healthcare Avatar</span>
+                      <AvatarPicker selectedId={avId} onSelect={setAvId} category="DOCTOR" />
+                    </div>
+
+                    {/* Basic Form Attributes */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        label="First Name"
+                        required
+                        placeholder="Doctor First Name"
+                        value={fname}
+                        onChange={(e) => setFname(e.target.value)}
+                      />
+                      <Input
+                        label="Last Name"
+                        required
+                        placeholder="Doctor Last Name"
+                        value={lname}
+                        onChange={(e) => setLname(e.target.value)}
+                      />
+                      <Input
+                        label="Email Address"
+                        required
+                        type="email"
+                        placeholder="dr.name@example.com"
+                        value={mail}
+                        onChange={(e) => setMail(e.target.value)}
+                      />
+                      <Input
+                        label="Practice Phone"
+                        required
+                        placeholder="+1 (555) 000-1111"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                      <Input
+                        label="Medical Specialization"
+                        required
+                        placeholder="Cardiology, General, etc."
+                        value={spec}
+                        onChange={(e) => setSpec(e.target.value)}
+                      />
+                      <Input
+                        label="License Number"
+                        required
+                        placeholder="LIC-12345"
+                        value={lic}
+                        onChange={(e) => setLic(e.target.value)}
+                      />
+                      <Input
+                        label="Academic Qualification"
+                        required
+                        placeholder="MD, MBBS, PhD"
+                        value={qual}
+                        onChange={(e) => setQual(e.target.value)}
+                      />
+                      <Input
+                        label="Years of Experience"
+                        required
+                        type="number"
+                        placeholder="10"
+                        value={exp}
+                        onChange={(e) => setExp(e.target.value)}
+                      />
+                      <Input
+                        label="Consultation Fee (INR)"
+                        required
+                        type="number"
+                        step="1"
+                        placeholder="500"
+                        value={fee}
+                        onChange={(e) => setFee(e.target.value)}
+                      />
+                      <Input
+                        label="Languages Spoken"
+                        placeholder="English, Spanish"
+                        value={lang}
+                        onChange={(e) => setLang(e.target.value)}
+                      />
+                      
+                      <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-655">
+                        <label className="block font-bold text-slate-500 uppercase tracking-wide">Availability Schedule</label>
+                        <textarea
+                          rows="2"
+                          placeholder="Mon-Fri: 9:00 AM - 5:00 PM, Sat: 10:00 AM - 2:00 PM"
+                          value={avail}
+                          onChange={(e) => setAvail(e.target.value)}
+                          className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none font-medium"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-655">
+                        <label className="block font-bold text-slate-500 uppercase tracking-wide">Professional Biography</label>
+                        <textarea
+                          rows="3"
+                          placeholder="Doctor's credentials and clinical history details..."
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-3 border-t">
+                      <Button
+                        type="submit"
+                        loading={savingProfile}
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
+                </div>
               )}
             </CardContent>
           </Card>

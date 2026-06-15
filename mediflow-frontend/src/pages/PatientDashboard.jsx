@@ -26,6 +26,18 @@ import Spinner from '../components/ui/Spinner';
 import { AvatarPicker } from '../components/ui/Avatar';
 import SecuritySettings from '../components/SecuritySettings';
 
+const calculateAge = (dobString) => {
+  if (!dobString) return 'N/A';
+  const birthDate = new Date(dobString);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 const PatientDashboard = ({ stats, refreshStats }) => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
@@ -82,8 +94,8 @@ const PatientDashboard = ({ stats, refreshStats }) => {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    if (!dob || !gender || !phone || !emerg) {
-      toast.error('All fields except address are mandatory');
+    if (!dob || !gender || !phone) {
+      toast.error('First Name, Last Name, Email, DOB, Gender, and Phone are required');
       return;
     }
 
@@ -371,103 +383,171 @@ const PatientDashboard = ({ stats, refreshStats }) => {
                   <p className="text-xs text-slate-400 font-semibold">Retrieving details...</p>
                 </div>
               ) : (
-                <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-4xl">
-                  {/* Avatar Picker Section */}
-                  <div className="space-y-3">
-                    <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Healthcare Avatar</span>
-                    <AvatarPicker selectedId={avId} onSelect={setAvId} category="PATIENT" />
-                  </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                  {/* Left Column: Health Passport Card */}
+                  <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-gradient-to-br from-teal-500/95 to-emerald-600 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden border border-white/10">
+                      {/* Grid background effect */}
+                      <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
+                      
+                      <div className="relative z-10 space-y-6">
+                        {/* Title bar */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-black uppercase bg-white/20 border border-white/20 px-2.5 py-1 rounded-md tracking-wider">
+                            MediFlow Health ID
+                          </span>
+                          <span className="text-[10px] font-bold opacity-60">ACTIVE</span>
+                        </div>
 
-                  {/* Form fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="First Name"
-                      required
-                      placeholder="First Name"
-                      value={fname}
-                      onChange={(e) => setFname(e.target.value)}
-                    />
-                    <Input
-                      label="Last Name"
-                      required
-                      placeholder="Last Name"
-                      value={lname}
-                      onChange={(e) => setLname(e.target.value)}
-                    />
-                    <Input
-                      label="Email Address"
-                      required
-                      type="email"
-                      placeholder="name@example.com"
-                      value={mail}
-                      onChange={(e) => setMail(e.target.value)}
-                    />
-                    <Input
-                      label="Phone Number"
-                      required
-                      placeholder="+1 (555) 000-1111"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                    <Input
-                      label="Date of Birth"
-                      required
-                      type="date"
-                      value={dob}
-                      onChange={(e) => setDob(e.target.value)}
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Select
-                        label="Gender"
-                        value={gender}
-                        onChange={(e) => setGender(e.target.value)}
-                        options={['Male', 'Female', 'Other']}
-                      />
-                      <Select
-                        label="Blood Group"
-                        value={blood}
-                        onChange={(e) => setBlood(e.target.value)}
-                        options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']}
-                      />
-                    </div>
-                    <Input
-                      label="Emergency Contact"
-                      required
-                      placeholder="Jane Doe (Spouse) - +1 (555) 111-2222"
-                      value={emerg}
-                      onChange={(e) => setEmerg(e.target.value)}
-                    />
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
-                      <label className="block font-bold text-slate-500 uppercase tracking-wide">Residential Address (Optional)</label>
-                      <textarea
-                        rows="2"
-                        placeholder="123 Health Ave, Medical City"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
-                      />
-                    </div>
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
-                      <label className="block font-bold text-slate-500 uppercase tracking-wide">Personal Medical Notes</label>
-                      <textarea
-                        rows="3"
-                        placeholder="Chronic diseases, allergies, special treatments, current medications..."
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
-                      />
+                        {/* Avatar & Name */}
+                        <div className="flex flex-col items-center text-center space-y-3 pt-2">
+                          <div className="p-1.5 bg-white/10 rounded-full border border-white/20 shadow-md">
+                            <HealthAvatar avatarId={avId} className="w-20 h-20" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-black tracking-tight leading-none">{fname} {lname}</h3>
+                            <p className="text-[11px] font-semibold opacity-75 mt-1.5">{patientProfile?.user?.city ? `${patientProfile.user.city}, ${patientProfile.user.state || ''}` : 'Location unconfigured'}</p>
+                          </div>
+                        </div>
+
+                        <hr className="border-white/15" />
+
+                        {/* Key Info Grid */}
+                        <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-xs font-semibold">
+                          <div>
+                            <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Age</span>
+                            <span className="text-sm font-extrabold">{calculateAge(dob)} Years</span>
+                          </div>
+                          <div>
+                            <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Gender</span>
+                            <span className="text-sm font-extrabold">{gender || 'N/A'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Blood Group</span>
+                            <span className="inline-block text-xs font-extrabold px-2 py-0.5 bg-white/25 rounded mt-0.5">{blood || 'N/A'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Emergency Contact</span>
+                            <span className="text-[11px] font-bold leading-tight block mt-0.5 truncate" title={emerg}>{emerg || 'Not configured'}</span>
+                          </div>
+                        </div>
+
+                        {/* Stats summary */}
+                        <div className="bg-white/10 border border-white/10 rounded-2xl p-3.5 flex justify-around text-center text-xs font-semibold">
+                          <div>
+                            <span className="block font-black text-lg leading-none">{stats?.totalAppointments ?? 0}</span>
+                            <span className="text-[9px] font-bold opacity-60 uppercase tracking-wider block mt-1">Consults</span>
+                          </div>
+                          <div className="border-r border-white/10 h-7 self-center" />
+                          <div>
+                            <span className="block font-black text-lg leading-none">{stats?.totalPrescriptions ?? 0}</span>
+                            <span className="text-[9px] font-bold opacity-60 uppercase tracking-wider block mt-1">Prescriptions</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 justify-end pt-3 border-t">
-                    <Button
-                      type="submit"
-                      loading={savingProfile}
-                    >
-                      Save Changes
-                    </Button>
-                  </div>
-                </form>
+                  {/* Right Column: Modify Profile Form */}
+                  <form onSubmit={handleUpdateProfile} className="lg:col-span-2 space-y-6 bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm text-slate-700">
+                    {/* Avatar Picker Section */}
+                    <div className="space-y-3">
+                      <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Healthcare Avatar</span>
+                      <AvatarPicker selectedId={avId} onSelect={setAvId} category="PATIENT" />
+                    </div>
+
+                    {/* Form fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        label="First Name"
+                        required
+                        placeholder="First Name"
+                        value={fname}
+                        onChange={(e) => setFname(e.target.value)}
+                      />
+                      <Input
+                        label="Last Name"
+                        required
+                        placeholder="Last Name"
+                        value={lname}
+                        onChange={(e) => setLname(e.target.value)}
+                      />
+                      <Input
+                        label="Email Address"
+                        required
+                        type="email"
+                        placeholder="name@example.com"
+                        value={mail}
+                        onChange={(e) => setMail(e.target.value)}
+                      />
+                      <Input
+                        label="Phone Number"
+                        required
+                        placeholder="+1 (555) 000-1111"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                      <Input
+                        label="Date of Birth"
+                        required
+                        type="date"
+                        value={dob}
+                        onChange={(e) => setDob(e.target.value)}
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Select
+                          label="Gender"
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                          options={['Male', 'Female', 'Other']}
+                        />
+                        <Select
+                          label="Blood Group"
+                          value={blood}
+                          onChange={(e) => setBlood(e.target.value)}
+                          options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Input
+                          label="Emergency Contact (Optional)"
+                          placeholder="Jane Doe (Spouse) - +1 (555) 111-2222"
+                          value={emerg}
+                          onChange={(e) => setEmerg(e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
+                        <label className="block font-bold text-slate-500 uppercase tracking-wide">Residential Address (Optional)</label>
+                        <textarea
+                          rows="2"
+                          placeholder="123 Health Ave, Medical City"
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none font-medium"
+                        />
+                      </div>
+                      <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
+                        <label className="block font-bold text-slate-500 uppercase tracking-wide">Personal Medical Notes</label>
+                        <textarea
+                          rows="3"
+                          placeholder="Chronic diseases, allergies, special treatments, current medications..."
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-3 border-t">
+                      <Button
+                        type="submit"
+                        loading={savingProfile}
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
+                </div>
               )}
             </CardContent>
           </Card>

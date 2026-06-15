@@ -30,7 +30,7 @@ public class Patient {
     @Column(columnDefinition = "TEXT")
     private String address;
 
-    @Column(name = "emergency_contact", nullable = false, length = 100)
+    @Column(name = "emergency_contact", nullable = true, length = 100)
     private String emergencyContact;
 
     @Column(name = "blood_type", length = 5)

@@ -267,7 +267,7 @@ const NearbyHospitals = () => {
                       <MapPin className="w-6 h-6 text-emerald-500" />
                     )}
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2.5">
                     <h3 
                       onClick={() => handleViewDoctors(hosp)}
                       className="font-extrabold text-slate-800 text-sm tracking-tight hover:text-emerald-600 transition-colors cursor-pointer"
@@ -277,6 +277,45 @@ const NearbyHospitals = () => {
                     <p className="text-[11px] text-slate-500 font-medium leading-relaxed max-w-xl">
                       {hosp.address}, {hosp.city}, {hosp.state} - {hosp.pincode}
                     </p>
+
+                    {/* Operational Details Grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px] bg-slate-50 p-3 rounded-xl border border-slate-100 max-w-lg">
+                      <div>
+                        <span className="text-slate-400 block font-bold uppercase tracking-wider text-[8px]">Type</span>
+                        <span className="text-slate-700 font-bold">{hosp.hospitalType || 'General Hospital'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-bold uppercase tracking-wider text-[8px]">Beds</span>
+                        <span className="text-slate-700 font-bold">{hosp.numberOfBeds || '0'} Total</span>
+                      </div>
+                      {hosp.website && (
+                        <div className="col-span-2">
+                          <span className="text-slate-400 block font-bold uppercase tracking-wider text-[8px]">Website</span>
+                          <a href={hosp.website} target="_blank" rel="noreferrer" className="text-emerald-600 hover:text-emerald-750 font-bold truncate block">
+                            {hosp.website}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Emergency Services & Facility Tags */}
+                    <div className="space-y-1.5 pt-0.5">
+                      <div>
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded inline-block ${hosp.emergencyServicesAvailable ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-400'}`}>
+                          {hosp.emergencyServicesAvailable ? 'Emergency Active' : 'No Emergency'}
+                        </span>
+                      </div>
+                      {hosp.facilities && (
+                        <div className="flex flex-wrap gap-1 max-w-xl">
+                          {hosp.facilities.split(',').map((fac, idx) => (
+                            <span key={idx} className="bg-slate-100 text-slate-600 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
+                              {fac.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     {hosp.phone && (
                       <p className="text-[10px] text-slate-400 font-bold flex items-center gap-1.5 pt-0.5">
                         <Phone className="w-3.5 h-3.5 text-slate-400" />

@@ -219,9 +219,47 @@ const HospitalSearch = () => {
                 <hr className="border-slate-100" />
 
                 {/* Body Details */}
-                <div className="space-y-1 text-xs font-semibold text-slate-600">
+                <div className="space-y-1.5 text-xs font-semibold text-slate-600">
                   <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Address</p>
                   <p className="text-slate-700 leading-normal text-[11px] font-medium">{hosp.address}, {hosp.pincode}</p>
+                </div>
+
+                {/* Operational Info Grid */}
+                <div className="grid grid-cols-2 gap-2 text-[10px] bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <div>
+                    <span className="text-slate-400 block font-bold uppercase tracking-wider text-[8px]">Type</span>
+                    <span className="text-slate-700 font-bold">{hosp.hospitalType || 'General Hospital'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block font-bold uppercase tracking-wider text-[8px]">Beds</span>
+                    <span className="text-slate-700 font-bold">{hosp.numberOfBeds || '0'} Total</span>
+                  </div>
+                  {hosp.website && (
+                    <div className="col-span-2">
+                      <span className="text-slate-400 block font-bold uppercase tracking-wider text-[8px]">Website</span>
+                      <a href={hosp.website} target="_blank" rel="noreferrer" className="text-emerald-600 hover:text-emerald-700 font-bold truncate block">
+                        {hosp.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Emergency Services & Facility Tags */}
+                <div className="space-y-2">
+                  <div>
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded inline-block ${hosp.emergencyServicesAvailable ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-400'}`}>
+                      {hosp.emergencyServicesAvailable ? 'Emergency Active' : 'No Emergency'}
+                    </span>
+                  </div>
+                  {hosp.facilities && (
+                    <div className="flex flex-wrap gap-1">
+                      {hosp.facilities.split(',').map((fac, idx) => (
+                        <span key={idx} className="bg-slate-100 text-slate-600 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
+                          {fac.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {hosp.description && (

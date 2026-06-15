@@ -14,7 +14,8 @@ import {
   CreditCard,
   Settings,
   Activity,
-  FileText
+  FileText,
+  Globe
 } from 'lucide-react';
 import API from '../services/api';
 import { useToast } from '../context/ToastContext';
@@ -66,6 +67,11 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
   const [hospLicense, setHospLicense] = useState('');
   const [hospDesc, setHospDesc] = useState('');
   const [hospLogo, setHospLogo] = useState('');
+  const [hospType, setHospType] = useState('General Hospital');
+  const [hospFacilities, setHospFacilities] = useState('');
+  const [hospBeds, setHospBeds] = useState('');
+  const [hospEmergency, setHospEmergency] = useState(false);
+  const [hospWebsite, setHospWebsite] = useState('');
 
   const fetchHospitalProfile = async () => {
     try {
@@ -85,6 +91,11 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
       setHospLicense(res.data.licenseNumber || '');
       setHospDesc(res.data.description || '');
       setHospLogo(res.data.logoAvatar || '');
+      setHospType(res.data.hospitalType || 'General Hospital');
+      setHospFacilities(res.data.facilities || '');
+      setHospBeds(res.data.numberOfBeds || '');
+      setHospEmergency(res.data.emergencyServicesAvailable || false);
+      setHospWebsite(res.data.website || '');
     } catch (err) {
       console.error(err);
       toast.error('Failed to load hospital profile');
@@ -162,7 +173,12 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
         longitude: hospLng ? parseFloat(hospLng) : null,
         licenseNumber: hospLicense,
         description: hospDesc,
-        logoAvatar: hospLogo
+        logoAvatar: hospLogo,
+        hospitalType: hospType,
+        facilities: hospFacilities,
+        numberOfBeds: hospBeds ? parseInt(hospBeds) : null,
+        emergencyServicesAvailable: hospEmergency,
+        website: hospWebsite
       };
       const res = await API.put('/hospitals/my-hospital', payload);
       setHospital(res.data);
@@ -590,7 +606,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
           <Card>
             <CardHeader>
               <CardTitle>Manage Hospital Profile</CardTitle>
-              <CardDescription>Update name, contact parameters, description, and location metadata of this facility.</CardDescription>
+              <CardDescription>Update identity parameters, facilities, bed capacities, emergency access, and web settings.</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               {loadingHosp ? (
@@ -599,97 +615,248 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                   <p className="text-xs text-slate-400 font-semibold">Loading details...</p>
                 </div>
               ) : (
-                <form onSubmit={handleUpdateHospital} className="space-y-6 max-w-4xl">
-                  {/* Avatar Picker Section */}
-                  <div className="space-y-3">
-                    <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Hospital Logo Avatar</span>
-                    <AvatarPicker selectedId={hospLogo} onSelect={setHospLogo} category="HOSPITAL" />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start text-slate-700">
+                  {/* Left Column: Enterprise Care Facility Card */}
+                  <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden border border-slate-800">
+                      {/* Grid background effect */}
+                      <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
+                      
+                      <div className="relative z-10 space-y-5">
+                        {/* Title bar */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-black uppercase bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 rounded-md tracking-wider text-emerald-400">
+                            Enterprise Care Facility
+                          </span>
+                          <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md tracking-wide ${hospEmergency ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-700 text-slate-300'}`}>
+                            {hospEmergency ? 'Emergency Active' : 'No Emergency'}
+                          </span>
+                        </div>
+
+                        {/* Logo & Name */}
+                        <div className="flex flex-col items-center text-center space-y-3 pt-2">
+                          <div className="p-2 bg-white/5 rounded-2xl border border-white/10 shadow-md">
+                            <HealthAvatar avatarId={hospLogo || 'hospital_1'} className="w-20 h-20 rounded-2xl" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-black tracking-tight leading-snug">{hospName || 'Hospital Facility'}</h3>
+                            <p className="text-xs font-black text-indigo-300 bg-white/5 border border-white/10 rounded-full px-4 py-1 mt-2 inline-block">
+                              {hospType}
+                            </p>
+                          </div>
+                        </div>
+
+                        <hr className="border-white/10" />
+
+                        {/* Key Info List */}
+                        <div className="space-y-3.5 text-xs font-semibold text-slate-300">
+                          <div className="flex justify-between items-start gap-4">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide shrink-0">Address</span>
+                            <span className="text-white font-extrabold text-right leading-tight truncate max-w-[200px]" title={hospAddress}>
+                              {hospAddress || 'Not entered'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">License Number</span>
+                            <span className="text-white font-extrabold">{hospLicense || 'Not entered'}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">Bed Capacity</span>
+                            <span className="text-white font-extrabold">{hospBeds || '0'} Total Beds</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">Active Doctors</span>
+                            <span className="text-white font-extrabold">{stats?.totalDoctors ?? doctors.length ?? 0} Associated</span>
+                          </div>
+                          {hospWebsite && (
+                            <div className="flex justify-between items-center">
+                              <span className="opacity-60 font-bold uppercase text-[9px] tracking-wide">Website</span>
+                              <a 
+                                href={hospWebsite} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-emerald-400 hover:text-emerald-300 font-extrabold flex items-center gap-1 transition-colors"
+                              >
+                                <Globe className="w-3.5 h-3.5" /> Visit site
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Facilities info */}
+                        <div className="bg-white/5 border border-white/5 rounded-2xl p-3.5 text-xs font-semibold">
+                          <span className="block opacity-60 font-bold uppercase text-[8px] tracking-wider mb-1.5">Operational Facilities</span>
+                          {hospFacilities ? (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {hospFacilities.split(',').map((fac, idx) => (
+                                <span key={idx} className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded font-bold">
+                                  {fac.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-slate-400 leading-normal text-[11px] font-medium italic">No facilities declared</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="Hospital Name"
-                      required
-                      placeholder="Saint Grace Medical Center"
-                      value={hospName}
-                      onChange={(e) => setHospName(e.target.value)}
-                    />
-                    <Input
-                      label="Medical License Number"
-                      placeholder="LIC-99887766"
-                      value={hospLicense}
-                      onChange={(e) => setHospLicense(e.target.value)}
-                    />
-                    <Input
-                      label="Contact Email"
-                      type="email"
-                      placeholder="info@stgrace.org"
-                      value={hospEmail}
-                      onChange={(e) => setHospEmail(e.target.value)}
-                    />
-                    <Input
-                      label="Contact Phone"
-                      placeholder="+1 (555) 123-4567"
-                      value={hospPhone}
-                      onChange={(e) => setHospPhone(e.target.value)}
-                    />
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
-                      <label className="block font-bold text-slate-500 uppercase tracking-wide">Street Address (Mandatory)</label>
-                      <AddressAutocomplete
-                        value={hospAddress}
-                        onChange={setHospAddress}
-                        onSelect={(res) => {
-                          setHospAddress(res.address);
-                          setHospCity(res.city);
-                          setHospState(res.state);
-                          setHospPincode(res.pincode);
-                          setHospLat(res.latitude ? res.latitude.toString() : '');
-                          setHospLng(res.longitude ? res.longitude.toString() : '');
-                        }}
+                  {/* Right Column: Profile Modification Form */}
+                  <form onSubmit={handleUpdateHospital} className="lg:col-span-2 space-y-6 bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm text-slate-700">
+                    {/* Avatar Picker Section */}
+                    <div className="space-y-3">
+                      <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Hospital Logo Avatar</span>
+                      <AvatarPicker selectedId={hospLogo} onSelect={setHospLogo} category="HOSPITAL" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                        label="Hospital Name"
                         required
-                        className="bg-white border border-slate-200"
+                        placeholder="Saint Grace Medical Center"
+                        value={hospName}
+                        onChange={(e) => setHospName(e.target.value)}
                       />
-                    </div>
-                    <Input
-                      label="City"
-                      placeholder="Medical City"
-                      value={hospCity}
-                      onChange={(e) => setHospCity(e.target.value)}
-                    />
-                    <Input
-                      label="State"
-                      placeholder="CA"
-                      value={hospState}
-                      onChange={(e) => setHospState(e.target.value)}
-                    />
-                    <Input
-                      label="Pincode"
-                      placeholder="90210"
-                      value={hospPincode}
-                      onChange={(e) => setHospPincode(e.target.value)}
-                    />
-                    
-                    <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
-                      <label className="block font-bold text-slate-500 uppercase tracking-wide">Facility Description</label>
-                      <textarea
-                        rows="3"
-                        placeholder="Saint Grace Medical Center is a premier multi-speciality hospital..."
-                        value={hospDesc}
-                        onChange={(e) => setHospDesc(e.target.value)}
-                        className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none"
+                      <Input
+                        label="Medical License Number"
+                        placeholder="LIC-99887766"
+                        value={hospLicense}
+                        onChange={(e) => setHospLicense(e.target.value)}
                       />
-                    </div>
-                  </div>
+                      <Input
+                        label="Contact Email"
+                        type="email"
+                        placeholder="info@stgrace.org"
+                        value={hospEmail}
+                        onChange={(e) => setHospEmail(e.target.value)}
+                      />
+                      <Input
+                        label="Contact Phone"
+                        placeholder="+1 (555) 123-4567"
+                        value={hospPhone}
+                        onChange={(e) => setHospPhone(e.target.value)}
+                      />
 
-                  <div className="flex gap-2 justify-end pt-3 border-t">
-                    <Button
-                      type="submit"
-                      loading={updatingHosp}
-                    >
-                      Save Changes
-                    </Button>
-                  </div>
-                </form>
+                      {/* Hospital Type */}
+                      <div className="space-y-1.5 text-xs font-semibold text-slate-600">
+                        <label className="block font-bold text-slate-500 uppercase tracking-wide">Hospital Type</label>
+                        <select
+                          value={hospType}
+                          onChange={(e) => setHospType(e.target.value)}
+                          className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50"
+                        >
+                          <option>General Hospital</option>
+                          <option>Multi-Specialty Hospital</option>
+                          <option>Clinic</option>
+                          <option>Emergency Care</option>
+                        </select>
+                      </div>
+
+                      {/* Number of Beds */}
+                      <Input
+                        label="Total Bed Capacity"
+                        type="number"
+                        min="0"
+                        placeholder="e.g. 150"
+                        value={hospBeds}
+                        onChange={(e) => setHospBeds(e.target.value)}
+                      />
+
+                      {/* Facilities */}
+                      <div className="md:col-span-2">
+                        <Input
+                          label="Facilities (Comma-separated)"
+                          placeholder="e.g. ICU, OPD, Emergency, Pharmacy, Diagnostics"
+                          value={hospFacilities}
+                          onChange={(e) => setHospFacilities(e.target.value)}
+                        />
+                      </div>
+
+                      {/* Website */}
+                      <div className="md:col-span-2">
+                        <Input
+                          label="Official Website (Optional)"
+                          type="url"
+                          placeholder="e.g. https://www.saintgrace.org"
+                          value={hospWebsite}
+                          onChange={(e) => setHospWebsite(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
+                        <label className="block font-bold text-slate-500 uppercase tracking-wide">Street Address (Mandatory)</label>
+                        <AddressAutocomplete
+                          value={hospAddress}
+                          onChange={setHospAddress}
+                          onSelect={(res) => {
+                            setHospAddress(res.address);
+                            setHospCity(res.city);
+                            setHospState(res.state);
+                            setHospPincode(res.pincode);
+                            setHospLat(res.latitude ? res.latitude.toString() : '');
+                            setHospLng(res.longitude ? res.longitude.toString() : '');
+                          }}
+                          required
+                          className="bg-white border border-slate-200"
+                        />
+                      </div>
+
+                      <Input
+                        label="City"
+                        placeholder="Medical City"
+                        value={hospCity}
+                        onChange={(e) => setHospCity(e.target.value)}
+                      />
+                      <Input
+                        label="State"
+                        placeholder="CA"
+                        value={hospState}
+                        onChange={(e) => setHospState(e.target.value)}
+                      />
+                      <Input
+                        label="Pincode"
+                        placeholder="90210"
+                        value={hospPincode}
+                        onChange={(e) => setHospPincode(e.target.value)}
+                      />
+
+                      {/* Emergency services toggle */}
+                      <div className="md:col-span-2 flex items-center gap-2.5 pt-2">
+                        <input
+                          type="checkbox"
+                          id="dashboardEmergCheckbox"
+                          checked={hospEmergency}
+                          onChange={(e) => setHospEmergency(e.target.checked)}
+                          className="w-4.5 h-4.5 accent-emerald-500 border border-slate-200 rounded-md cursor-pointer"
+                        />
+                        <label htmlFor="dashboardEmergCheckbox" className="text-xs font-bold text-slate-500 uppercase tracking-wide cursor-pointer select-none">
+                          24/7 Emergency Services Available
+                        </label>
+                      </div>
+                      
+                      <div className="md:col-span-2 space-y-1.5 text-xs font-semibold text-slate-600">
+                        <label className="block font-bold text-slate-500 uppercase tracking-wide">Facility Description</label>
+                        <textarea
+                          rows="3"
+                          placeholder="Saint Grace Medical Center is a premier multi-speciality hospital..."
+                          value={hospDesc}
+                          onChange={(e) => setHospDesc(e.target.value)}
+                          className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50 resize-none font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-3 border-t">
+                      <Button
+                        type="submit"
+                        loading={updatingHosp}
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
+                </div>
               )}
             </CardContent>
           </Card>

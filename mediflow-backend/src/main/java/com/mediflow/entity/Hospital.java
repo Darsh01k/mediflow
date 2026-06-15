@@ -194,4 +194,59 @@ public class Hospital {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    @Column(name = "hospital_type", length = 100)
+    private String hospitalType;
+
+    @Column(columnDefinition = "TEXT")
+    private String facilities;
+
+    @Column(name = "number_of_beds")
+    private Integer numberOfBeds;
+
+    @Column(name = "emergency_services_available")
+    private Boolean emergencyServicesAvailable = false;
+
+    @Column(length = 200)
+    private String website;
+
+    public String getHospitalType() {
+        return hospitalType;
+    }
+
+    public void setHospitalType(String hospitalType) {
+        this.hospitalType = hospitalType;
+    }
+
+    public String getFacilities() {
+        return facilities;
+    }
+
+    public void setFacilities(String facilities) {
+        this.facilities = facilities;
+    }
+
+    public Integer getNumberOfBeds() {
+        return numberOfBeds;
+    }
+
+    public void setNumberOfBeds(Integer numberOfBeds) {
+        this.numberOfBeds = numberOfBeds;
+    }
+
+    public Boolean getEmergencyServicesAvailable() {
+        return emergencyServicesAvailable;
+    }
+
+    public void setEmergencyServicesAvailable(Boolean emergencyServicesAvailable) {
+        this.emergencyServicesAvailable = emergencyServicesAvailable;
+    }
+
+    public String getWebsite() {
+        return website;
+    }
+
+    public void setWebsite(String website) {
+        this.website = website;
+    }
 }

@@ -188,9 +188,9 @@ public class UserService {
 
         if (registerRequest.getRole() == Role.PATIENT) {
             if (registerRequest.getDateOfBirth() == null || registerRequest.getGender() == null ||
-                registerRequest.getPhone() == null || registerRequest.getEmergencyContact() == null) {
+                registerRequest.getPhone() == null) {
                 logger.warn("Registration failed: Missing patient profile fields for username: {}", registerRequest.getUsername());
-                throw new BadRequestException("All patient profile fields (except address) are required");
+                throw new BadRequestException("All basic patient profile fields (DOB, Gender, Phone) are required");
             }
 
             Patient patient = new Patient(
@@ -199,7 +199,7 @@ public class UserService {
                     registerRequest.getGender(),
                     registerRequest.getPhone(),
                     registerRequest.getAddress(), // optional Address
-                    registerRequest.getEmergencyContact(),
+                    registerRequest.getEmergencyContact(), // optional Emergency Contact
                     registerRequest.getBloodType()
             );
 
@@ -237,6 +237,7 @@ public class UserService {
             doctor.setExperience(registerRequest.getExperience());
             doctor.setLanguages(registerRequest.getLanguages());
             doctor.setHospital(hospital);
+            doctor.setAvailability(registerRequest.getAvailability());
             doctor.setStatus(DoctorStatus.PENDING); // Begins as pending
 
             doctorRepository.save(doctor);
@@ -268,6 +269,14 @@ public class UserService {
                         registerRequest.getHospitalDescription(),
                         registerRequest.getHospitalLogoAvatar()
                 );
+                hospital.setHospitalType(registerRequest.getHospitalType());
+                hospital.setFacilities(registerRequest.getHospitalFacilities());
+                hospital.setNumberOfBeds(registerRequest.getHospitalNumberOfBeds());
+                hospital.setEmergencyServicesAvailable(
+                        registerRequest.getHospitalEmergencyServicesAvailable() != null ? 
+                        registerRequest.getHospitalEmergencyServicesAvailable() : false
+                );
+                hospital.setWebsite(registerRequest.getHospitalWebsite());
                 hospital = hospitalRepository.save(hospital);
                 logger.info("Created new hospital: {} during registration", hospital.getName());
             }
