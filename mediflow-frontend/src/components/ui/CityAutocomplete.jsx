@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { MapPin } from 'lucide-react';
 import { indianCities } from '../../data/indianCities';
 
@@ -18,6 +19,19 @@ const CityAutocomplete = ({
 
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
+  const portalRef = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  const updateCoords = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  };
 
   // Sync value from prop ONLY when the input is not focused
   useEffect(() => {
@@ -26,10 +40,34 @@ const CityAutocomplete = ({
     }
   }, [value, isFocused]);
 
+  // Update coords when dropdown is opened, window resized, or window scrolled
+  useEffect(() => {
+    if (showDropdown) {
+      updateCoords();
+      window.addEventListener('resize', updateCoords);
+      window.addEventListener('scroll', updateCoords, { passive: true });
+      return () => {
+        window.removeEventListener('resize', updateCoords);
+        window.removeEventListener('scroll', updateCoords);
+      };
+    }
+  }, [showDropdown]);
+
+  // Update coords when suggestions or searchText change while dropdown is open
+  useEffect(() => {
+    if (showDropdown) {
+      updateCoords();
+    }
+  }, [suggestions, searchText, showDropdown]);
+
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      const clickedInsideInputOrDropdown = 
+        (dropdownRef.current && dropdownRef.current.contains(e.target)) ||
+        (portalRef.current && portalRef.current.contains(e.target));
+      
+      if (!clickedInsideInputOrDropdown) {
         setShowDropdown(false);
         setActiveSuggestionIndex(-1);
       }
@@ -148,12 +186,23 @@ const CityAutocomplete = ({
         />
       </div>
 
-      {showDropdown && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-100 animate-in fade-in slide-in-from-top-1 duration-150">
+      {showDropdown && suggestions.length > 0 && createPortal(
+        <div 
+          ref={portalRef}
+          style={{
+            position: 'absolute',
+            top: `${coords.top}px`,
+            left: `${coords.left}px`,
+            width: `${coords.width}px`,
+            zIndex: 9999
+          }}
+          className="mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto divide-y divide-slate-100 animate-in fade-in slide-in-from-top-1 duration-150"
+        >
           {suggestions.map((item, idx) => (
             <button
               key={`${item.city}-${idx}`}
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleSelect(item)}
               className={`w-full px-4 py-2.5 text-left hover:bg-indigo-50/50 transition-colors flex items-center gap-2.5 text-slate-700 font-semibold text-xs cursor-pointer ${
                 activeSuggestionIndex === idx ? 'bg-indigo-50/80 text-indigo-700 font-bold' : ''
@@ -169,13 +218,25 @@ const CityAutocomplete = ({
               </div>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showDropdown && searchText && suggestions.length === 0 && (
-        <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4 text-center text-xs font-bold text-slate-400">
+      {showDropdown && searchText && suggestions.length === 0 && createPortal(
+        <div 
+          ref={portalRef}
+          style={{
+            position: 'absolute',
+            top: `${coords.top}px`,
+            left: `${coords.left}px`,
+            width: `${coords.width}px`,
+            zIndex: 9999
+          }}
+          className="mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl p-4 text-center text-xs font-bold text-slate-400"
+        >
           No matching Indian locations found
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
