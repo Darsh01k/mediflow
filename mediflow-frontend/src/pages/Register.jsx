@@ -343,7 +343,7 @@ const Register = () => {
               <div className="space-y-1.5 text-xs font-semibold text-slate-655 md:col-span-2">
                 <label className="block font-bold text-slate-500 uppercase tracking-wide">Registered City Location</label>
                 <CityAutocomplete
-                  value={city ? `${city}, ${state}, ${country}` : ''}
+                  value={city && state ? `${city}, ${state}, ${country}` : city}
                   onChange={(loc) => {
                     setCity(loc.city);
                     setState(loc.state);
