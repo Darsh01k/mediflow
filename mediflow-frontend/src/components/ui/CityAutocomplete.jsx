@@ -9,25 +9,22 @@ const CityAutocomplete = ({
   disabled = false,
   required = false
 }) => {
-  const [inputValue, setInputValue] = useState(value);
+  const [searchText, setSearchText] = useState(value || '');
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [isFocused, setIsFocused] = useState(false);
+
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
-  const lastSelectedValueRef = useRef('');
 
-  // Sync value from prop
+  // Sync value from prop ONLY when the input is not focused
   useEffect(() => {
-    // Only update inputValue if the value prop is different
-    // and different from what we last selected, to prevent typing rewrites.
-    if (value !== inputValue && value !== lastSelectedValueRef.current) {
-      setInputValue(value);
-      if (!value) {
-        lastSelectedValueRef.current = '';
-      }
+    if (!isFocused) {
+      setSearchText(value || '');
     }
-  }, [value]);
+  }, [value, isFocused]);
 
   // Click outside to close
   useEffect(() => {
@@ -43,10 +40,11 @@ const CityAutocomplete = ({
 
   const handleInputChange = (e) => {
     const val = e.target.value;
-    setInputValue(val);
+    setSearchText(val);
+    setSelectedLocation(null);
     setActiveSuggestionIndex(-1);
     
-    // Notify parent that the user is typing/editing
+    // Notify parent of typing changes immediately
     if (onChange) {
       onChange({ city: val, state: '', country: 'India' });
     }
@@ -73,8 +71,8 @@ const CityAutocomplete = ({
 
   const handleSelect = (item) => {
     const displayVal = `${item.city}, ${item.state}, ${item.country}`;
-    lastSelectedValueRef.current = displayVal;
-    setInputValue(displayVal);
+    setSearchText(displayVal);
+    setSelectedLocation(item);
     setShowDropdown(false);
     setActiveSuggestionIndex(-1);
     
@@ -116,6 +114,21 @@ const CityAutocomplete = ({
     }
   };
 
+  const handleFocus = () => {
+    setIsFocused(true);
+    if (searchText && searchText.trim().length > 0 && suggestions.length > 0) {
+      setShowDropdown(true);
+    }
+  };
+
+  const handleBlur = () => {
+    // Timeout allows list click handlers to complete before dropdown hides
+    setTimeout(() => {
+      setIsFocused(false);
+      setShowDropdown(false);
+    }, 200);
+  };
+
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <div className="relative">
@@ -126,14 +139,11 @@ const CityAutocomplete = ({
           required={required}
           disabled={disabled}
           placeholder={placeholder}
-          value={inputValue}
+          value={searchText}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => {
-            if (inputValue && inputValue.trim().length > 0 && suggestions.length > 0) {
-              setShowDropdown(true);
-            }
-          }}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           className="w-full pl-10 pr-4 py-2.5 border border-slate-200 bg-white rounded-xl focus:outline-none text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 hover:border-slate-300 transition-all duration-200"
         />
       </div>
@@ -162,7 +172,7 @@ const CityAutocomplete = ({
         </div>
       )}
 
-      {showDropdown && inputValue && suggestions.length === 0 && (
+      {showDropdown && searchText && suggestions.length === 0 && (
         <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4 text-center text-xs font-bold text-slate-400">
           No matching Indian locations found
         </div>
