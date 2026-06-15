@@ -1146,7 +1146,7 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-gradient-to-tr from-indigo-50/60 via-slate-50 to-blue-50/50 relative overflow-y-auto md:overflow-hidden select-none">
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-gradient-to-tr from-indigo-50/60 via-slate-50 to-blue-50/50 relative overflow-y-auto select-none">
       
       {/* Blurred background circles */}
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-300/10 rounded-full blur-3xl pointer-events-none animate-float" />
@@ -1210,7 +1210,7 @@ const Register = () => {
       </div>
 
       {/* RIGHT COLUMN: Onboarding Wizard */}
-      <div className="flex-grow w-full md:flex-grow flex flex-col justify-center items-center p-4 sm:p-8 md:p-12 lg:p-16 relative z-10 md:overflow-y-auto md:h-screen">
+      <div className="flex-grow w-full flex flex-col justify-center items-center p-4 sm:p-8 md:p-12 lg:p-16 relative z-10">
         
         {/* Wizard Card Wrapper */}
         <Card className="w-full max-w-2xl bg-white/75 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl shadow-slate-200/40 animate-fade-in-up relative my-6 md:my-10">
