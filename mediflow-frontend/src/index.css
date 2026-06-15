@@ -188,3 +188,12 @@
   animation-delay: 2.5s;
 }
 
+@keyframes loadingBar {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
