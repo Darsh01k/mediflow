@@ -25,6 +25,7 @@ import Alert from '../components/ui/Alert';
 import Spinner from '../components/ui/Spinner';
 import { AvatarPicker } from '../components/ui/Avatar';
 import SecuritySettings from '../components/SecuritySettings';
+import ErrorBoundary from '../components/ui/ErrorBoundary';
 
 const calculateAge = (dobString) => {
   if (!dobString) return 'N/A';
@@ -67,22 +68,27 @@ const PatientDashboard = ({ stats, refreshStats }) => {
     try {
       setLoadingProfile(true);
       const res = await API.get(`/patients/user/${user.userId}`);
-      setPatientProfile(res.data);
-      // Bind form variables
-      setDob(res.data.dateOfBirth || '');
-      setGender(res.data.gender || 'Male');
-      setPhone(res.data.phone || '');
-      setAddress(res.data.address || '');
-      setEmerg(res.data.emergencyContact || '');
-      setBlood(res.data.bloodType || 'O+');
-      setNotes(res.data.medicalNotes || '');
-      setAvId(res.data.user?.avatarId || 'avatar_1');
-      setFname(res.data.user?.firstName || '');
-      setLname(res.data.user?.lastName || '');
-      setMail(res.data.user?.email || '');
+      if (res.data) {
+        setPatientProfile(res.data);
+        // Bind form variables
+        setDob(res.data.dateOfBirth || '');
+        setGender(res.data.gender || 'Male');
+        setPhone(res.data.phone || '');
+        setAddress(res.data.address || '');
+        setEmerg(res.data.emergencyContact || '');
+        setBlood(res.data.bloodType || 'O+');
+        setNotes(res.data.medicalNotes || '');
+        setAvId(res.data.user?.avatarId || 'avatar_1');
+        setFname(res.data.user?.firstName || '');
+        setLname(res.data.user?.lastName || '');
+        setMail(res.data.user?.email || '');
+      } else {
+        setPatientProfile(null);
+      }
     } catch (err) {
       console.error(err);
       toast.error('Failed to load patient profile data');
+      setPatientProfile(null);
     } finally {
       setLoadingProfile(false);
     }
@@ -370,142 +376,144 @@ const PatientDashboard = ({ stats, refreshStats }) => {
         )}
 
         {/* Tab 2: Modify Profile */}
-        {activeTab === 'profile' && patientProfile && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Manage Patient Profile</CardTitle>
-              <CardDescription>Configure emergency contact, address details, medical notes, and change your avatar.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              {loadingProfile ? (
-                <div className="py-12 flex flex-col items-center justify-center gap-2">
-                  <Spinner />
-                  <p className="text-xs text-slate-400 font-semibold">Retrieving details...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                  {/* Left Column: Health Passport Card */}
-                  <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-gradient-to-br from-teal-500/95 to-emerald-600 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden border border-white/10">
-                      {/* Grid background effect */}
-                      <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
-                      
-                      <div className="relative z-10 space-y-6">
-                        {/* Title bar */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-black uppercase bg-white/20 border border-white/20 px-2.5 py-1 rounded-md tracking-wider">
-                            MediFlow Health ID
-                          </span>
-                          <span className="text-[10px] font-bold opacity-60">ACTIVE</span>
-                        </div>
+        {activeTab === 'profile' && (
+          <ErrorBoundary>
+            {patientProfile ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manage Patient Profile</CardTitle>
+                  <CardDescription>Configure emergency contact, address details, medical notes, and change your avatar.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {loadingProfile ? (
+                    <div className="py-12 flex flex-col items-center justify-center gap-2">
+                      <Spinner />
+                      <p className="text-xs text-slate-400 font-semibold">Retrieving details...</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                      {/* Left Column: Health Passport Card */}
+                      <div className="lg:col-span-1 space-y-6">
+                        <div className="bg-gradient-to-br from-teal-500/95 to-emerald-600 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden border border-white/10">
+                          {/* Grid background effect */}
+                          <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
+                          
+                          <div className="relative z-10 space-y-6">
+                            {/* Title bar */}
+                            <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-black uppercase bg-white/20 border border-white/20 px-2.5 py-1 rounded-md tracking-wider">
+                                MediFlow Health ID
+                              </span>
+                              <span className="text-[10px] font-bold opacity-60">ACTIVE</span>
+                            </div>
 
-                        {/* Avatar & Name */}
-                        <div className="flex flex-col items-center text-center space-y-3 pt-2">
-                          <div className="p-1.5 bg-white/10 rounded-full border border-white/20 shadow-md">
-                            <HealthAvatar avatarId={avId} className="w-20 h-20" />
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-black tracking-tight leading-none">{fname} {lname}</h3>
-                            <p className="text-[11px] font-semibold opacity-75 mt-1.5">{patientProfile?.user?.city ? `${patientProfile.user.city}, ${patientProfile.user.state || ''}` : 'Location unconfigured'}</p>
-                          </div>
-                        </div>
+                            {/* Avatar & Name */}
+                            <div className="flex flex-col items-center text-center space-y-3 pt-2">
+                              <div className="p-1.5 bg-white/10 rounded-full border border-white/20 shadow-md">
+                                <HealthAvatar avatarId={avId} className="w-20 h-20" />
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-black tracking-tight leading-none">{fname} {lname}</h3>
+                                <p className="text-[11px] font-semibold opacity-75 mt-1.5">{patientProfile?.user?.city ? `${patientProfile?.user?.city}, ${patientProfile?.user?.state || ''}` : 'Location unconfigured'}</p>
+                              </div>
+                            </div>
 
-                        <hr className="border-white/15" />
+                            <hr className="border-white/15" />
 
-                        {/* Key Info Grid */}
-                        <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-xs font-semibold">
-                          <div>
-                            <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Age</span>
-                            <span className="text-sm font-extrabold">{calculateAge(dob)} Years</span>
-                          </div>
-                          <div>
-                            <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Gender</span>
-                            <span className="text-sm font-extrabold">{gender || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Blood Group</span>
-                            <span className="inline-block text-xs font-extrabold px-2 py-0.5 bg-white/25 rounded mt-0.5">{blood || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Emergency Contact</span>
-                            <span className="text-[11px] font-bold leading-tight block mt-0.5 truncate" title={emerg}>{emerg || 'Not configured'}</span>
-                          </div>
-                        </div>
+                            {/* Key Info Grid */}
+                            <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-xs font-semibold">
+                              <div>
+                                <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Age</span>
+                                <span className="text-sm font-extrabold">{calculateAge(dob)} Years</span>
+                              </div>
+                              <div>
+                                <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Gender</span>
+                                <span className="text-sm font-extrabold">{gender || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Blood Group</span>
+                                <span className="inline-block text-xs font-extrabold px-2 py-0.5 bg-white/25 rounded mt-0.5">{blood || 'N/A'}</span>
+                              </div>
+                              <div>
+                                <span className="block text-[9px] font-bold opacity-50 uppercase tracking-wide">Emergency Contact</span>
+                                <span className="text-[11px] font-bold leading-tight block mt-0.5 truncate" title={emerg}>{emerg || 'Not configured'}</span>
+                              </div>
+                            </div>
 
-                        {/* Stats summary */}
-                        <div className="bg-white/10 border border-white/10 rounded-2xl p-3.5 flex justify-around text-center text-xs font-semibold">
-                          <div>
-                            <span className="block font-black text-lg leading-none">{stats?.totalAppointments ?? 0}</span>
-                            <span className="text-[9px] font-bold opacity-60 uppercase tracking-wider block mt-1">Consults</span>
-                          </div>
-                          <div className="border-r border-white/10 h-7 self-center" />
-                          <div>
-                            <span className="block font-black text-lg leading-none">{stats?.totalPrescriptions ?? 0}</span>
-                            <span className="text-[9px] font-bold opacity-60 uppercase tracking-wider block mt-1">Prescriptions</span>
+                            {/* Stats summary */}
+                            <div className="bg-white/10 border border-white/10 rounded-2xl p-3.5 flex justify-around text-center text-xs font-semibold">
+                              <div>
+                                <span className="block font-black text-lg leading-none">{stats?.totalAppointments ?? 0}</span>
+                                <span className="text-[9px] font-bold opacity-60 uppercase tracking-wider block mt-1">Consults</span>
+                              </div>
+                              <div className="border-r border-white/10 h-7 self-center" />
+                              <div>
+                                <span className="block font-black text-lg leading-none">{stats?.totalPrescriptions ?? 0}</span>
+                                <span className="text-[9px] font-bold opacity-60 uppercase tracking-wider block mt-1">Prescriptions</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Right Column: Modify Profile Form */}
-                  <form onSubmit={handleUpdateProfile} className="lg:col-span-2 space-y-6 bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm text-slate-700">
-                    {/* Avatar Picker Section */}
-                    <div className="space-y-3">
-                      <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Healthcare Avatar</span>
-                      <AvatarPicker selectedId={avId} onSelect={setAvId} category="PATIENT" />
-                    </div>
+                      {/* Right Column: Modify Profile Form */}
+                      <form onSubmit={handleUpdateProfile} className="lg:col-span-2 space-y-6 bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm text-slate-700">
+                        {/* Avatar Picker Section */}
+                        <div className="space-y-3">
+                          <span className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Select Healthcare Avatar</span>
+                          <AvatarPicker selectedId={avId} onSelect={setAvId} category="PATIENT" />
+                        </div>
 
-                    {/* Form fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        label="First Name"
-                        required
-                        placeholder="First Name"
-                        value={fname}
-                        onChange={(e) => setFname(e.target.value)}
-                      />
-                      <Input
-                        label="Last Name"
-                        required
-                        placeholder="Last Name"
-                        value={lname}
-                        onChange={(e) => setLname(e.target.value)}
-                      />
-                      <Input
-                        label="Email Address"
-                        required
-                        type="email"
-                        placeholder="name@example.com"
-                        value={mail}
-                        onChange={(e) => setMail(e.target.value)}
-                      />
-                      <Input
-                        label="Phone Number"
-                        required
-                        placeholder="+1 (555) 000-1111"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                      />
-                      <Input
-                        label="Date of Birth"
-                        required
-                        type="date"
-                        value={dob}
-                        onChange={(e) => setDob(e.target.value)}
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Select
-                          label="Gender"
-                          value={gender}
-                          onChange={(e) => setGender(e.target.value)}
-                          options={['Male', 'Female', 'Other']}
-                        />
-                        <Select
-                          label="Blood Group"
-                          value={blood}
-                          onChange={(e) => setBlood(e.target.value)}
-                          options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']}
+                        {/* Form fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Input
+                            label="First Name"
+                            required
+                            placeholder="First Name"
+                            value={fname}
+                            onChange={(e) => setFname(e.target.value)}
+                          />
+                          <Input
+                            label="Last Name"
+                            required
+                            placeholder="Last Name"
+                            value={lname}
+                            onChange={(e) => setLname(e.target.value)}
+                          />
+                          <Input
+                            label="Email Address"
+                            required
+                            type="email"
+                            placeholder="name@example.com"
+                            value={mail}
+                            onChange={(e) => setMail(e.target.value)}
+                          />
+                          <Input
+                            label="Phone Number"
+                            required
+                            placeholder="+1 (555) 000-1111"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                          />
+                          <Input
+                            label="Date of Birth"
+                            required
+                            type="date"
+                            value={dob}
+                            onChange={(e) => setDob(e.target.value)}
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <Select
+                              label="Gender"
+                              value={gender}
+                              onChange={(e) => setGender(e.target.value)}
+                              options={['Male', 'Female', 'Other']}
+                            />
+                            <Select
+                              label="Blood Group"
+                              value={blood}
+                              onChange={(e) => setBlood(e.target.value)}
+                              options={['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']}
                         />
                       </div>
                       <div className="md:col-span-2">
@@ -551,6 +559,15 @@ const PatientDashboard = ({ stats, refreshStats }) => {
               )}
             </CardContent>
           </Card>
+            ) : (
+              <div className="py-12 flex flex-col items-center justify-center gap-3 bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs text-center max-w-md mx-auto my-6">
+                <p className="text-xs text-slate-450 font-bold">No patient profile data available.</p>
+                <Button variant="primary" size="sm" onClick={fetchPatientProfile} loading={loadingProfile}>
+                  Retry Loading Profile
+                </Button>
+              </div>
+            )}
+          </ErrorBoundary>
         )}
 
         {activeTab === 'security' && (

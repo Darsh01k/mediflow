@@ -393,22 +393,114 @@ public class UserService {
         logger.info("Password updated successfully inside profile settings for user: {}", user.getUsername());
     }
 
+    // Store email change verification state in memory
+    private final java.util.Map<Long, EmailChangeRequest> emailChangeRequests = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static class EmailChangeRequest {
+        private final String newEmail;
+        private final String otp;
+        private final java.time.LocalDateTime expiryTime;
+        private final java.time.LocalDateTime lastRequestedTime;
+
+        public EmailChangeRequest(String newEmail, String otp, java.time.LocalDateTime expiryTime, java.time.LocalDateTime lastRequestedTime) {
+            this.newEmail = newEmail;
+            this.otp = otp;
+            this.expiryTime = expiryTime;
+            this.lastRequestedTime = lastRequestedTime;
+        }
+
+        public String getNewEmail() {
+            return newEmail;
+        }
+
+        public String getOtp() {
+            return otp;
+        }
+
+        public java.time.LocalDateTime getExpiryTime() {
+            return expiryTime;
+        }
+
+        public java.time.LocalDateTime getLastRequestedTime() {
+            return lastRequestedTime;
+        }
+    }
+
     @Transactional
-    public void updateEmail(Long userId, String newEmail) {
+    public void requestEmailChange(Long userId, String newEmail) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("User not found."));
 
         if (user.getEmail().equalsIgnoreCase(newEmail)) {
-            return; // no change needed
+            throw new BadRequestException("New email must be different from current email.");
         }
 
         if (userRepository.existsByEmail(newEmail)) {
             throw new BadRequestException("Email is already taken by another account.");
         }
 
+        // Rate limiting: 60 seconds
+        EmailChangeRequest existingRequest = emailChangeRequests.get(userId);
+        if (existingRequest != null && existingRequest.getLastRequestedTime().isAfter(java.time.LocalDateTime.now().minusSeconds(60))) {
+            long secondsLeft = 60 - java.time.Duration.between(existingRequest.getLastRequestedTime(), java.time.LocalDateTime.now()).getSeconds();
+            throw new BadRequestException("Please wait " + secondsLeft + " seconds before requesting another code.");
+        }
+
+        // Generate 6 digit OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+        
+        // Store request
+        emailChangeRequests.put(userId, new EmailChangeRequest(
+                newEmail,
+                otp,
+                java.time.LocalDateTime.now().plusMinutes(10), // 10 minutes expiry
+                java.time.LocalDateTime.now()
+        ));
+
+        // Log and print to console
+        logger.info("=================================================");
+        logger.info("EMAIL CHANGE OTP FOR USER ID {}: {}", userId, otp);
+        logger.info("=================================================");
+        System.out.println("=================================================");
+        System.out.println("EMAIL CHANGE OTP FOR USER ID " + userId + " (New Email: " + newEmail + "): " + otp);
+        System.out.println("=================================================");
+    }
+
+    @Transactional
+    public void verifyEmailChange(Long userId, String otp, String newEmail) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BadRequestException("User not found."));
+
+        EmailChangeRequest changeRequest = emailChangeRequests.get(userId);
+        if (changeRequest == null) {
+            throw new BadRequestException("No pending email change request found.");
+        }
+
+        if (!changeRequest.getNewEmail().equalsIgnoreCase(newEmail)) {
+            throw new BadRequestException("The target email address does not match your active request.");
+        }
+
+        if (changeRequest.getExpiryTime().isBefore(java.time.LocalDateTime.now())) {
+            emailChangeRequests.remove(userId);
+            throw new BadRequestException("Verification code has expired. Please request a new one.");
+        }
+
+        if (!changeRequest.getOtp().equals(otp)) {
+            throw new BadRequestException("Invalid verification code. Please try again.");
+        }
+
+        if (userRepository.existsByEmail(newEmail)) {
+            emailChangeRequests.remove(userId);
+            throw new BadRequestException("Email is already taken by another account.");
+        }
+
+        // Update database
         user.setEmail(newEmail);
         userRepository.save(user);
-        logger.info("Email updated successfully inside profile settings to: {} for user: {}", newEmail, user.getUsername());
+
+        // Clear the request
+        emailChangeRequests.remove(userId);
+        logger.info("Email updated successfully via verified OTP for user ID: {}", userId);
     }
 
     @Transactional(readOnly = true)

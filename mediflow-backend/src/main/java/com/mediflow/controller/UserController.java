@@ -56,8 +56,8 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
     }
 
-    @PostMapping("/update-email")
-    public ResponseEntity<?> updateEmail(@RequestBody Map<String, String> request) {
+    @PostMapping("/request-email-change")
+    public ResponseEntity<?> requestEmailChange(@RequestBody Map<String, String> request) {
         Long userId = getCurrentUserId();
         String newEmail = request.get("newEmail");
 
@@ -65,7 +65,24 @@ public class UserController {
             return ResponseEntity.badRequest().body(Map.of("message", "New email address is required."));
         }
 
-        userService.updateEmail(userId, newEmail);
+        userService.requestEmailChange(userId, newEmail);
+        return ResponseEntity.ok(Map.of("message", "Verification code sent successfully."));
+    }
+
+    @PostMapping("/verify-email-change")
+    public ResponseEntity<?> verifyEmailChange(@RequestBody Map<String, String> request) {
+        Long userId = getCurrentUserId();
+        String newEmail = request.get("newEmail");
+        String otp = request.get("otp");
+
+        if (newEmail == null || newEmail.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "New email address is required."));
+        }
+        if (otp == null || otp.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Verification code (OTP) is required."));
+        }
+
+        userService.verifyEmailChange(userId, otp, newEmail);
         return ResponseEntity.ok(Map.of("message", "Email address updated successfully."));
     }
 

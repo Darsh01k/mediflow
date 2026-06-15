@@ -36,9 +36,12 @@ const SecuritySettings = () => {
 
   // Update Email States
   const [newEmail, setNewEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [emailSuccess, setEmailSuccess] = useState('');
+  const [countdown, setCountdown] = useState(0);
 
   // Active Sessions States
   const [sessions, setSessions] = useState([]);
@@ -46,6 +49,19 @@ const SecuritySettings = () => {
   const [revokingSessionId, setRevokingSessionId] = useState(null);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
   const [sessionsError, setSessionsError] = useState('');
+
+  // OTP resend countdown effect
+  useEffect(() => {
+    let timer = null;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [countdown]);
 
   // Password validation helper
   const validatePasswordStrength = (password) => {
@@ -97,8 +113,8 @@ const SecuritySettings = () => {
     }
   };
 
-  const handleEmailSubmit = async (e) => {
-    e.preventDefault();
+  const handleRequestEmailChange = async (e) => {
+    if (e) e.preventDefault();
     setEmailError('');
     setEmailSuccess('');
 
@@ -107,26 +123,68 @@ const SecuritySettings = () => {
       return;
     }
 
-    // Basic email format check
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
       setEmailError('Please enter a valid email address');
       return;
     }
 
+    if (newEmail.toLowerCase() === user?.email?.toLowerCase()) {
+      setEmailError('New email must be different from current email');
+      return;
+    }
+
     try {
       setEmailLoading(true);
-      await API.post('/users/update-email', { newEmail });
+      const res = await API.post('/users/request-email-change', { newEmail });
+      setOtpSent(true);
+      setCountdown(60);
+      setEmailSuccess(res.data.message || 'Verification code sent to your new email.');
+      toast.success('Verification code sent successfully!');
+    } catch (err) {
+      setEmailError(err.response?.data?.message || 'Failed to request email change.');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleVerifyEmailChange = async (e) => {
+    if (e) e.preventDefault();
+    setEmailError('');
+    setEmailSuccess('');
+
+    if (!otp || otp.trim().length !== 6) {
+      setEmailError('Please enter a valid 6-digit verification code');
+      return;
+    }
+
+    try {
+      setEmailLoading(true);
+      await API.post('/users/verify-email-change', { newEmail, otp });
       setEmailSuccess('Email address updated successfully!');
       toast.success('Email updated successfully!');
       
       // Sync local context state
       updateUser({ email: newEmail });
+      
+      // Reset flow
       setNewEmail('');
+      setOtp('');
+      setOtpSent(false);
+      setCountdown(0);
     } catch (err) {
-      setEmailError(err.response?.data?.message || 'Failed to update email address.');
+      setEmailError(err.response?.data?.message || 'Verification failed. Please check the code.');
     } finally {
       setEmailLoading(false);
     }
+  };
+
+  const handleCancelEmailChange = () => {
+    setNewEmail('');
+    setOtp('');
+    setOtpSent(false);
+    setEmailError('');
+    setEmailSuccess('');
+    setCountdown(0);
   };
 
   const fetchActiveSessions = async () => {
@@ -302,36 +360,103 @@ const SecuritySettings = () => {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <form onSubmit={handleEmailSubmit} className="space-y-4">
-              {emailError && <Alert variant="danger">{emailError}</Alert>}
-              {emailSuccess && <Alert variant="success">{emailSuccess}</Alert>}
+            {!otpSent ? (
+              <form onSubmit={handleRequestEmailChange} className="space-y-4">
+                {emailError && <Alert variant="danger">{emailError}</Alert>}
+                {emailSuccess && <Alert variant="success">{emailSuccess}</Alert>}
 
-              <div className="p-3 bg-indigo-50/40 border border-indigo-100/50 rounded-xl text-[11px] font-bold text-slate-500 flex justify-between items-center">
-                <span>Current Email Address:</span>
-                <span className="text-slate-700 bg-white border px-2.5 py-1 rounded-lg shadow-2xs font-mono">{user?.email || 'N/A'}</span>
-              </div>
+                <div className="p-3 bg-indigo-50/40 border border-indigo-100/50 rounded-xl text-[11px] font-bold text-slate-500 flex justify-between items-center">
+                  <span>Current Email Address:</span>
+                  <span className="text-slate-700 bg-white border px-2.5 py-1 rounded-lg shadow-2xs font-mono">{user?.email || 'N/A'}</span>
+                </div>
 
-              <Input
-                label="New Email Address"
-                type="email"
-                required
-                placeholder="example@mediflow.in"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                disabled={emailLoading}
-                icon={Mail}
-              />
+                <Input
+                  label="New Email Address"
+                  type="email"
+                  required
+                  placeholder="example@mediflow.in"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  disabled={emailLoading}
+                  icon={Mail}
+                />
 
-              <div className="flex justify-end border-t pt-3">
-                <Button
-                  type="submit"
-                  loading={emailLoading}
-                  variant="primary"
-                >
-                  Update Email
-                </Button>
-              </div>
-            </form>
+                <div className="flex justify-end border-t pt-3">
+                  <Button
+                    type="submit"
+                    loading={emailLoading}
+                    variant="primary"
+                  >
+                    Send Verification Code
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyEmailChange} className="space-y-4">
+                {emailError && <Alert variant="danger">{emailError}</Alert>}
+                {emailSuccess && <Alert variant="success">{emailSuccess}</Alert>}
+
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-[11.5px] font-semibold text-amber-800 space-y-1">
+                  <p className="font-bold text-xs">Verification code sent!</p>
+                  <p>We've sent a 6-digit OTP code to <strong className="font-extrabold">{newEmail}</strong>.</p>
+                  <p className="text-[10px] text-amber-600 italic">Please check your inbox. The code is valid for 10 minutes.</p>
+                </div>
+
+                <Input
+                  label="Enter 6-Digit Verification Code"
+                  type="text"
+                  required
+                  maxLength={6}
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  disabled={emailLoading}
+                  className="text-center tracking-widest text-lg font-black"
+                />
+
+                <div className="flex justify-between items-center text-[11px] font-bold text-slate-500 px-1 pt-1">
+                  {countdown > 0 ? (
+                    <span className="text-slate-400">Resend code in {countdown}s</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleRequestEmailChange}
+                      disabled={emailLoading}
+                      className="text-indigo-600 hover:text-indigo-700 cursor-pointer disabled:opacity-50 font-bold"
+                    >
+                      Resend Code
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCancelEmailChange}
+                    disabled={emailLoading}
+                    className="text-rose-600 hover:text-rose-700 cursor-pointer font-bold"
+                  >
+                    Cancel / Change Email
+                  </button>
+                </div>
+
+                <div className="flex justify-end border-t pt-3 gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleCancelEmailChange}
+                    disabled={emailLoading}
+                    className="border-slate-200"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    loading={emailLoading}
+                    variant="primary"
+                  >
+                    Verify & Update
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
