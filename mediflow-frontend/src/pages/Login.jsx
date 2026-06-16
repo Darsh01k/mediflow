@@ -61,8 +61,17 @@ const Login = () => {
       toast.success(`Welcome Back, ${greeting}`);
       navigate('/');
     } catch (err) {
-      setError(err);
-      toast.error(err);
+      console.error('Login Error:', err);
+      const message =
+        typeof err === 'string'
+          ? err
+          : err?.message
+          ? err.message
+          : err?.response?.data?.message
+          ? err.response.data.message
+          : 'Login failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -95,8 +104,17 @@ const Login = () => {
       toast.success(`Welcome Back, ${greeting}`);
       navigate('/');
     } catch (err) {
-      setError(err);
-      toast.error(err);
+      console.error('Google Sign-In Error:', err);
+      const message =
+        typeof err === 'string'
+          ? err
+          : err?.message
+          ? err.message
+          : err?.response?.data?.message
+          ? err.response.data.message
+          : 'Google sign in failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

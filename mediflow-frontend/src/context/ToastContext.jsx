@@ -8,7 +8,15 @@ export const ToastProvider = ({ children }) => {
 
   const showToast = useCallback((message, type = 'info', duration = 3000) => {
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
+    const formattedMessage = typeof message === 'string'
+      ? message
+      : message?.message
+      ? message.message
+      : message?.response?.data?.message
+      ? message.response.data.message
+      : String(message || '');
+
+    setToasts((prev) => [...prev, { id, message: formattedMessage, type }]);
 
     setTimeout(() => {
       removeToast(id);

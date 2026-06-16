@@ -103,8 +103,17 @@ const Register = () => {
       toast.success(`Welcome to MediFlow, ${greeting}!`);
       navigate('/');
     } catch (err) {
-      setError(err);
-      toast.error(err);
+      console.error('Google Sign-Up Error:', err);
+      const message =
+        typeof err === 'string'
+          ? err
+          : err?.message
+          ? err.message
+          : err?.response?.data?.message
+          ? err.response.data.message
+          : 'Google sign up failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -324,8 +333,17 @@ const Register = () => {
         navigate('/login');
       }, 3000);
     } catch (err) {
-      setError(err);
-      toast.error(err);
+      console.error('Registration Error:', err);
+      const message =
+        typeof err === 'string'
+          ? err
+          : err?.message
+          ? err.message
+          : err?.response?.data?.message
+          ? err.response.data.message
+          : 'Registration failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
