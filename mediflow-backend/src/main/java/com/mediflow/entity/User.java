@@ -48,9 +48,12 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "google_id", length = 255)
+    private String googleId;
+
     @Enumerated(EnumType.STRING)
-    @Column(name = "provider", nullable = false, length = 20)
-    private Provider provider = Provider.LOCAL;
+    @Column(name = "auth_provider", nullable = false, length = 20)
+    private AuthProvider authProvider = AuthProvider.LOCAL;
 
     public User() {}
 
@@ -184,11 +187,19 @@ public class User {
         this.country = country;
     }
 
-    public Provider getProvider() {
-        return provider;
+    public String getGoogleId() {
+        return googleId;
     }
 
-    public void setProvider(Provider provider) {
-        this.provider = provider;
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
+    }
+
+    public AuthProvider getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(AuthProvider authProvider) {
+        this.authProvider = authProvider;
     }
 }

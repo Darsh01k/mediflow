@@ -1,6 +1,6 @@
 package com.mediflow.entity;
 
-public enum Provider {
+public enum AuthProvider {
     LOCAL,
     GOOGLE
 }

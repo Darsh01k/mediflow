@@ -66,6 +66,9 @@ public class MediFlowFlowIntegrationTest {
     @Autowired
     private com.mediflow.service.UserService userService;
 
+    @Autowired
+    private com.mediflow.service.GoogleTokenVerifierService googleTokenVerifierService;
+
     @BeforeEach
     public void setup() {
         notificationRepository.deleteAll();
@@ -511,6 +514,6 @@ public class MediFlowFlowIntegrationTest {
 
         // Verify provider in db updated to GOOGLE
         User user = userRepository.findByEmail("localuser@google.com").orElseThrow();
-        assertEquals(Provider.GOOGLE, user.getProvider());
+        assertEquals(AuthProvider.GOOGLE, user.getAuthProvider());
     }
 }

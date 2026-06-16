@@ -53,6 +53,9 @@ public class UserService {
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired
+    private GoogleTokenVerifierService googleTokenVerifierService;
+
 
 
     @org.springframework.beans.factory.annotation.Value("${mediflow.jwt.expiration-ms}")
@@ -350,27 +353,49 @@ public class UserService {
     }
 
     @Transactional
-    public AuthResponse authenticateGoogle(String idToken) {
-        logger.info("Attempting Google login/authentication");
+    public AuthResponse authenticateGoogle(String idTokenString) {
+        logger.info("Attempting production-grade Google login/authentication");
         try {
-            GoogleUser googleUser = verifyGoogleIdToken(idToken);
+            com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload payload = googleTokenVerifierService.verify(idTokenString);
             
-            Optional<User> userOpt = userRepository.findByEmail(googleUser.email);
+            String email = payload.getEmail();
+            if (email == null) {
+                throw new BadRequestException("Email claim not found in Google token.");
+            }
+            
+            String firstName = (String) payload.get("given_name");
+            if (firstName == null) {
+                firstName = (String) payload.get("name");
+            }
+            String lastName = (String) payload.get("family_name");
+            if (lastName == null) {
+                lastName = "";
+            }
+            String googleId = payload.getSubject();
+            
+            Optional<User> userByGoogleId = userRepository.findByGoogleId(googleId);
+            Optional<User> userByEmail = userRepository.findByEmail(email);
             User user;
             
-            if (userOpt.isPresent()) {
-                user = userOpt.get();
-                logger.info("Google login: User with email {} already exists.", googleUser.email);
+            if (userByGoogleId.isPresent()) {
+                user = userByGoogleId.get();
+                logger.info("Google login: Found user by googleId with email {}", email);
                 
-                if (user.getProvider() != Provider.GOOGLE) {
-                    logger.info("Linking existing LOCAL account for email {} to GOOGLE provider", googleUser.email);
-                    user.setProvider(Provider.GOOGLE);
+                if (user.getAuthProvider() != AuthProvider.GOOGLE) {
+                    user.setAuthProvider(AuthProvider.GOOGLE);
                     user = userRepository.save(user);
                 }
-            } else {
-                logger.info("Google login: Creating new user for email {}", googleUser.email);
+            } else if (userByEmail.isPresent()) {
+                user = userByEmail.get();
+                logger.info("Google login: Found user by email {} (LOCAL/other). Linking account.", email);
                 
-                String baseUsername = googleUser.email.split("@")[0];
+                user.setGoogleId(googleId);
+                user.setAuthProvider(AuthProvider.GOOGLE);
+                user = userRepository.save(user);
+            } else {
+                logger.info("Google login: Creating new user for email {}", email);
+                
+                String baseUsername = email.split("@")[0];
                 String username = baseUsername;
                 int count = 1;
                 while (userRepository.existsByUsername(username)) {
@@ -380,12 +405,13 @@ public class UserService {
                 
                 user = new User();
                 user.setUsername(username);
-                user.setEmail(googleUser.email);
+                user.setEmail(email);
                 user.setPassword(passwordEncoder.encode("GOOGLE_USER_RANDOM_PASSWORD_" + java.util.UUID.randomUUID()));
                 user.setRole(Role.PATIENT);
-                user.setFirstName(googleUser.firstName != null ? googleUser.firstName : "Google");
-                user.setLastName(googleUser.lastName != null ? googleUser.lastName : "User");
-                user.setProvider(Provider.GOOGLE);
+                user.setFirstName(firstName != null ? firstName : "Google");
+                user.setLastName(lastName != null ? lastName : "User");
+                user.setGoogleId(googleId);
+                user.setAuthProvider(AuthProvider.GOOGLE);
                 user.setAvatarId("avatar_1");
                 
                 user = userRepository.save(user);
@@ -425,13 +451,13 @@ public class UserService {
                 profileId = user.getId();
             }
             
-            String firstName = user.getFirstName();
-            String lastName = user.getLastName();
+            String userFirstName = user.getFirstName();
+            String userLastName = user.getLastName();
             String avatarId = user.getAvatarId();
             
             if (Role.HOSPITAL_ADMIN.name().equals(role) && user.getHospital() != null) {
-                firstName = user.getHospital().getName();
-                lastName = "";
+                userFirstName = user.getHospital().getName();
+                userLastName = "";
                 avatarId = user.getHospital().getLogoAvatar() != null ? user.getHospital().getLogoAvatar() : "hospital_1";
             }
             
@@ -443,8 +469,8 @@ public class UserService {
                     user.getEmail(),
                     role,
                     profileId,
-                    firstName,
-                    lastName,
+                    userFirstName,
+                    userLastName,
                     avatarId,
                     user.getCity(),
                     user.getState(),
@@ -453,59 +479,6 @@ public class UserService {
         } catch (Exception e) {
             logger.error("Google authentication failed", e);
             throw new BadRequestException("Google login failed: " + e.getMessage());
-        }
-    }
-
-    private GoogleUser verifyGoogleIdToken(String idToken) {
-        if ("mock-google-token".equals(idToken) || idToken.startsWith("mock-")) {
-            String mockEmail = idToken.replace("mock-", "") + "@google.com";
-            if ("mock-google-token".equals(idToken)) {
-                mockEmail = "mockuser@google.com";
-            }
-            return new GoogleUser(mockEmail, "Mock", "User", null);
-        }
-        
-        try {
-            String[] parts = idToken.split("\\.");
-            if (parts.length < 2) {
-                throw new BadRequestException("Invalid Google ID token format.");
-            }
-            String payloadJson = new String(java.util.Base64.getUrlDecoder().decode(parts[1]), java.nio.charset.StandardCharsets.UTF_8);
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            java.util.Map<String, Object> claims = mapper.readValue(payloadJson, java.util.Map.class);
-            
-            String email = (String) claims.get("email");
-            if (email == null) {
-                throw new BadRequestException("Email claim not found in Google token.");
-            }
-            String firstName = (String) claims.get("given_name");
-            if (firstName == null) {
-                firstName = (String) claims.get("name");
-            }
-            String lastName = (String) claims.get("family_name");
-            if (lastName == null) {
-                lastName = "";
-            }
-            String picture = (String) claims.get("picture");
-            
-            return new GoogleUser(email, firstName, lastName, picture);
-        } catch (Exception e) {
-            logger.error("Failed to parse/verify Google ID token", e);
-            throw new BadRequestException("Invalid Google ID token.");
-        }
-    }
-
-    private static class GoogleUser {
-        final String email;
-        final String firstName;
-        final String lastName;
-        final String picture;
-
-        GoogleUser(String email, String firstName, String lastName, String picture) {
-            this.email = email;
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.picture = picture;
         }
     }
 
