@@ -59,8 +59,21 @@ public class JwtUtils {
                     .parseSignedClaims(token)
                     .getPayload()
                     .get("sessionToken", String.class);
+        } catch (ExpiredJwtException e) {
+            return e.getClaims().get("sessionToken", String.class);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            Jwts.parser().verifyWith(key()).build().parseSignedClaims(token);
+            return false;
+        } catch (ExpiredJwtException e) {
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 

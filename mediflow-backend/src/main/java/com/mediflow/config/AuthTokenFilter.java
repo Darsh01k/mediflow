@@ -43,11 +43,17 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                     String username = jwtUtils.getUserNameFromJwtToken(jwt);
                     String sessionToken = jwtUtils.getSessionTokenFromJwtToken(jwt);
                     
-                    boolean isSessionActive = true;
+                    boolean isSessionActive = false;
                     if (sessionToken != null) {
-                        isSessionActive = userSessionRepository.findByToken(sessionToken)
-                                .map(com.mediflow.entity.UserSession::isActive)
-                                .orElse(false);
+                        java.util.Optional<com.mediflow.entity.UserSession> sessionOpt = userSessionRepository.findByToken(sessionToken);
+                        if (sessionOpt.isPresent()) {
+                            com.mediflow.entity.UserSession session = sessionOpt.get();
+                            if (session.isActive()) {
+                                isSessionActive = true;
+                                session.setLastActiveAt(java.time.LocalDateTime.now());
+                                userSessionRepository.save(session);
+                            }
+                        }
                     }
 
                     if (isSessionActive) {
@@ -66,6 +72,20 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                     }
                 } else {
                     logger.warn("[AuthTokenFilter] Invalid JWT token for request: {}", requestURI);
+                    if (jwtUtils.isTokenExpired(jwt)) {
+                        String sessionToken = jwtUtils.getSessionTokenFromJwtToken(jwt);
+                        if (sessionToken != null) {
+                            java.util.Optional<com.mediflow.entity.UserSession> sessionOpt = userSessionRepository.findByToken(sessionToken);
+                            if (sessionOpt.isPresent()) {
+                                com.mediflow.entity.UserSession session = sessionOpt.get();
+                                if (session.isActive()) {
+                                    session.setActive(false);
+                                    userSessionRepository.save(session);
+                                    logger.info("[AuthTokenFilter] Deactivated session {} due to expired JWT", sessionToken);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 logger.info("[AuthTokenFilter] No JWT token found, continuing request as anonymous");

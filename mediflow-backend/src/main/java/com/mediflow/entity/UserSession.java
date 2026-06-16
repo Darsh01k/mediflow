@@ -21,6 +21,9 @@ public class UserSession {
     @Column(name = "login_time", nullable = false)
     private LocalDateTime loginTime;
 
+    @Column(name = "last_active_at")
+    private LocalDateTime lastActiveAt;
+
     @Column(name = "device_info", length = 150)
     private String deviceInfo;
 
@@ -36,6 +39,7 @@ public class UserSession {
         this.token = token;
         this.user = user;
         this.loginTime = loginTime;
+        this.lastActiveAt = loginTime;
         this.deviceInfo = deviceInfo;
         this.browserInfo = browserInfo;
         this.isActive = true;
@@ -71,6 +75,14 @@ public class UserSession {
 
     public void setLoginTime(LocalDateTime loginTime) {
         this.loginTime = loginTime;
+    }
+
+    public LocalDateTime getLastActiveAt() {
+        return lastActiveAt;
+    }
+
+    public void setLastActiveAt(LocalDateTime lastActiveAt) {
+        this.lastActiveAt = lastActiveAt;
     }
 
     public String getDeviceInfo() {

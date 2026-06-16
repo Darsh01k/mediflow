@@ -81,7 +81,7 @@ public class UserController {
             }
 
             userService.requestEmailChange(userId, newEmail);
-            return ResponseEntity.ok(Map.of("message", "Verification code sent successfully."));
+            return ResponseEntity.ok(Map.of("message", "For security, a verification code has been sent to your current registered email address."));
         } catch (Exception e) {
             logger.error("FULL ERROR", e);
             return ResponseEntity.internalServerError().body(
@@ -152,5 +152,25 @@ public class UserController {
         Long userId = getCurrentUserId();
         userService.logoutAllSessions(userId);
         return ResponseEntity.ok(Map.of("message", "Signed out of all devices successfully."));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        try {
+            String jwt = parseJwt(request);
+            if (jwt != null) {
+                String sessionToken = jwtUtils.getSessionTokenFromJwtToken(jwt);
+                userService.logoutSessionByToken(sessionToken);
+            }
+            return ResponseEntity.ok(Map.of("message", "Logged out successfully."));
+        } catch (Exception e) {
+            logger.error("FULL ERROR during logout", e);
+            return ResponseEntity.internalServerError().body(
+                Map.of(
+                    "error", e.getClass().getName(),
+                    "message", e.getMessage()
+                )
+            );
+        }
     }
 }

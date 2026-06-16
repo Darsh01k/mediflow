@@ -67,16 +67,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('loginTimestamp');
-    localStorage.removeItem('lastActivityTimestamp');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('loginTimestamp');
-    sessionStorage.removeItem('lastActivityTimestamp');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await API.post('/users/logout');
+    } catch (err) {
+      console.error('Logout request failed', err);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('loginTimestamp');
+      localStorage.removeItem('lastActivityTimestamp');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('loginTimestamp');
+      sessionStorage.removeItem('lastActivityTimestamp');
+      setUser(null);
+    }
   };
 
   const updateUser = (newUserData) => {

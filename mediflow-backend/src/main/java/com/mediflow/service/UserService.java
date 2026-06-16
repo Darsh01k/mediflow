@@ -58,6 +58,9 @@ public class UserService {
     @Autowired
     private com.mediflow.repository.PasswordResetTokenRepository passwordResetTokenRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${mediflow.jwt.expiration-ms}")
+    private int jwtExpirationMs;
+
     public AuthResponse authenticate(LoginRequest loginRequest) {
         return authenticate(loginRequest, null);
     }
@@ -84,8 +87,19 @@ public class UserService {
             String browserInfo = parseBrowser(userAgent);
             String deviceInfo = parseDevice(userAgent);
             
-            UserSession userSession = new UserSession(sessionToken, user, java.time.LocalDateTime.now(), deviceInfo, browserInfo);
-            userSessionRepository.save(userSession);
+            Optional<UserSession> existingSessionOpt = userSessionRepository.findByUserIdAndDeviceInfoAndBrowserInfoAndIsActiveTrue(user.getId(), deviceInfo, browserInfo);
+            if (existingSessionOpt.isPresent()) {
+                UserSession existingSession = existingSessionOpt.get();
+                existingSession.setToken(sessionToken);
+                existingSession.setLoginTime(java.time.LocalDateTime.now());
+                existingSession.setLastActiveAt(java.time.LocalDateTime.now());
+                userSessionRepository.save(existingSession);
+                logger.info("Updated existing session for user {} and device {} / browser {}", user.getUsername(), deviceInfo, browserInfo);
+            } else {
+                UserSession userSession = new UserSession(sessionToken, user, java.time.LocalDateTime.now(), deviceInfo, browserInfo);
+                userSessionRepository.save(userSession);
+                logger.info("Created new session for user {} and device {} / browser {}", user.getUsername(), deviceInfo, browserInfo);
+            }
 
             String jwt = jwtUtils.generateJwtToken(authentication, sessionToken);
 
@@ -477,13 +491,23 @@ public class UserService {
                 java.time.LocalDateTime.now()
         ));
 
-        // Log and print to console
-        logger.info("=================================================");
-        logger.info("EMAIL CHANGE OTP FOR USER ID {}: {}", userId, otp);
-        logger.info("=================================================");
-        System.out.println("=================================================");
-        System.out.println("EMAIL CHANGE OTP FOR USER ID " + userId + " (New Email: " + newEmail + "): " + otp);
-        System.out.println("=================================================");
+        // Log and print to console (simulated SMTP)
+        try {
+            String currentEmail = user.getEmail();
+            if (currentEmail == null || currentEmail.trim().isEmpty()) {
+                throw new RuntimeException("User current email is empty or invalid.");
+            }
+            logger.info("=================================================");
+            logger.info("EMAIL CHANGE OTP FOR USER ID {}: {}", userId, otp);
+            logger.info("SENDING OTP TO CURRENT EMAIL: {}", currentEmail);
+            logger.info("=================================================");
+            System.out.println("=================================================");
+            System.out.println("EMAIL CHANGE OTP FOR USER ID " + userId + " (Sent to current email: " + currentEmail + ", target email: " + newEmail + "): " + otp);
+            System.out.println("=================================================");
+        } catch (Exception e) {
+            logger.error("Failed to send verification email for user ID {}", userId, e);
+            throw new RuntimeException("Unable to send verification email.");
+        }
     }
 
     @Transactional
@@ -535,14 +559,26 @@ public class UserService {
         logger.info("Email updated successfully via verified OTP for user ID: {}", userId);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public java.util.List<com.mediflow.dto.UserSessionDto> getUserSessions(Long userId, String currentPrincipalToken) {
         logger.info("Entering getUserSessions userId={}, currentPrincipalToken={}", userId, currentPrincipalToken);
         logger.info("Querying userSessionRepository for active sessions of userId={}", userId);
         java.util.List<UserSession> sessions = userSessionRepository.findByUserIdAndIsActiveTrue(userId);
         java.util.List<com.mediflow.dto.UserSessionDto> dtoList = new java.util.ArrayList<>();
+        
+        java.time.LocalDateTime expirationCutoff = java.time.LocalDateTime.now().minus(java.time.Duration.ofMillis(jwtExpirationMs));
+        
         for (UserSession session : sessions) {
             logger.info("Processing session ID={}, token={}, is_active={}", session.getId(), session.getToken(), session.isActive());
+            
+            // Auto cleanup for sessions older than JWT expiration time
+            if (session.getLoginTime().isBefore(expirationCutoff)) {
+                logger.info("Deactivating expired session ID={} (created at {})", session.getId(), session.getLoginTime());
+                session.setActive(false);
+                userSessionRepository.save(session);
+                continue;
+            }
+            
             boolean isCurrent = java.util.Objects.equals(session.getToken(), currentPrincipalToken);
             dtoList.add(new com.mediflow.dto.UserSessionDto(
                 session.getId(),
@@ -557,11 +593,22 @@ public class UserService {
     }
 
     @Transactional
+    public void logoutSessionByToken(String sessionToken) {
+        if (sessionToken != null) {
+            userSessionRepository.findByToken(sessionToken).ifPresent(session -> {
+                session.setActive(false);
+                userSessionRepository.save(session);
+                logger.info("Successfully revoked session by token: {}", sessionToken);
+            });
+        }
+    }
+
+    @Transactional
     public void logoutSession(Long userId, Long sessionId) {
         UserSession session = userSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new BadRequestException("Session not found."));
 
-        if (!session.getUser().getId().equals(userId)) {
+        if (!java.util.Objects.equals(session.getUser().getId(), userId)) {
             throw new BadRequestException("Unauthorized access to revoke session.");
         }
 

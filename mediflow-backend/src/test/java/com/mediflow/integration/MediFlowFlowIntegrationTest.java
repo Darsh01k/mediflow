@@ -60,8 +60,16 @@ public class MediFlowFlowIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private UserSessionRepository userSessionRepository;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
     @BeforeEach
     public void setup() {
+        userSessionRepository.deleteAll();
+        passwordResetTokenRepository.deleteAll();
         prescriptionRepository.deleteAll();
         medicalRecordRepository.deleteAll();
         appointmentRepository.deleteAll();
@@ -426,5 +434,53 @@ public class MediFlowFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalDoctors", is(1)))
                 .andExpect(jsonPath("$.totalPrescriptions", is(1)));
+    }
+
+    @Test
+    public void testUserSettingsEndpoints() throws Exception {
+        LoginRequest adminLogin = new LoginRequest();
+        adminLogin.setUsername("platformadmin");
+        adminLogin.setPassword("adminpassword");
+
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(adminLogin)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String token = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("token").asText();
+
+        System.out.println("--- TESTING GET /api/users/sessions ---");
+        MvcResult sessionsResult = mockMvc.perform(get("/api/users/sessions")
+                .header("Authorization", "Bearer " + token))
+                .andReturn();
+        System.out.println("Response Status for sessions: " + sessionsResult.getResponse().getStatus());
+        System.out.println("Response Body for sessions: " + sessionsResult.getResponse().getContentAsString());
+
+        System.out.println("--- TESTING POST /api/users/change-password ---");
+        java.util.Map<String, String> pwRequest = java.util.Map.of(
+            "currentPassword", "adminpassword",
+            "newPassword", "newPassword123!",
+            "confirmPassword", "newPassword123!"
+        );
+        MvcResult pwResult = mockMvc.perform(post("/api/users/change-password")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(pwRequest)))
+                .andReturn();
+        System.out.println("Response Status for change-password: " + pwResult.getResponse().getStatus());
+        System.out.println("Response Body for change-password: " + pwResult.getResponse().getContentAsString());
+
+        System.out.println("--- TESTING POST /api/users/request-email-change ---");
+        java.util.Map<String, String> emailRequest = java.util.Map.of(
+            "newEmail", "newadmin@mediflow.com"
+        );
+        MvcResult emailResult = mockMvc.perform(post("/api/users/request-email-change")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(emailRequest)))
+                .andReturn();
+        System.out.println("Response Status for request-email-change: " + emailResult.getResponse().getStatus());
+        System.out.println("Response Body for request-email-change: " + emailResult.getResponse().getContentAsString());
     }
 }
