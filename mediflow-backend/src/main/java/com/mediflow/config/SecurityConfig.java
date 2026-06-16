@@ -95,7 +95,8 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/hospitals", "/api/hospitals/search", "/api/hospitals/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/doctors", "/api/doctors/search", "/api/doctors/hospital/**", "/api/doctors/specializations", "/api/doctors/**").permitAll()
                                 .anyRequest().authenticated()
-                );
+                )
+                .oauth2Login(oauth2 -> oauth2.permitAll());
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);

@@ -58,27 +58,23 @@ public class MediFlowFlowIntegrationTest {
     private MedicalRecordRepository medicalRecordRepository;
 
     @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private UserSessionRepository userSessionRepository;
-
-    @Autowired
-    private PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Autowired
     private com.mediflow.service.UserService userService;
 
     @BeforeEach
     public void setup() {
-        userSessionRepository.deleteAll();
-        passwordResetTokenRepository.deleteAll();
+        notificationRepository.deleteAll();
         prescriptionRepository.deleteAll();
         medicalRecordRepository.deleteAll();
         appointmentRepository.deleteAll();
-        userRepository.deleteAll();
         doctorRepository.deleteAll();
         patientRepository.deleteAll();
+        userRepository.deleteAll();
         hospitalRepository.deleteAll();
 
         // Create platform admin
@@ -453,13 +449,6 @@ public class MediFlowFlowIntegrationTest {
 
         String token = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("token").asText();
 
-        System.out.println("--- TESTING GET /api/users/sessions ---");
-        MvcResult sessionsResult = mockMvc.perform(get("/api/users/sessions")
-                .header("Authorization", "Bearer " + token))
-                .andReturn();
-        System.out.println("Response Status for sessions: " + sessionsResult.getResponse().getStatus());
-        System.out.println("Response Body for sessions: " + sessionsResult.getResponse().getContentAsString());
-
         System.out.println("--- TESTING POST /api/users/change-password ---");
         java.util.Map<String, String> pwRequest = java.util.Map.of(
             "currentPassword", "adminpassword",
@@ -470,100 +459,58 @@ public class MediFlowFlowIntegrationTest {
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(pwRequest)))
+                .andExpect(status().isOk())
                 .andReturn();
         System.out.println("Response Status for change-password: " + pwResult.getResponse().getStatus());
         System.out.println("Response Body for change-password: " + pwResult.getResponse().getContentAsString());
+    }
 
-        System.out.println("--- TESTING POST /api/users/request-email-change ---");
-        java.util.Map<String, String> emailRequest = java.util.Map.of(
-            "newEmail", "newadmin@mediflow.com"
+    @Test
+    public void testGoogleLoginNewUser() throws Exception {
+        java.util.Map<String, String> googleRequest = java.util.Map.of(
+            "idToken", "mock-google-token"
         );
-        MvcResult emailResult = mockMvc.perform(post("/api/users/request-email-change")
-                .header("Authorization", "Bearer " + token)
+        mockMvc.perform(post("/api/auth/google")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(emailRequest)))
+                .content(objectMapper.writeValueAsString(googleRequest)))
                 .andExpect(status().isOk())
-                .andReturn();
-        System.out.println("Response Status for request-email-change: " + emailResult.getResponse().getStatus());
-        System.out.println("Response Body for request-email-change: " + emailResult.getResponse().getContentAsString());
-        assertTrue(emailResult.getResponse().getContentAsString().contains("For security, a verification code has been sent to your current registered email address."));
+                .andExpect(jsonPath("$.token", notNullValue()))
+                .andExpect(jsonPath("$.email", is("mockuser@google.com")))
+                .andExpect(jsonPath("$.role", is("PATIENT")));
+    }
 
-        // Get admin user and pending OTP
-        User admin = userRepository.findByUsername("platformadmin").orElseThrow();
-        Long userId = admin.getId();
-        String otp = userService.getPendingEmailChangeOtp(userId);
-        assertNotNull(otp);
+    @Test
+    public void testGoogleLoginExistingLocalUser() throws Exception {
+        // First register a local user
+        RegisterRequest registerRequest = new RegisterRequest();
+        registerRequest.setUsername("localuser");
+        registerRequest.setPassword("password123!");
+        registerRequest.setEmail("localuser@google.com");
+        registerRequest.setRole(Role.PATIENT);
+        registerRequest.setFirstName("Local");
+        registerRequest.setLastName("User");
+        registerRequest.setDateOfBirth(LocalDate.of(1995, 5, 5));
+        registerRequest.setGender("Male");
+        registerRequest.setPhone("1234567890");
 
-        // Verify with invalid OTP fails
-        System.out.println("--- TESTING POST /api/users/verify-email-change with invalid OTP ---");
-        java.util.Map<String, String> verifyFailRequest = java.util.Map.of(
-            "newEmail", "newadmin@mediflow.com",
-            "otp", "000000"
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated());
+
+        // Login with Google using same email
+        java.util.Map<String, String> googleRequest = java.util.Map.of(
+            "idToken", "mock-localuser"
         );
-        mockMvc.perform(post("/api/users/verify-email-change")
-                .header("Authorization", "Bearer " + token)
+        mockMvc.perform(post("/api/auth/google")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(verifyFailRequest)))
-                .andExpect(status().isBadRequest());
-
-        // Verify with correct OTP succeeds
-        System.out.println("--- TESTING POST /api/users/verify-email-change with valid OTP ---");
-        java.util.Map<String, String> verifySuccessRequest = java.util.Map.of(
-            "newEmail", "newadmin@mediflow.com",
-            "otp", otp
-        );
-        mockMvc.perform(post("/api/users/verify-email-change")
-                .header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(verifySuccessRequest)))
-                .andExpect(status().isOk());
-
-        // Verify database reflects the updated email
-        User updatedAdmin = userRepository.findById(userId).orElseThrow();
-        assertEquals("newadmin@mediflow.com", updatedAdmin.getEmail());
-
-        // ==========================================
-        // Duplicate Sessions & Logout Cleanup Verification
-        // ==========================================
-        System.out.println("--- TESTING DUPLICATE SESSIONS (BROWSER FINGERPRINTING) ---");
-        String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-        LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("platformadmin");
-        loginRequest.setPassword("newPassword123!"); // changed in pwRequest step
-
-        // Create first session via login with a User-Agent
-        MvcResult login1Result = mockMvc.perform(post("/api/auth/login")
-                .header("User-Agent", userAgent)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
+                .content(objectMapper.writeValueAsString(googleRequest)))
                 .andExpect(status().isOk())
-                .andReturn();
-        String token1 = objectMapper.readTree(login1Result.getResponse().getContentAsString()).get("token").asText();
+                .andExpect(jsonPath("$.token", notNullValue()))
+                .andExpect(jsonPath("$.email", is("localuser@google.com")));
 
-        int sessionsCount1 = userSessionRepository.findByUserIdAndIsActiveTrue(userId).size();
-
-        // Login again with same User-Agent
-        MvcResult login2Result = mockMvc.perform(post("/api/auth/login")
-                .header("User-Agent", userAgent)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isOk())
-                .andReturn();
-        String token2 = objectMapper.readTree(login2Result.getResponse().getContentAsString()).get("token").asText();
-
-        // Verify count of active sessions did not increase
-        int sessionsCount2 = userSessionRepository.findByUserIdAndIsActiveTrue(userId).size();
-        assertEquals(sessionsCount1, sessionsCount2);
-
-        // Verify logging out deactivates the session
-        System.out.println("--- TESTING POST /api/users/logout ---");
-        mockMvc.perform(post("/api/users/logout")
-                .header("Authorization", "Bearer " + token2))
-                .andExpect(status().isOk());
-
-        // Verify that trying to access sessions with the logged out token returns Unauthorized (401)
-        mockMvc.perform(get("/api/users/sessions")
-                .header("Authorization", "Bearer " + token2))
-                .andExpect(status().isUnauthorized());
+        // Verify provider in db updated to GOOGLE
+        User user = userRepository.findByEmail("localuser@google.com").orElseThrow();
+        assertEquals(Provider.GOOGLE, user.getProvider());
     }
 }

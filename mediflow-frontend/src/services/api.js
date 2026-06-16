@@ -27,8 +27,7 @@ API.interceptors.request.use(
       const isAuthEndpoint = config.url && (
         config.url.includes('/auth/login') || 
         config.url.includes('/auth/register') || 
-        config.url.includes('/auth/reset-password') || 
-        config.url.includes('/auth/forgot-password')
+        config.url.includes('/auth/google')
       );
       
       if (!isAuthEndpoint && isSessionExpired()) {

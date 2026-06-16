@@ -58,6 +58,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (idToken) => {
+    try {
+      const response = await API.post('/auth/google', { idToken });
+      const { token, ...userData } = response.data;
+      
+      const now = Date.now().toString();
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('loginTimestamp', now);
+      localStorage.setItem('lastActivityTimestamp', now);
+      
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      throw error.response?.data?.message || 'Google login failed.';
+    }
+  };
+
   const register = async (registerData) => {
     try {
       const response = await API.post('/auth/register', registerData);
@@ -68,21 +86,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    try {
-      await API.post('/users/logout');
-    } catch (err) {
-      console.error('Logout request failed', err);
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('loginTimestamp');
-      localStorage.removeItem('lastActivityTimestamp');
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('user');
-      sessionStorage.removeItem('loginTimestamp');
-      sessionStorage.removeItem('lastActivityTimestamp');
-      setUser(null);
-    }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('loginTimestamp');
+    localStorage.removeItem('lastActivityTimestamp');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('loginTimestamp');
+    sessionStorage.removeItem('lastActivityTimestamp');
+    setUser(null);
   };
 
   const updateUser = (newUserData) => {

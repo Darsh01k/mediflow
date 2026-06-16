@@ -30,28 +30,13 @@ public class AuthController {
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
 
-    @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody java.util.Map<String, String> request) {
-        String email = request.get("email");
-        if (email == null || email.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Email is required."));
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> google(@RequestBody java.util.Map<String, String> request) {
+        String idToken = request.get("idToken");
+        if (idToken == null || idToken.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
         }
-        String token = userService.forgotPassword(email);
-        return ResponseEntity.ok(java.util.Map.of(
-            "message", "Reset email sent successfully.",
-            "token", token,
-            "resetLink", "http://localhost:5173/reset-password?token=" + token
-        ));
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody java.util.Map<String, String> request) {
-        String token = request.get("token");
-        String newPassword = request.get("newPassword");
-        if (token == null || token.trim().isEmpty() || newPassword == null || newPassword.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Token and new password are required."));
-        }
-        userService.resetPassword(token, newPassword);
-        return ResponseEntity.ok(java.util.Map.of("message", "Password updated successfully."));
+        AuthResponse response = userService.authenticateGoogle(idToken);
+        return ResponseEntity.ok(response);
     }
 }

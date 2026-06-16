@@ -48,6 +48,10 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider", nullable = false, length = 20)
+    private Provider provider = Provider.LOCAL;
+
     public User() {}
 
     public User(String username, String password, String email, Role role, String firstName, String lastName) {
@@ -178,5 +182,13 @@ public class User {
 
     public void setCountry(String country) {
         this.country = country;
+    }
+
+    public Provider getProvider() {
+        return provider;
+    }
+
+    public void setProvider(Provider provider) {
+        this.provider = provider;
     }
 }
