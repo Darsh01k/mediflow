@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 
 // Predefined city coordinates for fallback geocoding
@@ -29,12 +29,20 @@ const LocationContext = createContext(null);
 
 export const LocationProvider = ({ children }) => {
   const { user } = useAuth();
-  const [coords, setCoords] = useState(null); // { lat, lng }
-  const [locationSource, setLocationSource] = useState(null); // 'gps' | 'city' | null
-  const [geoStatus, setGeoStatus] = useState('idle'); // 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable'
+  const [coords, setCoords] = useState(null);
+  const [locationSource, setLocationSource] = useState(null);
+  const [geoStatus, setGeoStatus] = useState('idle');
   const [error, setError] = useState(null);
+  const mountedRef = useRef(true);
+  const geoPendingRef = useRef(false);
 
-  // Try to restore from localStorage on mount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     const saved = localStorage.getItem('userLocation');
     if (saved) {
@@ -50,19 +58,28 @@ export const LocationProvider = ({ children }) => {
     }
   }, []);
 
-  // Request browser geolocation
+  const safeSetCoords = useCallback((c) => { if (mountedRef.current) setCoords(c); }, []);
+  const safeSetLocationSource = useCallback((s) => { if (mountedRef.current) setLocationSource(s); }, []);
+  const safeSetGeoStatus = useCallback((s) => { if (mountedRef.current) setGeoStatus(s); }, []);
+  const safeSetError = useCallback((e) => { if (mountedRef.current) setError(e); }, []);
+
   const requestGeolocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setGeoStatus('unavailable');
-      setError('Geolocation is not supported by your browser.');
+      safeSetGeoStatus('unavailable');
+      safeSetError('Geolocation is not supported by your browser.');
       return;
     }
 
-    setGeoStatus('requesting');
-    setError(null);
+    if (geoPendingRef.current) return;
+
+    safeSetGeoStatus('requesting');
+    safeSetError(null);
+    geoPendingRef.current = true;
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (!mountedRef.current) return;
+        geoPendingRef.current = false;
         const { latitude, longitude } = position.coords;
         const newCoords = { lat: latitude, lng: longitude };
         setCoords(newCoords);
@@ -71,48 +88,49 @@ export const LocationProvider = ({ children }) => {
         localStorage.setItem('userLocation', JSON.stringify({ ...newCoords, source: 'gps' }));
       },
       (err) => {
+        if (!mountedRef.current) return;
+        geoPendingRef.current = false;
         console.warn('Geolocation denied or failed:', err.message);
         setGeoStatus('denied');
         setError('Location permission denied.');
-        // Fallback to user's registered city
-        fallbackToCity();
+        fallbackToCityRef.current?.();
       },
       {
         enableHighAccuracy: false,
         timeout: 10000,
-        maximumAge: 300000, // 5 min cache
+        maximumAge: 300000,
       }
     );
-  }, [user]);
+  }, []);
 
-  // Fallback: use the user's registered city to get coordinates
   const fallbackToCity = useCallback(() => {
     if (user?.city) {
       const cityKey = user.city.toLowerCase().trim();
       const cityCoords = CITY_COORDINATES[cityKey];
       if (cityCoords) {
-        setCoords(cityCoords);
-        setLocationSource('city');
+        safeSetCoords(cityCoords);
+        safeSetLocationSource('city');
         localStorage.setItem('userLocation', JSON.stringify({ ...cityCoords, source: 'city' }));
         return;
       }
     }
-    // No city fallback available
-    setLocationSource(null);
+    safeSetLocationSource(null);
   }, [user]);
 
-  // On mount, attempt GPS if not already resolved
+  const fallbackToCityRef = useRef(fallbackToCity);
+  fallbackToCityRef.current = fallbackToCity;
+
   useEffect(() => {
-    if (!coords) {
-      // First try city fallback (instant), then GPS (async)
-      if (user?.city) {
-        fallbackToCity();
-      }
-      requestGeolocation();
+    if (!user) return;
+    if (coords) return;
+    if (user?.city) {
+      fallbackToCity();
     }
+    requestGeolocation();
   }, [user]);
 
   const refreshLocation = useCallback(() => {
+    geoPendingRef.current = false;
     requestGeolocation();
   }, [requestGeolocation]);
 

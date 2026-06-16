@@ -1,4 +1,4 @@
-package com.mediflow.service;
+﻿package com.mediflow.service;
 
 import com.mediflow.dto.NotificationDto;
 import com.mediflow.entity.Notification;
@@ -7,6 +7,7 @@ import com.mediflow.exception.ResourceNotFoundException;
 import com.mediflow.repository.NotificationRepository;
 import com.mediflow.utils.DtoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,11 +20,24 @@ public class NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @Transactional
     public NotificationDto createNotification(User user, String message) {
         Notification notification = new Notification(user, message);
         Notification saved = notificationRepository.save(notification);
-        return DtoMapper.toDto(saved);
+        NotificationDto dto = DtoMapper.toDto(saved);
+
+        // Send real-time notification via STOMP WebSocket
+        // The client subscribes to /user/{userId}/notifications
+        messagingTemplate.convertAndSendToUser(
+                user.getId().toString(),
+                "/notifications",
+                dto
+        );
+
+        return dto;
     }
 
     public List<NotificationDto> getUserNotifications(Long userId) {

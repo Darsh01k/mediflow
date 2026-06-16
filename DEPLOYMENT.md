@@ -1,4 +1,4 @@
-# MediFlow Deployment Guide
+﻿# MediFlow Deployment Guide
 
 This guide details how to deploy the **MediFlow** Patient Management Platform to production using **Neon PostgreSQL** (database), **Render** (backend web service), and **Vercel** (frontend application).
 
@@ -60,3 +60,31 @@ Vercel hosts the React client as a static SPA.
 1. Verify CORS: Copy your Vercel URL and add it to `ALLOWED_ORIGINS` in Render if you haven't already.
 2. Visit the Vercel site, verify you can access the `/login` route, create a new patient account (which will hit the Render API and register in the Neon database), and log in.
 3. Access the Dashboards to ensure data metrics load seamlessly.
+
+---
+
+## 5. New Feature Configuration
+
+### Rate Limiting
+Configured via `application.yml` under `mediflow.ratelimit`:
+- `requests-per-minute`: Max auth requests per IP per minute (default: 20)
+- `auth-endpoints-enabled`: Enable/disable rate limiting on auth endpoints (default: true)
+- Global API rate limit: 100 requests per minute per IP (hardcoded)
+
+### Flyway Migrations
+- Enabled by default with `baseline-on-migrate: true`
+- Migration scripts are in `mediflow-backend/src/main/resources/db/migration/`
+- V1: Base schema (adds columns and constraints)
+- V2: Seed coordinates for 22 Indian cities
+- No manual intervention needed on first deploy
+
+### WebSocket Real-Time Notifications
+- Endpoint: `/ws/notifications` (STOMP over SockJS)
+- Automatically used by the frontend when a user is logged in
+- Falls back to 60-second polling if WebSocket connection fails
+- No additional configuration required
+
+### Input Sanitization (XSS Protection)
+- Applied globally to all `@RequestBody` string fields via Jackson deserializer
+- Strips: HTML tags, script elements, event handlers, javascript: URIs, null bytes
+- No configuration needed

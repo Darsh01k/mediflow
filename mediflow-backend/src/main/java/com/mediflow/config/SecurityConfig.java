@@ -1,4 +1,4 @@
-package com.mediflow.config;
+﻿package com.mediflow.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,7 +43,10 @@ public class SecurityConfig {
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
 
-    @Value("${mediflow.cors.allowed-origins}")
+    @Autowired
+    private RateLimitingFilter rateLimitingFilter;
+
+    @Value("")
     private List<String> allowedOrigins;
 
     @Bean
@@ -91,6 +94,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/api/auth/**").permitAll()
+                                .requestMatchers("/ws/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/hospitals/my-hospital", "/api/hospitals/my-hospital/**").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/api/hospitals", "/api/hospitals/search", "/api/hospitals/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/doctors", "/api/doctors/search", "/api/doctors/hospital/**", "/api/doctors/specializations", "/api/doctors/**").permitAll()
@@ -99,6 +103,8 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2.permitAll());
 
         http.authenticationProvider(authenticationProvider());
+        // Rate limiting runs before JWT auth to protect auth endpoints from brute force
+        http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(new SecurityDebugFilter(), AuthTokenFilter.class);
 

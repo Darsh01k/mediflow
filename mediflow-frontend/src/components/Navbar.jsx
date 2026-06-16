@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { HealthAvatar } from './ui/Avatar';
 import { Calendar as CalendarIcon, Menu, Bell, CheckCheck, MailOpen, Clock } from 'lucide-react';
 import API from '../services/api';
+import { useNotificationWebSocket } from '../hooks/useNotificationWebSocket';
 
 const Navbar = ({ title, onToggleSidebar }) => {
   const { user } = useAuth();
@@ -28,7 +29,7 @@ const Navbar = ({ title, onToggleSidebar }) => {
     day: 'numeric',
   });
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     if (!user) return;
     try {
       const countRes = await API.get('/notifications/unread-count');
@@ -39,23 +40,22 @@ const Navbar = ({ title, onToggleSidebar }) => {
     } catch (err) {
       console.error('Failed to load notifications', err);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     loadNotifications();
+  }, [loadNotifications]);
 
-    const handleRefresh = () => {
-      loadNotifications();
-    };
-    window.addEventListener('refresh-notifications', handleRefresh);
+  // Real-time WebSocket notification handler
+  const handleNewNotification = useCallback((notification) => {
+    // Increment unread count
+    setUnreadCount(prev => prev + 1);
+    // Prepend to the notifications list
+    setNotifications(prev => [notification, ...prev].slice(0, 10));
+  }, []);
 
-    // Refresh notifications every 60 seconds
-    const interval = setInterval(loadNotifications, 60000);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('refresh-notifications', handleRefresh);
-    };
-  }, [user]);
+  // Connect WebSocket for real-time notifications
+  useNotificationWebSocket(handleNewNotification, !!user);
 
   // Click outside handler
   useEffect(() => {

@@ -1,7 +1,13 @@
-server:
+﻿server:
   port: ${PORT:8080}
 
 spring:
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    out-of-order: false
   security:
     oauth2:
       client:
@@ -28,6 +34,9 @@ spring:
     open-in-view: false
 
 mediflow:
+  ratelimit:
+    requests-per-minute: 20
+    auth-endpoints-enabled: true
   jwt:
     # 256-bit secret key in Hex (must be at least 32 bytes)
     secret: ${JWT_SECRET:bWVkaWZsb3ctc2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tc2VjdXJlLTI1Ni1iaXQ=}
