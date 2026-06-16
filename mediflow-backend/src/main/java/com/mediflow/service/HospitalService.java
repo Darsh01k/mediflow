@@ -143,6 +143,7 @@ public class HospitalService {
 
         if (finalLat != null && finalLng != null) {
             dtos.sort((h1, h2) -> {
+                if (h1.getDistance() == null && h2.getDistance() == null) return 0;
                 if (h1.getDistance() == null) return 1;
                 if (h2.getDistance() == null) return -1;
                 return h1.getDistance().compareTo(h2.getDistance());
@@ -187,6 +188,7 @@ public class HospitalService {
 
         if (finalLat != null && finalLng != null) {
             nearbyList.sort((h1, h2) -> {
+                if (h1.getDistanceKm() == null && h2.getDistanceKm() == null) return 0;
                 if (h1.getDistanceKm() == null) return 1;
                 if (h2.getDistanceKm() == null) return -1;
                 return h1.getDistanceKm().compareTo(h2.getDistanceKm());

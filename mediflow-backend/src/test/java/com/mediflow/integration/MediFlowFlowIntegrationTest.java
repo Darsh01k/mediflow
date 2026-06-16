@@ -124,6 +124,11 @@ public class MediFlowFlowIntegrationTest {
                 .andExpect(jsonPath("$.username", is("apolloadmin")))
                 .andExpect(jsonPath("$.role", is("HOSPITAL_ADMIN")));
 
+        mockMvc.perform(get("/api/hospitals"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].name", is("Apollo Hospital")));
+
         // ==========================================
         // 2. Hospital Login
         // ==========================================
@@ -208,6 +213,11 @@ public class MediFlowFlowIntegrationTest {
         mockMvc.perform(put("/api/hospitals/my-hospital/doctors/" + doctorId + "/status?status=APPROVED")
                 .header("Authorization", "Bearer " + hospitalToken))
                 .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/hospitals"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].doctorCount", is(1)));
 
         // ==========================================
         // 6. Doctor Login
@@ -515,5 +525,11 @@ public class MediFlowFlowIntegrationTest {
         // Verify provider in db updated to GOOGLE
         User user = userRepository.findByEmail("localuser@google.com").orElseThrow();
         assertEquals(AuthProvider.GOOGLE, user.getAuthProvider());
+    }
+
+    @Test
+    public void testGetHospitals() throws Exception {
+        mockMvc.perform(get("/api/hospitals"))
+                .andExpect(status().isOk());
     }
 }
