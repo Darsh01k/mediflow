@@ -86,19 +86,22 @@ public class UserService {
             String userAgent = request != null ? request.getHeader("User-Agent") : "Unknown";
             String browserInfo = parseBrowser(userAgent);
             String deviceInfo = parseDevice(userAgent);
+            String deviceFingerprint = generateDeviceFingerprint(userAgent);
             
-            Optional<UserSession> existingSessionOpt = userSessionRepository.findByUserIdAndDeviceInfoAndBrowserInfoAndIsActiveTrue(user.getId(), deviceInfo, browserInfo);
+            logger.info("Checking session duplication for userId={}, browserInfo={}, deviceFingerprint={}", user.getId(), browserInfo, deviceFingerprint);
+            Optional<UserSession> existingSessionOpt = userSessionRepository.findByUserIdAndBrowserInfoAndDeviceFingerprintAndIsActiveTrue(user.getId(), browserInfo, deviceFingerprint);
             if (existingSessionOpt.isPresent()) {
                 UserSession existingSession = existingSessionOpt.get();
                 existingSession.setToken(sessionToken);
                 existingSession.setLoginTime(java.time.LocalDateTime.now());
                 existingSession.setLastActiveAt(java.time.LocalDateTime.now());
+                existingSession.setDeviceInfo(deviceInfo);
                 userSessionRepository.save(existingSession);
-                logger.info("Updated existing session for user {} and device {} / browser {}", user.getUsername(), deviceInfo, browserInfo);
+                logger.info("Updated existing active session for user {} and device {} / browser {} with fingerprint {}", user.getUsername(), deviceInfo, browserInfo, deviceFingerprint);
             } else {
-                UserSession userSession = new UserSession(sessionToken, user, java.time.LocalDateTime.now(), deviceInfo, browserInfo);
+                UserSession userSession = new UserSession(sessionToken, user, java.time.LocalDateTime.now(), deviceInfo, browserInfo, deviceFingerprint);
                 userSessionRepository.save(userSession);
-                logger.info("Created new session for user {} and device {} / browser {}", user.getUsername(), deviceInfo, browserInfo);
+                logger.info("Created new active session for user {} and device {} / browser {} with fingerprint {}", user.getUsername(), deviceInfo, browserInfo, deviceFingerprint);
             }
 
             String jwt = jwtUtils.generateJwtToken(authentication, sessionToken);
@@ -326,6 +329,24 @@ public class UserService {
         return "Device";
     }
 
+    private String generateDeviceFingerprint(String userAgent) {
+        if (userAgent == null) return "Unknown";
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(userAgent.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            logger.error("Failed to generate device fingerprint for user-agent: {}", userAgent, e);
+            return "Fingerprint-" + userAgent.hashCode();
+        }
+    }
+
     // Password Reset Flow
     @Transactional
     public String forgotPassword(String email) {
@@ -449,6 +470,11 @@ public class UserService {
         }
     }
 
+    public String getPendingEmailChangeOtp(Long userId) {
+        EmailChangeRequest req = emailChangeRequests.get(userId);
+        return req != null ? req.getOtp() : null;
+    }
+
     @Transactional
     public void requestEmailChange(Long userId, String newEmail) {
         logger.info("Entering requestEmailChange userId={}, newEmail={}", userId, newEmail);
@@ -561,35 +587,53 @@ public class UserService {
 
     @Transactional
     public java.util.List<com.mediflow.dto.UserSessionDto> getUserSessions(Long userId, String currentPrincipalToken) {
-        logger.info("Entering getUserSessions userId={}, currentPrincipalToken={}", userId, currentPrincipalToken);
-        logger.info("Querying userSessionRepository for active sessions of userId={}", userId);
-        java.util.List<UserSession> sessions = userSessionRepository.findByUserIdAndIsActiveTrue(userId);
-        java.util.List<com.mediflow.dto.UserSessionDto> dtoList = new java.util.ArrayList<>();
-        
-        java.time.LocalDateTime expirationCutoff = java.time.LocalDateTime.now().minus(java.time.Duration.ofMillis(jwtExpirationMs));
-        
-        for (UserSession session : sessions) {
-            logger.info("Processing session ID={}, token={}, is_active={}", session.getId(), session.getToken(), session.isActive());
-            
-            // Auto cleanup for sessions older than JWT expiration time
-            if (session.getLoginTime().isBefore(expirationCutoff)) {
-                logger.info("Deactivating expired session ID={} (created at {})", session.getId(), session.getLoginTime());
-                session.setActive(false);
-                userSessionRepository.save(session);
-                continue;
+        try {
+            logger.info("Entering getUserSessions userId={}, currentPrincipalToken={}", userId, currentPrincipalToken);
+            if (userId == null) {
+                logger.warn("getUserSessions failed: userId is null");
+                return new java.util.ArrayList<>();
+            }
+            logger.info("Querying userSessionRepository for active sessions of userId={}", userId);
+            java.util.List<UserSession> sessions = userSessionRepository.findByUserIdAndIsActiveTrue(userId);
+            java.util.List<com.mediflow.dto.UserSessionDto> dtoList = new java.util.ArrayList<>();
+            if (sessions == null) {
+                return dtoList;
             }
             
-            boolean isCurrent = java.util.Objects.equals(session.getToken(), currentPrincipalToken);
-            dtoList.add(new com.mediflow.dto.UserSessionDto(
-                session.getId(),
-                session.getLoginTime(),
-                session.getDeviceInfo(),
-                session.getBrowserInfo(),
-                isCurrent
-            ));
+            java.time.LocalDateTime expirationCutoff = java.time.LocalDateTime.now().minus(java.time.Duration.ofMillis(jwtExpirationMs));
+            
+            for (UserSession session : sessions) {
+                if (session == null) continue;
+                logger.info("Processing session ID={}, token={}, is_active={}", session.getId(), session.getToken(), session.isActive());
+                
+                java.time.LocalDateTime loginTime = session.getLoginTime();
+                if (loginTime == null) {
+                    loginTime = java.time.LocalDateTime.now();
+                }
+                
+                // Auto cleanup for sessions older than JWT expiration time
+                if (loginTime.isBefore(expirationCutoff)) {
+                    logger.info("Deactivating expired session ID={} (created at {})", session.getId(), loginTime);
+                    session.setActive(false);
+                    userSessionRepository.save(session);
+                    continue;
+                }
+                
+                boolean isCurrent = java.util.Objects.equals(session.getToken(), currentPrincipalToken);
+                dtoList.add(new com.mediflow.dto.UserSessionDto(
+                    session.getId(),
+                    loginTime,
+                    session.getDeviceInfo() != null ? session.getDeviceInfo() : "Unknown Device",
+                    session.getBrowserInfo() != null ? session.getBrowserInfo() : "Unknown Browser",
+                    isCurrent
+                ));
+            }
+            logger.info("Returning {} sessions for userId={}", dtoList.size(), userId);
+            return dtoList;
+        } catch (Exception e) {
+            logger.error("FULL ERROR in getUserSessions for userId={}", userId, e);
+            return new java.util.ArrayList<>();
         }
-        logger.info("Returning {} sessions for userId={}", dtoList.size(), userId);
-        return dtoList;
     }
 
     @Transactional

@@ -59,14 +59,16 @@ public class UserController {
 
             userService.changePassword(userId, currentPassword, newPassword);
             return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
+        } catch (com.mediflow.exception.BadRequestException e) {
+            logger.warn("Password change validation failed: {}", e.getMessage());
+            String msg = e.getMessage();
+            if ("Current password does not match.".equals(msg)) {
+                msg = "Current password incorrect";
+            }
+            return ResponseEntity.badRequest().body(Map.of("message", msg));
         } catch (Exception e) {
-            logger.error("FULL ERROR", e);
-            return ResponseEntity.internalServerError().body(
-                Map.of(
-                    "error", e.getClass().getName(),
-                    "message", e.getMessage()
-                )
-            );
+            logger.error("FULL ERROR during password change", e);
+            return ResponseEntity.badRequest().body(Map.of("message", "An internal error occurred."));
         }
     }
 
@@ -80,16 +82,19 @@ public class UserController {
                 return ResponseEntity.badRequest().body(Map.of("message", "New email address is required."));
             }
 
+            // Email format validation
+            if (!newEmail.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Invalid email format."));
+            }
+
             userService.requestEmailChange(userId, newEmail);
             return ResponseEntity.ok(Map.of("message", "For security, a verification code has been sent to your current registered email address."));
+        } catch (com.mediflow.exception.BadRequestException e) {
+            logger.warn("Email change request validation failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            logger.error("FULL ERROR", e);
-            return ResponseEntity.internalServerError().body(
-                Map.of(
-                    "error", e.getClass().getName(),
-                    "message", e.getMessage()
-                )
-            );
+            logger.error("FULL ERROR during email change request", e);
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage() != null ? e.getMessage() : "Failed to request email change."));
         }
     }
 
@@ -109,14 +114,12 @@ public class UserController {
 
             userService.verifyEmailChange(userId, otp, newEmail);
             return ResponseEntity.ok(Map.of("message", "Email address updated successfully."));
+        } catch (com.mediflow.exception.BadRequestException e) {
+            logger.warn("Email change verification validation failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
-            logger.error("FULL ERROR", e);
-            return ResponseEntity.internalServerError().body(
-                Map.of(
-                    "error", e.getClass().getName(),
-                    "message", e.getMessage()
-                )
-            );
+            logger.error("FULL ERROR during email change verification", e);
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage() != null ? e.getMessage() : "Failed to verify email change."));
         }
     }
 
@@ -130,13 +133,8 @@ public class UserController {
             List<UserSessionDto> sessions = userService.getUserSessions(userId, currentSessionToken);
             return ResponseEntity.ok(sessions);
         } catch (Exception e) {
-            logger.error("FULL ERROR", e);
-            return ResponseEntity.internalServerError().body(
-                Map.of(
-                    "error", e.getClass().getName(),
-                    "message", e.getMessage()
-                )
-            );
+            logger.error("FULL ERROR in getActiveSessions", e);
+            return ResponseEntity.ok(List.of());
         }
     }
 
@@ -155,7 +153,7 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request) {
+    public ResponseEntity<?> logout(HttpServletRequest request) throws Exception {
         try {
             String jwt = parseJwt(request);
             if (jwt != null) {
@@ -165,12 +163,7 @@ public class UserController {
             return ResponseEntity.ok(Map.of("message", "Logged out successfully."));
         } catch (Exception e) {
             logger.error("FULL ERROR during logout", e);
-            return ResponseEntity.internalServerError().body(
-                Map.of(
-                    "error", e.getClass().getName(),
-                    "message", e.getMessage()
-                )
-            );
+            throw e;
         }
     }
 }

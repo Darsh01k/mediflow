@@ -30,18 +30,26 @@ public class UserSession {
     @Column(name = "browser_info", length = 150)
     private String browserInfo;
 
+    @Column(name = "device_fingerprint", length = 256)
+    private String deviceFingerprint;
+
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
     public UserSession() {}
 
     public UserSession(String token, User user, LocalDateTime loginTime, String deviceInfo, String browserInfo) {
+        this(token, user, loginTime, deviceInfo, browserInfo, null);
+    }
+
+    public UserSession(String token, User user, LocalDateTime loginTime, String deviceInfo, String browserInfo, String deviceFingerprint) {
         this.token = token;
         this.user = user;
         this.loginTime = loginTime;
         this.lastActiveAt = loginTime;
         this.deviceInfo = deviceInfo;
         this.browserInfo = browserInfo;
+        this.deviceFingerprint = deviceFingerprint;
         this.isActive = true;
     }
 
@@ -99,6 +107,14 @@ public class UserSession {
 
     public void setBrowserInfo(String browserInfo) {
         this.browserInfo = browserInfo;
+    }
+
+    public String getDeviceFingerprint() {
+        return deviceFingerprint;
+    }
+
+    public void setDeviceFingerprint(String deviceFingerprint) {
+        this.deviceFingerprint = deviceFingerprint;
     }
 
     public boolean isActive() {

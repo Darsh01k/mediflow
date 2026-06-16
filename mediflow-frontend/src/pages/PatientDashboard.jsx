@@ -23,7 +23,7 @@ import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Alert from '../components/ui/Alert';
 import Spinner from '../components/ui/Spinner';
-import { AvatarPicker } from '../components/ui/Avatar';
+import { HealthAvatar, AvatarPicker } from '../components/ui/Avatar';
 import SecuritySettings from '../components/SecuritySettings';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 

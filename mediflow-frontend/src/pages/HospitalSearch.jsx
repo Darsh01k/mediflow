@@ -332,10 +332,10 @@ const HospitalSearch = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {modalDoctors.map(doc => (
                     <div key={doc.id} className="p-4 border border-slate-200/60 rounded-xl bg-white flex items-start gap-3 hover:bg-slate-50/50 transition-colors">
-                      <HealthAvatar avatarId={doc.user.avatarId || 'avatar_1'} className="w-10 h-10 rounded-full" />
+                      <HealthAvatar avatarId={doc.user?.avatarId || 'avatar_1'} className="w-10 h-10 rounded-full" />
                       <div className="min-w-0 flex-1 space-y-1">
                         <h4 className="font-bold text-slate-800 text-xs truncate">
-                          Dr. {doc.user.firstName} {doc.user.lastName}
+                          Dr. {doc.user?.firstName || ''} {doc.user?.lastName || ''}
                         </h4>
                         <p className="text-[10px] text-emerald-600 font-bold">{doc.specialization}</p>
                         <p className="text-[9px] text-slate-400 font-semibold">{doc.experience || 0} yrs exp • Fee: {formatINR(doc.consultationFee)}</p>

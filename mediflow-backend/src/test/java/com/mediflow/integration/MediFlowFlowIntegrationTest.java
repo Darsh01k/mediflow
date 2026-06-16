@@ -66,6 +66,9 @@ public class MediFlowFlowIntegrationTest {
     @Autowired
     private PasswordResetTokenRepository passwordResetTokenRepository;
 
+    @Autowired
+    private com.mediflow.service.UserService userService;
+
     @BeforeEach
     public void setup() {
         userSessionRepository.deleteAll();
@@ -479,8 +482,88 @@ public class MediFlowFlowIntegrationTest {
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(emailRequest)))
+                .andExpect(status().isOk())
                 .andReturn();
         System.out.println("Response Status for request-email-change: " + emailResult.getResponse().getStatus());
         System.out.println("Response Body for request-email-change: " + emailResult.getResponse().getContentAsString());
+        assertTrue(emailResult.getResponse().getContentAsString().contains("For security, a verification code has been sent to your current registered email address."));
+
+        // Get admin user and pending OTP
+        User admin = userRepository.findByUsername("platformadmin").orElseThrow();
+        Long userId = admin.getId();
+        String otp = userService.getPendingEmailChangeOtp(userId);
+        assertNotNull(otp);
+
+        // Verify with invalid OTP fails
+        System.out.println("--- TESTING POST /api/users/verify-email-change with invalid OTP ---");
+        java.util.Map<String, String> verifyFailRequest = java.util.Map.of(
+            "newEmail", "newadmin@mediflow.com",
+            "otp", "000000"
+        );
+        mockMvc.perform(post("/api/users/verify-email-change")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(verifyFailRequest)))
+                .andExpect(status().isBadRequest());
+
+        // Verify with correct OTP succeeds
+        System.out.println("--- TESTING POST /api/users/verify-email-change with valid OTP ---");
+        java.util.Map<String, String> verifySuccessRequest = java.util.Map.of(
+            "newEmail", "newadmin@mediflow.com",
+            "otp", otp
+        );
+        mockMvc.perform(post("/api/users/verify-email-change")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(verifySuccessRequest)))
+                .andExpect(status().isOk());
+
+        // Verify database reflects the updated email
+        User updatedAdmin = userRepository.findById(userId).orElseThrow();
+        assertEquals("newadmin@mediflow.com", updatedAdmin.getEmail());
+
+        // ==========================================
+        // Duplicate Sessions & Logout Cleanup Verification
+        // ==========================================
+        System.out.println("--- TESTING DUPLICATE SESSIONS (BROWSER FINGERPRINTING) ---");
+        String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setUsername("platformadmin");
+        loginRequest.setPassword("newPassword123!"); // changed in pwRequest step
+
+        // Create first session via login with a User-Agent
+        MvcResult login1Result = mockMvc.perform(post("/api/auth/login")
+                .header("User-Agent", userAgent)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String token1 = objectMapper.readTree(login1Result.getResponse().getContentAsString()).get("token").asText();
+
+        int sessionsCount1 = userSessionRepository.findByUserIdAndIsActiveTrue(userId).size();
+
+        // Login again with same User-Agent
+        MvcResult login2Result = mockMvc.perform(post("/api/auth/login")
+                .header("User-Agent", userAgent)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String token2 = objectMapper.readTree(login2Result.getResponse().getContentAsString()).get("token").asText();
+
+        // Verify count of active sessions did not increase
+        int sessionsCount2 = userSessionRepository.findByUserIdAndIsActiveTrue(userId).size();
+        assertEquals(sessionsCount1, sessionsCount2);
+
+        // Verify logging out deactivates the session
+        System.out.println("--- TESTING POST /api/users/logout ---");
+        mockMvc.perform(post("/api/users/logout")
+                .header("Authorization", "Bearer " + token2))
+                .andExpect(status().isOk());
+
+        // Verify that trying to access sessions with the logged out token returns Unauthorized (401)
+        mockMvc.perform(get("/api/users/sessions")
+                .header("Authorization", "Bearer " + token2))
+                .andExpect(status().isUnauthorized());
     }
 }

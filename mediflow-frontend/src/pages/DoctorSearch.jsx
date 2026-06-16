@@ -200,14 +200,14 @@ const DoctorSearch = () => {
                 {/* Header Profile */}
                 <div className="flex items-start gap-4">
                   <div className="relative">
-                    <HealthAvatar avatarId={doc.user.avatarId || 'avatar_1'} className="w-14 h-14" />
+                    <HealthAvatar avatarId={doc.user?.avatarId || 'avatar_1'} className="w-14 h-14" />
                     <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${
                       doc.availability ? 'bg-emerald-500' : 'bg-slate-400'
                     }`} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="font-bold text-slate-800 text-sm truncate group-hover:text-emerald-600 transition-colors">
-                      Dr. {doc.user.firstName} {doc.user.lastName}
+                      Dr. {doc.user?.firstName || ''} {doc.user?.lastName || ''}
                     </h3>
                     <p className="text-[11px] text-emerald-600 font-black flex items-center gap-1 mt-0.5">
                       <Stethoscope className="w-3.5 h-3.5" />

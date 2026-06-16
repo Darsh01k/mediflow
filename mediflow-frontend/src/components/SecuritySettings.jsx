@@ -138,7 +138,7 @@ const SecuritySettings = () => {
       const res = await API.post('/users/request-email-change', { newEmail });
       setOtpSent(true);
       setCountdown(60);
-      setEmailSuccess(res.data.message || 'Verification code sent to your new email.');
+      setEmailSuccess(res.data.message || 'For security, a verification code has been sent to your current registered email address.');
       toast.success('Verification code sent successfully!');
     } catch (err) {
       setEmailError(err.response?.data?.message || 'Failed to request email change.');
@@ -398,7 +398,7 @@ const SecuritySettings = () => {
 
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-[11.5px] font-semibold text-amber-800 space-y-1">
                   <p className="font-bold text-xs">Verification code sent!</p>
-                  <p>We've sent a 6-digit OTP code to <strong className="font-extrabold">{newEmail}</strong>.</p>
+                  <p>We've sent a 6-digit OTP code to <strong className="font-extrabold">{user?.email}</strong>.</p>
                   <p className="text-[10px] text-amber-600 italic">Please check your inbox. The code is valid for 10 minutes.</p>
                 </div>
 
@@ -506,12 +506,25 @@ const SecuritySettings = () => {
                             <Laptop className="w-4 h-4" />
                           </span>
                           <div>
-                            <span className="block font-bold text-slate-800 text-xs">
-                              {session.deviceInfo || 'Unknown Device'}
-                            </span>
-                            <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
-                              <Globe className="w-3 h-3 text-slate-400/80" /> {session.browserInfo || 'Unknown Browser'}
-                            </span>
+                            {session.isCurrent ? (
+                              <>
+                                <span className="block font-bold text-slate-800 text-xs">
+                                  Current Device
+                                </span>
+                                <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                                  {session.browserInfo && session.deviceInfo ? `${session.browserInfo} • ${session.deviceInfo}` : (session.deviceInfo || 'Unknown Device')}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="block font-bold text-slate-800 text-xs">
+                                  {session.browserInfo ? `${session.browserInfo} Browser` : 'Unknown Browser'}
+                                </span>
+                                <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                                  {session.deviceInfo || 'Unknown Device'}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -532,19 +545,33 @@ const SecuritySettings = () => {
                       </div>
 
                       <div className="border-t border-slate-100/80 pt-2 flex items-center justify-between text-[10px] text-slate-450 font-bold">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          Logged In:
-                        </span>
-                        <span className="font-mono text-slate-600">
-                          {session.loginTime ? new Date(session.loginTime).toLocaleString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
-                          }) : 'N/A'}
-                        </span>
+                        {session.isCurrent ? (
+                          <>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              Last Active:
+                            </span>
+                            <span className="font-mono text-slate-650">
+                              Just now
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-slate-400" />
+                              Logged In:
+                            </span>
+                            <span className="font-mono text-slate-600">
+                              {session.loginTime ? new Date(session.loginTime).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit'
+                              }) : 'N/A'}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
