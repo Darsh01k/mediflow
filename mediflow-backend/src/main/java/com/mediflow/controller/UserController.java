@@ -5,6 +5,8 @@ import com.mediflow.config.UserDetailsImpl;
 import com.mediflow.dto.UserSessionDto;
 import com.mediflow.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +19,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
@@ -39,61 +43,101 @@ public class UserController {
 
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request) {
-        Long userId = getCurrentUserId();
-        String currentPassword = request.get("currentPassword");
-        String newPassword = request.get("newPassword");
-        String confirmPassword = request.get("confirmPassword");
+        try {
+            Long userId = getCurrentUserId();
+            String currentPassword = request.get("currentPassword");
+            String newPassword = request.get("newPassword");
+            String confirmPassword = request.get("confirmPassword");
 
-        if (currentPassword == null || newPassword == null || confirmPassword == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "All password fields are required."));
+            if (currentPassword == null || newPassword == null || confirmPassword == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "All password fields are required."));
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "New passwords do not match."));
+            }
+
+            userService.changePassword(userId, currentPassword, newPassword);
+            return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
+        } catch (Exception e) {
+            logger.error("FULL ERROR", e);
+            return ResponseEntity.internalServerError().body(
+                Map.of(
+                    "error", e.getClass().getName(),
+                    "message", e.getMessage()
+                )
+            );
         }
-
-        if (!newPassword.equals(confirmPassword)) {
-            return ResponseEntity.badRequest().body(Map.of("message", "New passwords do not match."));
-        }
-
-        userService.changePassword(userId, currentPassword, newPassword);
-        return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
     }
 
     @PostMapping("/request-email-change")
     public ResponseEntity<?> requestEmailChange(@RequestBody Map<String, String> request) {
-        Long userId = getCurrentUserId();
-        String newEmail = request.get("newEmail");
+        try {
+            Long userId = getCurrentUserId();
+            String newEmail = request.get("newEmail");
 
-        if (newEmail == null || newEmail.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "New email address is required."));
+            if (newEmail == null || newEmail.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "New email address is required."));
+            }
+
+            userService.requestEmailChange(userId, newEmail);
+            return ResponseEntity.ok(Map.of("message", "Verification code sent successfully."));
+        } catch (Exception e) {
+            logger.error("FULL ERROR", e);
+            return ResponseEntity.internalServerError().body(
+                Map.of(
+                    "error", e.getClass().getName(),
+                    "message", e.getMessage()
+                )
+            );
         }
-
-        userService.requestEmailChange(userId, newEmail);
-        return ResponseEntity.ok(Map.of("message", "Verification code sent successfully."));
     }
 
     @PostMapping("/verify-email-change")
     public ResponseEntity<?> verifyEmailChange(@RequestBody Map<String, String> request) {
-        Long userId = getCurrentUserId();
-        String newEmail = request.get("newEmail");
-        String otp = request.get("otp");
+        try {
+            Long userId = getCurrentUserId();
+            String newEmail = request.get("newEmail");
+            String otp = request.get("otp");
 
-        if (newEmail == null || newEmail.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "New email address is required."));
-        }
-        if (otp == null || otp.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Verification code (OTP) is required."));
-        }
+            if (newEmail == null || newEmail.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "New email address is required."));
+            }
+            if (otp == null || otp.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Verification code (OTP) is required."));
+            }
 
-        userService.verifyEmailChange(userId, otp, newEmail);
-        return ResponseEntity.ok(Map.of("message", "Email address updated successfully."));
+            userService.verifyEmailChange(userId, otp, newEmail);
+            return ResponseEntity.ok(Map.of("message", "Email address updated successfully."));
+        } catch (Exception e) {
+            logger.error("FULL ERROR", e);
+            return ResponseEntity.internalServerError().body(
+                Map.of(
+                    "error", e.getClass().getName(),
+                    "message", e.getMessage()
+                )
+            );
+        }
     }
 
     @GetMapping("/sessions")
-    public ResponseEntity<List<UserSessionDto>> getActiveSessions(HttpServletRequest request) {
-        Long userId = getCurrentUserId();
-        String jwt = parseJwt(request);
-        String currentSessionToken = jwt != null ? jwtUtils.getSessionTokenFromJwtToken(jwt) : null;
-        
-        List<UserSessionDto> sessions = userService.getUserSessions(userId, currentSessionToken);
-        return ResponseEntity.ok(sessions);
+    public ResponseEntity<?> getActiveSessions(HttpServletRequest request) {
+        try {
+            Long userId = getCurrentUserId();
+            String jwt = parseJwt(request);
+            String currentSessionToken = jwt != null ? jwtUtils.getSessionTokenFromJwtToken(jwt) : null;
+            
+            List<UserSessionDto> sessions = userService.getUserSessions(userId, currentSessionToken);
+            return ResponseEntity.ok(sessions);
+        } catch (Exception e) {
+            logger.error("FULL ERROR", e);
+            return ResponseEntity.internalServerError().body(
+                Map.of(
+                    "error", e.getClass().getName(),
+                    "message", e.getMessage()
+                )
+            );
+        }
     }
 
     @DeleteMapping("/sessions/{id}")

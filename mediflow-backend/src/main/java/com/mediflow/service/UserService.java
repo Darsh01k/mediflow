@@ -379,15 +379,24 @@ public class UserService {
     // Account Security settings
     @Transactional
     public void changePassword(Long userId, String currentPassword, String newPassword) {
+        logger.info("Entering changePassword userId={}", userId);
+        logger.info("Querying userRepository for userId={}", userId);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException("User not found."));
+                .orElseThrow(() -> {
+                    logger.error("User not found with ID {}", userId);
+                    return new BadRequestException("User not found.");
+                });
 
-        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+        logger.info("Validating current password match for user={}", user.getUsername());
+        if (currentPassword == null || user.getPassword() == null || !passwordEncoder.matches(currentPassword, user.getPassword())) {
+            logger.warn("Password change failed: current password does not match for user={}", user.getUsername());
             throw new BadRequestException("Current password does not match.");
         }
 
+        logger.info("Validating new password strength for user={}", user.getUsername());
         validatePasswordStrength(newPassword);
 
+        logger.info("Saving new password for user ID {}", userId);
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         logger.info("Password updated successfully inside profile settings for user: {}", user.getUsername());
@@ -428,14 +437,22 @@ public class UserService {
 
     @Transactional
     public void requestEmailChange(Long userId, String newEmail) {
+        logger.info("Entering requestEmailChange userId={}, newEmail={}", userId, newEmail);
+        logger.info("Querying userRepository for userId={}", userId);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException("User not found."));
+                .orElseThrow(() -> {
+                    logger.error("User not found with ID {}", userId);
+                    return new BadRequestException("User not found.");
+                });
 
-        if (user.getEmail().equalsIgnoreCase(newEmail)) {
+        if (user.getEmail() != null && user.getEmail().equalsIgnoreCase(newEmail)) {
+            logger.warn("requestEmailChange failed: new email is same as current email for user ID {}", userId);
             throw new BadRequestException("New email must be different from current email.");
         }
 
+        logger.info("Checking if new email {} exists in database", newEmail);
         if (userRepository.existsByEmail(newEmail)) {
+            logger.warn("requestEmailChange failed: email {} already exists for user ID {}", newEmail, userId);
             throw new BadRequestException("Email is already taken by another account.");
         }
 
@@ -443,13 +460,16 @@ public class UserService {
         EmailChangeRequest existingRequest = emailChangeRequests.get(userId);
         if (existingRequest != null && existingRequest.getLastRequestedTime().isAfter(java.time.LocalDateTime.now().minusSeconds(60))) {
             long secondsLeft = 60 - java.time.Duration.between(existingRequest.getLastRequestedTime(), java.time.LocalDateTime.now()).getSeconds();
+            logger.warn("requestEmailChange failed due to rate limit for user ID {}, secondsLeft={}", userId, secondsLeft);
             throw new BadRequestException("Please wait " + secondsLeft + " seconds before requesting another code.");
         }
 
         // Generate 6 digit OTP
+        logger.info("Generating OTP for email change of user ID {}", userId);
         String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
         
         // Store request
+        logger.info("Saving OTP state for email change of user ID {}", userId);
         emailChangeRequests.put(userId, new EmailChangeRequest(
                 newEmail,
                 otp,
@@ -468,33 +488,45 @@ public class UserService {
 
     @Transactional
     public void verifyEmailChange(Long userId, String otp, String newEmail) {
+        logger.info("Entering verifyEmailChange userId={}, otp={}, newEmail={}", userId, otp, newEmail);
+        logger.info("Querying userRepository for userId={}", userId);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException("User not found."));
+                .orElseThrow(() -> {
+                    logger.error("User not found with ID {}", userId);
+                    return new BadRequestException("User not found.");
+                });
 
+        logger.info("Retrieving pending email change request for userId={}", userId);
         EmailChangeRequest changeRequest = emailChangeRequests.get(userId);
         if (changeRequest == null) {
+            logger.warn("verifyEmailChange failed: No pending email change request for user ID {}", userId);
             throw new BadRequestException("No pending email change request found.");
         }
 
-        if (!changeRequest.getNewEmail().equalsIgnoreCase(newEmail)) {
+        if (changeRequest.getNewEmail() == null || !changeRequest.getNewEmail().equalsIgnoreCase(newEmail)) {
+            logger.warn("verifyEmailChange failed: Target email {} does not match requested email {} for user ID {}", newEmail, changeRequest.getNewEmail(), userId);
             throw new BadRequestException("The target email address does not match your active request.");
         }
 
         if (changeRequest.getExpiryTime().isBefore(java.time.LocalDateTime.now())) {
+            logger.warn("verifyEmailChange failed: OTP expired for user ID {}", userId);
             emailChangeRequests.remove(userId);
             throw new BadRequestException("Verification code has expired. Please request a new one.");
         }
 
-        if (!changeRequest.getOtp().equals(otp)) {
+        if (!java.util.Objects.equals(changeRequest.getOtp(), otp)) {
+            logger.warn("verifyEmailChange failed: Invalid OTP entered for user ID {}", userId);
             throw new BadRequestException("Invalid verification code. Please try again.");
         }
 
+        logger.info("Checking if new email {} exists before finalizing user ID {}", newEmail, userId);
         if (userRepository.existsByEmail(newEmail)) {
             emailChangeRequests.remove(userId);
             throw new BadRequestException("Email is already taken by another account.");
         }
 
         // Update database
+        logger.info("Saving updated email for user ID {}", userId);
         user.setEmail(newEmail);
         userRepository.save(user);
 
@@ -505,10 +537,13 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public java.util.List<com.mediflow.dto.UserSessionDto> getUserSessions(Long userId, String currentPrincipalToken) {
+        logger.info("Entering getUserSessions userId={}, currentPrincipalToken={}", userId, currentPrincipalToken);
+        logger.info("Querying userSessionRepository for active sessions of userId={}", userId);
         java.util.List<UserSession> sessions = userSessionRepository.findByUserIdAndIsActiveTrue(userId);
         java.util.List<com.mediflow.dto.UserSessionDto> dtoList = new java.util.ArrayList<>();
         for (UserSession session : sessions) {
-            boolean isCurrent = session.getToken().equals(currentPrincipalToken);
+            logger.info("Processing session ID={}, token={}, is_active={}", session.getId(), session.getToken(), session.isActive());
+            boolean isCurrent = java.util.Objects.equals(session.getToken(), currentPrincipalToken);
             dtoList.add(new com.mediflow.dto.UserSessionDto(
                 session.getId(),
                 session.getLoginTime(),
@@ -517,6 +552,7 @@ public class UserService {
                 isCurrent
             ));
         }
+        logger.info("Returning {} sessions for userId={}", dtoList.size(), userId);
         return dtoList;
     }
 
