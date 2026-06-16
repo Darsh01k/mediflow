@@ -152,9 +152,24 @@ export const AuthProvider = ({ children }) => {
     };
   }, [user]);
 
+  if (loading) {
+    return (
+      <AuthContext.Provider value={{ user: null, loading: true, login, loginWithGoogle, register, logout, updateUser }}>
+        <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-tr from-indigo-50/60 via-slate-50 to-blue-50/50">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center shadow-sm">
+              <div className="w-5 h-5 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+            </div>
+            <span className="text-sm font-semibold text-slate-500">Loading...</span>
+          </div>
+        </div>
+      </AuthContext.Provider>
+    );
+  }
+
   return (
     <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, register, logout, updateUser }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

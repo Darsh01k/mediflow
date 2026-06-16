@@ -77,48 +77,6 @@ const Register = () => {
   const toast = useToast();
   const navigate = useNavigate();
 
-  const handleGoogleSignUpSuccess = async (credentialResponse) => {
-    if (!credentialResponse.credential) {
-      setError('No credential returned from Google');
-      return;
-    }
-    try {
-      setError('');
-      setLoading(true);
-      const user = await loginWithGoogle(credentialResponse.credential);
-      let greeting = '';
-      const fname = user.firstName ? user.firstName.trim() : '';
-      const lname = user.lastName ? user.lastName.trim() : '';
-      let fullName = `${fname} ${lname}`.trim();
-      
-      if (!fullName || 
-          fullName.toLowerCase() === 'user' || 
-          fullName.toLowerCase() === 'undefined' || 
-          fullName.toLowerCase() === 'null') {
-        greeting = user.username || 'user';
-      } else {
-        greeting = fullName;
-      }
-      
-      toast.success(`Welcome to MediFlow, ${greeting}!`);
-      navigate('/');
-    } catch (err) {
-      console.error('Google Sign-Up Error:', err);
-      const message =
-        typeof err === 'string'
-          ? err
-          : err?.message
-          ? err.message
-          : err?.response?.data?.message
-          ? err.response.data.message
-          : 'Google sign up failed';
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Onboarding wizard steps
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -202,6 +160,48 @@ const Register = () => {
     };
     loadHospitals();
   }, []);
+
+  const handleGoogleSignUpSuccess = async (credentialResponse) => {
+    if (!credentialResponse.credential) {
+      setError('No credential returned from Google');
+      return;
+    }
+    try {
+      setError('');
+      setLoading(true);
+      const user = await loginWithGoogle(credentialResponse.credential);
+      let greeting = '';
+      const fname = user.firstName ? user.firstName.trim() : '';
+      const lname = user.lastName ? user.lastName.trim() : '';
+      let fullName = `${fname} ${lname}`.trim();
+
+      if (!fullName ||
+          fullName.toLowerCase() === 'user' ||
+          fullName.toLowerCase() === 'undefined' ||
+          fullName.toLowerCase() === 'null') {
+        greeting = user.username || 'user';
+      } else {
+        greeting = fullName;
+      }
+
+      toast.success(`Welcome to MediFlow, ${greeting}!`);
+      navigate('/');
+    } catch (err) {
+      console.error('Google Sign-Up Error:', err);
+      const message =
+        typeof err === 'string'
+          ? err
+          : err?.message
+          ? err.message
+          : err?.response?.data?.message
+          ? err.response.data.message
+          : 'Google sign up failed';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateStep = (s) => {
     if (s === 1) {

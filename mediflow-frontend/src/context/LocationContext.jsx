@@ -118,7 +118,10 @@ export const LocationProvider = ({ children }) => {
   }, [user]);
 
   const fallbackToCityRef = useRef(fallbackToCity);
-  fallbackToCityRef.current = fallbackToCity;
+
+  useEffect(() => {
+    fallbackToCityRef.current = fallbackToCity;
+  }, [fallbackToCity]);
 
   useEffect(() => {
     if (!user) return;
