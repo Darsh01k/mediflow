@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import { useToast } from './ToastContext';
+import { isSessionExpired, getSessionExpirationReason } from '../utils/auth';
 
 const AuthContext = createContext(null);
 
@@ -15,36 +16,29 @@ export const AuthProvider = ({ children }) => {
     // Check if user is logged in on mount
     const savedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
-    const loginTime = localStorage.getItem('loginTimestamp');
-    const lastActivity = localStorage.getItem('lastActivityTimestamp');
     
     if (savedUser && token) {
-      const now = Date.now();
-      const threeHours = 3 * 60 * 60 * 1000;
-      let expired = false;
-      let reason = '';
-
-      if (loginTime && now - parseInt(loginTime, 10) >= threeHours) {
-        expired = true;
-        reason = 'session';
-      } else if (lastActivity && now - parseInt(lastActivity, 10) >= threeHours) {
-        expired = true;
-        reason = 'inactivity';
-      }
-
-      if (expired) {
+      if (isSessionExpired()) {
+        const reason = getSessionExpirationReason() || 'session';
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('loginTimestamp');
         localStorage.removeItem('lastActivityTimestamp');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('loginTimestamp');
+        sessionStorage.removeItem('lastActivityTimestamp');
         localStorage.setItem('logoutReason', reason);
         setUser(null);
+        if (!window.location.pathname.includes('/login')) {
+          navigate('/login');
+        }
       } else {
         setUser(JSON.parse(savedUser));
       }
     }
     setLoading(false);
-  }, []);
+  }, [navigate]);
 
   const login = async (username, password) => {
     try {
@@ -78,6 +72,10 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     localStorage.removeItem('loginTimestamp');
     localStorage.removeItem('lastActivityTimestamp');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('loginTimestamp');
+    sessionStorage.removeItem('lastActivityTimestamp');
     setUser(null);
   };
 
@@ -114,22 +112,8 @@ export const AuthProvider = ({ children }) => {
     });
 
     const interval = setInterval(() => {
-      const now = Date.now();
-      const loginTime = localStorage.getItem('loginTimestamp');
-      const lastActivity = localStorage.getItem('lastActivityTimestamp');
-
-      let expired = false;
-      let reason = '';
-
-      if (loginTime && now - parseInt(loginTime, 10) >= threeHours) {
-        expired = true;
-        reason = 'session';
-      } else if (lastActivity && now - parseInt(lastActivity, 10) >= threeHours) {
-        expired = true;
-        reason = 'inactivity';
-      }
-
-      if (expired) {
+      if (isSessionExpired()) {
+        const reason = getSessionExpirationReason() || 'session';
         logout();
         localStorage.setItem('logoutReason', reason);
         navigate('/login');

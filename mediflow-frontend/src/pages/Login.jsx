@@ -14,6 +14,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   
   // Forgot Password modal state
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -31,6 +32,7 @@ const Login = () => {
     if (reason) {
       localStorage.removeItem('logoutReason');
       if (reason === 'session') {
+        setSessionExpired(true);
         toast.warning('Your session has expired. Please sign in again.');
       } else if (reason === 'inactivity') {
         toast.warning('You were signed out due to inactivity.');
@@ -188,6 +190,13 @@ const Login = () => {
                 Sign in to access your secure healthcare portal
               </p>
             </div>
+
+            {/* Session Expired Alert */}
+            {sessionExpired && (
+              <Alert variant="warning" className="mb-6 rounded-xl">
+                Your session has expired. Please sign in again.
+              </Alert>
+            )}
 
             {/* Error Alert */}
             {error && (
