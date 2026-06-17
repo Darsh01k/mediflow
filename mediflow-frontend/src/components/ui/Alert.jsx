@@ -37,6 +37,9 @@ const Alert = ({
 
   const renderSafeChildren = (child) => {
     if (!child) return child;
+    if (Array.isArray(child)) {
+      return child.map((c, i) => <React.Fragment key={i}>{renderSafeChildren(c)}</React.Fragment>);
+    }
     if (child instanceof Error) {
       return child.message || String(child);
     }

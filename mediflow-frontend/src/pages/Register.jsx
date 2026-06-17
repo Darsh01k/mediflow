@@ -268,8 +268,8 @@ const Register = () => {
   const handleNext = () => {
     const err = validateStep(step);
     if (err) {
-      setError(err);
-      toast.error(err);
+      setError(typeof err === 'string' ? err : err?.message || "Something went wrong.");
+      toast.error(typeof err === 'string' ? err : err?.message || "Something went wrong.");
       return;
     }
     setError('');
@@ -287,8 +287,8 @@ const Register = () => {
 
     const err = validateStep(1) || validateStep(2) || validateStep(3);
     if (err) {
-      setError(err);
-      toast.error(err);
+      setError(typeof err === 'string' ? err : err?.message || "Something went wrong.");
+      toast.error(typeof err === 'string' ? err : err?.message || "Something went wrong.");
       return;
     }
 
@@ -1247,6 +1247,14 @@ const Register = () => {
         return null;
     }
   };
+
+  console.log("ERROR STATE:", error);
+  console.log("ERROR TYPE:", typeof error);
+  try {
+    console.log("ERROR VALUE:", JSON.stringify(error, null, 2));
+  } catch (e) {
+    console.log("ERROR VALUE: [Unserializable]", error);
+  }
 
   if (success) {
     return (
