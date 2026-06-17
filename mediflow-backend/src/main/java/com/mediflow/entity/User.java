@@ -48,8 +48,6 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "google_id", length = 255)
-    private String googleId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "provider", nullable = false, length = 20)
@@ -187,13 +185,6 @@ public class User {
         this.country = country;
     }
 
-    public String getGoogleId() {
-        return googleId;
-    }
-
-    public void setGoogleId(String googleId) {
-        this.googleId = googleId;
-    }
 
     public AuthProvider getProvider() {
         return provider;

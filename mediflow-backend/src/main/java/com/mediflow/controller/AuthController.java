@@ -30,13 +30,5 @@ public class AuthController {
         return new ResponseEntity<>(registeredUser, HttpStatus.CREATED);
     }
 
-    @PostMapping("/google")
-    public ResponseEntity<AuthResponse> google(@RequestBody java.util.Map<String, String> request) {
-        String idToken = request.get("idToken");
-        if (idToken == null || idToken.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        AuthResponse response = userService.authenticateGoogle(idToken);
-        return ResponseEntity.ok(response);
-    }
+
 }

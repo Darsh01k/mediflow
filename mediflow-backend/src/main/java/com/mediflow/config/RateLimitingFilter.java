@@ -37,7 +37,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
 
-        // Apply rate limiting to auth endpoints (login, register, google auth)
+        // Apply rate limiting to auth endpoints (login, register)
         boolean isAuthEndpoint = requestURI.startsWith("/api/auth/");
 
         if (isAuthEndpoint && authEndpointsEnabled) {

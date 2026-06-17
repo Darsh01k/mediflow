@@ -13,7 +13,6 @@ public class UserDto {
     private String avatarId;
     private HospitalDto hospital;
     private AuthProvider provider;
-    private String googleId;
 
     public UserDto() {}
 
@@ -137,11 +136,4 @@ public class UserDto {
         this.provider = provider;
     }
 
-    public String getGoogleId() {
-        return googleId;
-    }
-
-    public void setGoogleId(String googleId) {
-        this.googleId = googleId;
-    }
 }

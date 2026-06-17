@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
 import { HeartPulse, Lock, User, Eye, EyeOff, ShieldCheck, Zap, CheckCircle } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
 
 const extractErrorMessage = (err, fallback = 'An unexpected error occurred') => {
   if (!err) return fallback;
@@ -43,7 +42,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   
-  const { login, loginWithGoogle } = useAuth();
+  const { login } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -90,42 +89,6 @@ const Login = () => {
     } catch (err) {
       console.error('Login Error:', err);
       const message = extractErrorMessage(err, 'Login failed');
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    if (!credentialResponse.credential) {
-      setError('No credential returned from Google');
-      return;
-    }
-    try {
-      setError('');
-      setLoading(true);
-      const user = await loginWithGoogle(credentialResponse.credential);
-      
-      let greeting = '';
-      const fname = user.firstName ? user.firstName.trim() : '';
-      const lname = user.lastName ? user.lastName.trim() : '';
-      let fullName = `${fname} ${lname}`.trim();
-      
-      if (!fullName || 
-          fullName.toLowerCase() === 'user' || 
-          fullName.toLowerCase() === 'undefined' || 
-          fullName.toLowerCase() === 'null') {
-        greeting = user.username || 'user';
-      } else {
-        greeting = fullName;
-      }
-      
-      toast.success(`Welcome Back, ${greeting}`);
-      navigate('/');
-    } catch (err) {
-      console.error('Google Sign-In Error:', err);
-      const message = extractErrorMessage(err, 'Google sign in failed');
       setError(message);
       toast.error(message);
     } finally {
@@ -325,32 +288,6 @@ const Login = () => {
               >
                 Sign In
               </Button>
-
-              {/* Divider */}
-              <div className="relative my-4 flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200"></div>
-                </div>
-                <span className="relative px-3 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Or continue with
-                </span>
-              </div>
-
-              {/* Google Button */}
-              <div className="w-full flex justify-center">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={() => {
-                    setError('Google sign-in failed. Please try again.');
-                    toast.error('Google sign-in failed.');
-                  }}
-                  theme="outline"
-                  size="large"
-                  text="continue_with"
-                  shape="rectangular"
-                  width="340"
-                />
-              </div>
 
             </form>
 

@@ -8,7 +8,6 @@ import Alert from '../components/ui/Alert';
 import API from '../services/api';
 import { AvatarPicker } from '../components/ui/Avatar';
 import AddressAutocomplete from '../components/ui/AddressAutocomplete';
-import { GoogleLogin } from '@react-oauth/google';
 import { 
   HeartPulse, 
   User, 
@@ -100,7 +99,7 @@ const extractErrorMessage = (err, fallback = 'An unexpected error occurred') => 
 };
 
 const Register = () => {
-  const { register, registerWithGoogle } = useAuth();
+  const { register } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -187,42 +186,6 @@ const Register = () => {
     };
     loadHospitals();
   }, []);
-
-  const handleGoogleSignUpSuccess = async (credentialResponse) => {
-    if (!credentialResponse.credential) {
-      setError('No credential returned from Google');
-      return;
-    }
-    try {
-      setError('');
-      setLoading(true);
-      console.log("Submitting registration data:", credentialResponse.credential);
-      const response = await registerWithGoogle(credentialResponse.credential);
-      console.log("API response:", response);
-      let greeting = '';
-      const fname = response.firstName ? response.firstName.trim() : '';
-      const lname = response.lastName ? response.lastName.trim() : '';
-      let fullName = `${fname} ${lname}`.trim();
-
-      if (!fullName ||
-          fullName.toLowerCase() === 'user' ||
-          fullName.toLowerCase() === 'undefined' ||
-          fullName.toLowerCase() === 'null') {
-        greeting = response.username || 'user';
-      } else {
-        greeting = fullName;
-      }
-
-      toast.success(`Welcome to MediFlow, ${greeting}!`);
-      navigate('/');
-    } catch (err) {
-      console.error("Registration failure:", err);
-      console.error("Registration Error:", err);
-      setError(err?.message || "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const validateStep = (s) => {
     if (s === 1) {
@@ -472,32 +435,6 @@ const Register = () => {
                   }}
                   disabled={loading}
                   required
-                />
-              </div>
-
-              {/* Divider */}
-              <div className="relative my-4 flex items-center justify-center col-span-1 md:col-span-2">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200"></div>
-                </div>
-                <span className="relative px-3 bg-white text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Or register with
-                </span>
-              </div>
-
-              {/* Google Button */}
-              <div className="col-span-1 md:col-span-2 flex justify-center">
-                <GoogleLogin
-                  onSuccess={handleGoogleSignUpSuccess}
-                  onError={() => {
-                    setError('Google sign-up failed. Please try again.');
-                    toast.error('Google sign-up failed.');
-                  }}
-                  theme="outline"
-                  size="large"
-                  text="signup_with"
-                  shape="rectangular"
-                  width="340"
                 />
               </div>
 

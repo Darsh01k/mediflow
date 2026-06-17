@@ -58,24 +58,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const loginWithGoogle = async (idToken) => {
-    try {
-      const response = await API.post('/auth/google', { idToken });
-      const { token, ...userData } = response.data;
-      
-      const now = Date.now().toString();
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('loginTimestamp', now);
-      localStorage.setItem('lastActivityTimestamp', now);
-      
-      setUser(userData);
-      return userData;
-    } catch (error) {
-      throw error.response?.data?.message || 'Google login failed.';
-    }
-  };
-
   const register = async (registerData) => {
     try {
       const response = await API.post('/auth/register', registerData);
@@ -104,7 +86,6 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUser);
   };
 
-  const registerWithGoogle = loginWithGoogle;
 
   // Inactivity tracking & Global timer check
   useEffect(() => {
@@ -156,7 +137,7 @@ export const AuthProvider = ({ children }) => {
 
   if (loading) {
     return (
-      <AuthContext.Provider value={{ user: null, loading: true, login, loginWithGoogle, registerWithGoogle, register, logout, updateUser }}>
+      <AuthContext.Provider value={{ user: null, loading: true, login, register, logout, updateUser }}>
         <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-tr from-indigo-50/60 via-slate-50 to-blue-50/50">
           <div className="flex flex-col items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center shadow-sm">
@@ -170,7 +151,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, registerWithGoogle, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

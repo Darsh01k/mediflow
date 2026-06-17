@@ -66,8 +66,6 @@ public class MediFlowFlowIntegrationTest {
     @Autowired
     private com.mediflow.service.UserService userService;
 
-    @Autowired
-    private com.mediflow.service.GoogleTokenVerifierService googleTokenVerifierService;
 
     @BeforeEach
     public void setup() {
@@ -478,54 +476,6 @@ public class MediFlowFlowIntegrationTest {
         System.out.println("Response Body for change-password: " + pwResult.getResponse().getContentAsString());
     }
 
-    @Test
-    public void testGoogleLoginNewUser() throws Exception {
-        java.util.Map<String, String> googleRequest = java.util.Map.of(
-            "idToken", "mock-google-token"
-        );
-        mockMvc.perform(post("/api/auth/google")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(googleRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token", notNullValue()))
-                .andExpect(jsonPath("$.email", is("mockuser@google.com")))
-                .andExpect(jsonPath("$.role", is("PATIENT")));
-    }
-
-    @Test
-    public void testGoogleLoginExistingLocalUser() throws Exception {
-        // First register a local user
-        RegisterRequest registerRequest = new RegisterRequest();
-        registerRequest.setUsername("localuser");
-        registerRequest.setPassword("password123!");
-        registerRequest.setEmail("localuser@google.com");
-        registerRequest.setRole(Role.PATIENT);
-        registerRequest.setFirstName("Local");
-        registerRequest.setLastName("User");
-        registerRequest.setDateOfBirth(LocalDate.of(1995, 5, 5));
-        registerRequest.setGender("Male");
-        registerRequest.setPhone("1234567890");
-
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(registerRequest)))
-                .andExpect(status().isCreated());
-
-        // Login with Google using same email
-        java.util.Map<String, String> googleRequest = java.util.Map.of(
-            "idToken", "mock-localuser"
-        );
-        mockMvc.perform(post("/api/auth/google")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(googleRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token", notNullValue()))
-                .andExpect(jsonPath("$.email", is("localuser@google.com")));
-
-        // Verify provider in db updated to GOOGLE
-        User user = userRepository.findByEmail("localuser@google.com").orElseThrow();
-        assertEquals(AuthProvider.GOOGLE, user.getProvider());
-    }
 
     @Test
     public void testGetHospitals() throws Exception {

@@ -21,7 +21,6 @@ public class DtoMapper {
         dto.setState(user.getState());
         dto.setCountry(user.getCountry());
         dto.setProvider(user.getProvider());
-        dto.setGoogleId(user.getGoogleId());
         return dto;
     }
 
