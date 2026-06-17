@@ -72,8 +72,35 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+const extractErrorMessage = (err, fallback = 'An unexpected error occurred') => {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
+  
+  if (err.response && err.response.data) {
+    if (typeof err.response.data === 'string') {
+      return err.response.data;
+    }
+    if (err.response.data.message && typeof err.response.data.message === 'string') {
+      return err.response.data.message;
+    }
+    if (err.response.data.error && typeof err.response.data.error === 'string') {
+      return err.response.data.error;
+    }
+  }
+  
+  if (err.message && typeof err.message === 'string') {
+    return err.message;
+  }
+  
+  try {
+    return String(err);
+  } catch (e) {
+    return fallback;
+  }
+};
+
 const Register = () => {
-  const { register, loginWithGoogle } = useAuth();
+  const { register, registerWithGoogle } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -169,7 +196,7 @@ const Register = () => {
     try {
       setError('');
       setLoading(true);
-      const user = await loginWithGoogle(credentialResponse.credential);
+      const user = await registerWithGoogle(credentialResponse.credential);
       let greeting = '';
       const fname = user.firstName ? user.firstName.trim() : '';
       const lname = user.lastName ? user.lastName.trim() : '';
@@ -188,14 +215,7 @@ const Register = () => {
       navigate('/');
     } catch (err) {
       console.error('Google Sign-Up Error:', err);
-      const message =
-        typeof err === 'string'
-          ? err
-          : err?.message
-          ? err.message
-          : err?.response?.data?.message
-          ? err.response.data.message
-          : 'Google sign up failed';
+      const message = extractErrorMessage(err, 'Google sign up failed');
       setError(message);
       toast.error(message);
     } finally {
@@ -334,14 +354,7 @@ const Register = () => {
       }, 3000);
     } catch (err) {
       console.error('Registration Error:', err);
-      const message =
-        typeof err === 'string'
-          ? err
-          : err?.message
-          ? err.message
-          : err?.response?.data?.message
-          ? err.response.data.message
-          : 'Registration failed';
+      const message = extractErrorMessage(err, 'Registration failed');
       setError(message);
       toast.error(message);
     } finally {

@@ -8,6 +8,33 @@ import Alert from '../components/ui/Alert';
 import { HeartPulse, Lock, User, Eye, EyeOff, ShieldCheck, Zap, CheckCircle } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 
+const extractErrorMessage = (err, fallback = 'An unexpected error occurred') => {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
+  
+  if (err.response && err.response.data) {
+    if (typeof err.response.data === 'string') {
+      return err.response.data;
+    }
+    if (err.response.data.message && typeof err.response.data.message === 'string') {
+      return err.response.data.message;
+    }
+    if (err.response.data.error && typeof err.response.data.error === 'string') {
+      return err.response.data.error;
+    }
+  }
+  
+  if (err.message && typeof err.message === 'string') {
+    return err.message;
+  }
+  
+  try {
+    return String(err);
+  } catch (e) {
+    return fallback;
+  }
+};
+
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -62,14 +89,7 @@ const Login = () => {
       navigate('/');
     } catch (err) {
       console.error('Login Error:', err);
-      const message =
-        typeof err === 'string'
-          ? err
-          : err?.message
-          ? err.message
-          : err?.response?.data?.message
-          ? err.response.data.message
-          : 'Login failed';
+      const message = extractErrorMessage(err, 'Login failed');
       setError(message);
       toast.error(message);
     } finally {
@@ -105,14 +125,7 @@ const Login = () => {
       navigate('/');
     } catch (err) {
       console.error('Google Sign-In Error:', err);
-      const message =
-        typeof err === 'string'
-          ? err
-          : err?.message
-          ? err.message
-          : err?.response?.data?.message
-          ? err.response.data.message
-          : 'Google sign in failed';
+      const message = extractErrorMessage(err, 'Google sign in failed');
       setError(message);
       toast.error(message);
     } finally {
