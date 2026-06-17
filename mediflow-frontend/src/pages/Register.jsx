@@ -196,17 +196,19 @@ const Register = () => {
     try {
       setError('');
       setLoading(true);
-      const user = await registerWithGoogle(credentialResponse.credential);
+      console.log("Submitting registration data:", credentialResponse.credential);
+      const response = await registerWithGoogle(credentialResponse.credential);
+      console.log("API response:", response);
       let greeting = '';
-      const fname = user.firstName ? user.firstName.trim() : '';
-      const lname = user.lastName ? user.lastName.trim() : '';
+      const fname = response.firstName ? response.firstName.trim() : '';
+      const lname = response.lastName ? response.lastName.trim() : '';
       let fullName = `${fname} ${lname}`.trim();
 
       if (!fullName ||
           fullName.toLowerCase() === 'user' ||
           fullName.toLowerCase() === 'undefined' ||
           fullName.toLowerCase() === 'null') {
-        greeting = user.username || 'user';
+        greeting = response.username || 'user';
       } else {
         greeting = fullName;
       }
@@ -214,10 +216,9 @@ const Register = () => {
       toast.success(`Welcome to MediFlow, ${greeting}!`);
       navigate('/');
     } catch (err) {
-      console.error('Google Sign-Up Error:', err);
-      const message = extractErrorMessage(err, 'Google sign up failed');
-      setError(message);
-      toast.error(message);
+      console.error("Registration failure:", err);
+      console.error("Registration Error:", err);
+      setError(err?.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -346,17 +347,18 @@ const Register = () => {
 
     try {
       setLoading(true);
-      await register(payload);
+      console.log("Submitting registration data:", payload);
+      const response = await register(payload);
+      console.log("API response:", response);
       setSuccess(true);
       toast.success('Registration successful! Welcome to MediFlow.');
       setTimeout(() => {
         navigate('/login');
       }, 3000);
     } catch (err) {
-      console.error('Registration Error:', err);
-      const message = extractErrorMessage(err, 'Registration failed');
-      setError(message);
-      toast.error(message);
+      console.error("Registration failure:", err);
+      console.error("Registration Error:", err);
+      setError(err?.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -1403,7 +1405,9 @@ const Register = () => {
             {/* Step error logs */}
             {error && (
               <Alert variant="danger" className="mb-6 rounded-xl">
-                {error}
+                {typeof error === "string"
+                    ? error
+                    : error?.message || "Unexpected error"}
               </Alert>
             )}
 

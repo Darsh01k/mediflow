@@ -35,12 +35,23 @@ const Alert = ({
 
   const Icon = variants[variant].icon;
 
+  const renderSafeChildren = (child) => {
+    if (!child) return child;
+    if (child instanceof Error) {
+      return child.message || String(child);
+    }
+    if (typeof child === 'object' && child !== null && !React.isValidElement(child)) {
+      return child.message || String(child);
+    }
+    return child;
+  };
+
   return (
     <div className={`${baseStyles} ${variants[variant].container} ${className}`}>
       <Icon className="w-4.5 h-4.5 shrink-0 mt-0.5" />
       <div className="space-y-0.5">
         {title && <h5 className="font-bold uppercase tracking-wider">{title}</h5>}
-        <div className="font-semibold text-slate-700">{children}</div>
+        <div className="font-semibold text-slate-700">{renderSafeChildren(children)}</div>
       </div>
     </div>
   );

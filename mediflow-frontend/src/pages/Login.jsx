@@ -259,7 +259,9 @@ const Login = () => {
             {/* Error Alert */}
             {error && (
               <Alert variant="danger" className="mb-6 rounded-xl">
-                {error}
+                {typeof error === "string"
+                    ? error
+                    : error?.message || "Unexpected error"}
               </Alert>
             )}
 
