@@ -381,8 +381,8 @@ public class UserService {
                 user = userByGoogleId.get();
                 logger.info("Google login: Found user by googleId with email {}", email);
                 
-                if (user.getAuthProvider() != AuthProvider.GOOGLE) {
-                    user.setAuthProvider(AuthProvider.GOOGLE);
+                if (user.getProvider() != AuthProvider.GOOGLE) {
+                    user.setProvider(AuthProvider.GOOGLE);
                     user = userRepository.save(user);
                 }
             } else if (userByEmail.isPresent()) {
@@ -390,7 +390,7 @@ public class UserService {
                 logger.info("Google login: Found user by email {} (LOCAL/other). Linking account.", email);
                 
                 user.setGoogleId(googleId);
-                user.setAuthProvider(AuthProvider.GOOGLE);
+                user.setProvider(AuthProvider.GOOGLE);
                 user = userRepository.save(user);
             } else {
                 logger.info("Google login: Creating new user for email {}", email);
@@ -411,7 +411,7 @@ public class UserService {
                 user.setFirstName(firstName != null ? firstName : "Google");
                 user.setLastName(lastName != null ? lastName : "User");
                 user.setGoogleId(googleId);
-                user.setAuthProvider(AuthProvider.GOOGLE);
+                user.setProvider(AuthProvider.GOOGLE);
                 user.setAvatarId("avatar_1");
                 
                 user = userRepository.save(user);
@@ -502,5 +502,11 @@ public class UserService {
         if (!hasUppercase || !hasLowercase || !hasDigit || !hasSpecial) {
             throw new BadRequestException("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
         }
+    }
+
+    public java.util.List<UserDto> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(DtoMapper::toDto)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

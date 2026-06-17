@@ -1,4 +1,4 @@
-﻿package com.mediflow.utils;
+package com.mediflow.utils;
 
 import java.util.regex.Pattern;
 

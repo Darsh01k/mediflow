@@ -1,6 +1,7 @@
 package com.mediflow.dto;
 
 import com.mediflow.entity.Role;
+import com.mediflow.entity.AuthProvider;
 
 public class UserDto {
     private Long id;
@@ -11,6 +12,8 @@ public class UserDto {
     private String lastName;
     private String avatarId;
     private HospitalDto hospital;
+    private AuthProvider provider;
+    private String googleId;
 
     public UserDto() {}
 
@@ -124,5 +127,21 @@ public class UserDto {
 
     public void setCountry(String country) {
         this.country = country;
+    }
+
+    public AuthProvider getProvider() {
+        return provider;
+    }
+
+    public void setProvider(AuthProvider provider) {
+        this.provider = provider;
+    }
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
     }
 }

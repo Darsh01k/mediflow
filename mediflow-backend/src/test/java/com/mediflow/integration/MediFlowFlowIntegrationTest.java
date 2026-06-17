@@ -524,12 +524,19 @@ public class MediFlowFlowIntegrationTest {
 
         // Verify provider in db updated to GOOGLE
         User user = userRepository.findByEmail("localuser@google.com").orElseThrow();
-        assertEquals(AuthProvider.GOOGLE, user.getAuthProvider());
+        assertEquals(AuthProvider.GOOGLE, user.getProvider());
     }
 
     @Test
     public void testGetHospitals() throws Exception {
         mockMvc.perform(get("/api/hospitals"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testGetUsers() throws Exception {
+        mockMvc.perform(get("/api/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))));
     }
 }

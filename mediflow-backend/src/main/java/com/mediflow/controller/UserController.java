@@ -2,6 +2,7 @@ package com.mediflow.controller;
 
 import com.mediflow.config.JwtUtils;
 import com.mediflow.config.UserDetailsImpl;
+import com.mediflow.dto.UserDto;
 import com.mediflow.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -68,5 +70,12 @@ public class UserController {
             logger.error("FULL ERROR during password change", e);
             return ResponseEntity.badRequest().body(Map.of("message", "An internal error occurred."));
         }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        logger.info("Fetching all users list via GET /api/users");
+        List<UserDto> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 }

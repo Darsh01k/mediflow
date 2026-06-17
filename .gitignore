@@ -28,6 +28,9 @@ pnpm-debug.log*
 .env.production.local
 *.local
 
+# Project documentation (AI context file, do not commit)
+PROJECT.md
+
 # Database temporary files
 *.db
 *.sqlite

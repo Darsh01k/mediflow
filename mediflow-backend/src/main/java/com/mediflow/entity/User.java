@@ -52,8 +52,8 @@ public class User {
     private String googleId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "auth_provider", nullable = false, length = 20)
-    private AuthProvider authProvider = AuthProvider.LOCAL;
+    @Column(name = "provider", nullable = false, length = 20)
+    private AuthProvider provider = AuthProvider.LOCAL;
 
     public User() {}
 
@@ -195,11 +195,11 @@ public class User {
         this.googleId = googleId;
     }
 
-    public AuthProvider getAuthProvider() {
-        return authProvider;
+    public AuthProvider getProvider() {
+        return provider;
     }
 
-    public void setAuthProvider(AuthProvider authProvider) {
-        this.authProvider = authProvider;
+    public void setProvider(AuthProvider provider) {
+        this.provider = provider;
     }
 }

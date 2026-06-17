@@ -1,4 +1,4 @@
-﻿package com.mediflow.config;
+package com.mediflow.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,16 +18,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 
+@Component
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(RateLimitingFilter.class);
 
     private final Map<String, RateLimitEntry> requestCounts = new ConcurrentHashMap<>();
 
-    @Value("\")
+    @Value("${mediflow.ratelimit.requests-per-minute:20}")
     private int requestsPerMinute;
 
-    @Value("\")
+    @Value("${mediflow.ratelimit.auth-endpoints-enabled:true}")
     private boolean authEndpointsEnabled;
 
     @Override

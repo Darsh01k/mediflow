@@ -1,4 +1,4 @@
-﻿package com.mediflow.config;
+package com.mediflow.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;

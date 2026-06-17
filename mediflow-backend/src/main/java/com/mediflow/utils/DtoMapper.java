@@ -20,6 +20,8 @@ public class DtoMapper {
         dto.setCity(user.getCity());
         dto.setState(user.getState());
         dto.setCountry(user.getCountry());
+        dto.setProvider(user.getProvider());
+        dto.setGoogleId(user.getGoogleId());
         return dto;
     }
 
