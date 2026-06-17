@@ -25,7 +25,7 @@ const Layout = () => {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-h-screen">
+      <div className="flex-1 lg:pl-64 flex flex-col min-h-screen min-w-0">
         {/* Sticky Header */}
         <Navbar title={getTitle()} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 

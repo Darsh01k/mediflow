@@ -367,10 +367,10 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200">
+      <div className="flex border-b border-slate-200 overflow-x-auto whitespace-nowrap scrollbar-none">
         <button
           onClick={() => setActiveTab('appointments')}
-          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors shrink-0 ${
             activeTab === 'appointments'
               ? 'border-emerald-500 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -380,7 +380,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
         </button>
         <button
           onClick={() => setActiveTab('prescriptions')}
-          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors shrink-0 ${
             activeTab === 'prescriptions'
               ? 'border-emerald-500 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -390,7 +390,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
         </button>
         <button
           onClick={() => setActiveTab('patients')}
-          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors shrink-0 ${
             activeTab === 'patients'
               ? 'border-emerald-500 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -400,7 +400,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
         </button>
         <button
           onClick={() => setActiveTab('profile')}
-          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors shrink-0 ${
             activeTab === 'profile'
               ? 'border-emerald-500 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -410,7 +410,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
         </button>
         <button
           onClick={() => setActiveTab('security')}
-          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors shrink-0 ${
             activeTab === 'security'
               ? 'border-emerald-500 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'

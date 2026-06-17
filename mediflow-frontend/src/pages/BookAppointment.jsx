@@ -167,7 +167,7 @@ const BookAppointment = () => {
         <CardDescription>Book your clinical appointment in three quick steps</CardDescription>
       </CardHeader>
 
-      <CardContent className="p-8">
+      <CardContent className="p-4 sm:p-8">
         {error && (
           <Alert variant="danger" className="mb-6">
             {error}
@@ -236,7 +236,7 @@ const BookAppointment = () => {
             <div className="p-5 bg-slate-50 border border-slate-200/50 rounded-xl space-y-4 hover:bg-slate-50/80 transition-colors animate-in fade-in duration-200">
               {/* Doctor Details Section */}
               <div className="flex items-start gap-4">
-                <HealthAvatar avatarId={selectedDoctorDetails.user.avatarId || 'doctor_1'} className="w-12 h-12 rounded-full" />
+                <HealthAvatar avatarId={selectedDoctorDetails.user.avatarId || 'doctor_1'} className="w-12 h-12 rounded-full shrink-0" />
                 <div className="space-y-1">
                   <h4 className="font-bold text-slate-800 text-xs">
                     Dr. {selectedDoctorDetails.user.firstName} {selectedDoctorDetails.user.lastName}
@@ -268,7 +268,7 @@ const BookAppointment = () => {
               {/* Hospital Details Section */}
               {selectedDoctorDetails.hospital && (
                 <div className="flex items-start gap-4">
-                  <HealthAvatar avatarId={selectedDoctorDetails.hospital.logoAvatar || 'hospital_1'} className="w-12 h-12 rounded-xl" />
+                  <HealthAvatar avatarId={selectedDoctorDetails.hospital.logoAvatar || 'hospital_1'} className="w-12 h-12 rounded-xl shrink-0" />
                   <div className="space-y-1 text-slate-600 font-medium">
                     <h4 className="font-bold text-slate-800 text-xs">
                       {selectedDoctorDetails.hospital.name}

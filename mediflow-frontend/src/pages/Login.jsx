@@ -171,7 +171,7 @@ const Login = () => {
 
         {/* Card wrapper */}
         <Card className="w-full max-w-md bg-white/75 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl shadow-slate-200/40 overflow-hidden animate-fade-in-up">
-          <CardContent className="p-8 sm:p-10">
+          <CardContent className="p-4 sm:p-10">
             
             {/* Header */}
             <div className="space-y-2 mb-8 text-center md:text-left">

@@ -118,3 +118,49 @@
     display: table-cell !important;
   }
 }
+
+/* Screen responsiveness for prescription viewing */
+@media screen and (max-width: 640px) {
+  .prescription-print-container {
+    padding: 16px !important;
+  }
+
+  .prescription-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+
+  .prescription-header > div:last-child {
+    text-align: left !important;
+    align-self: flex-start !important;
+    width: 100% !important;
+  }
+
+  .prescription-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .prescription-grid-2 > div {
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+
+  .prescription-table {
+    display: block !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+  }
+
+  .prescription-signature {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 24px !important;
+  }
+
+  .prescription-signature > div:last-child {
+    width: 100% !important;
+    text-align: left !important;
+  }
+}

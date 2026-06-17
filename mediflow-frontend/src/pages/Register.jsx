@@ -1159,7 +1159,7 @@ const Register = () => {
     return (
       <div className="min-h-screen w-full flex justify-center items-center bg-gradient-to-tr from-indigo-50/60 via-slate-50 to-blue-50/50 p-4">
         <Card className="w-full max-w-md bg-white/75 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl shadow-slate-200/40 overflow-hidden animate-fade-in-up text-center">
-          <CardContent className="p-8 sm:p-10 flex flex-col items-center justify-center space-y-6">
+          <CardContent className="p-4 sm:p-10 flex flex-col items-center justify-center space-y-6">
             <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm animate-bounce">
               <CheckCircle className="w-10 h-10" />
             </div>
@@ -1251,7 +1251,7 @@ const Register = () => {
         
         {/* Wizard Card Wrapper */}
         <Card className="w-full max-w-2xl bg-white/75 backdrop-blur-xl border border-white/50 rounded-2xl shadow-xl shadow-slate-200/40 animate-fade-in-up relative my-6 md:my-10">
-          <CardContent className="pt-8 sm:pt-10 px-8 sm:px-10 pb-0 flex flex-col relative h-full">
+          <CardContent className="pt-8 sm:pt-10 px-4 sm:px-10 pb-0 flex flex-col relative h-full">
             
             {/* Form Role Selector (Step 1 only) */}
             {step === 1 && (
@@ -1325,7 +1325,7 @@ const Register = () => {
                 </div>
 
                 {/* Action Buttons (Sticky Footer) */}
-                <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-slate-150 py-4 px-8 sm:px-10 -mx-8 sm:-mx-10 z-20 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.05)] flex items-center justify-between rounded-b-2xl">
+                <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-slate-150 py-4 px-4 sm:px-10 -mx-4 sm:-mx-10 z-20 shadow-[0_-4px_12px_-2px_rgba(0,0,0,0.05)] flex items-center justify-between rounded-b-2xl">
                   {step > 1 && (
                     <button
                       type="button"

@@ -113,7 +113,7 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
           paddingBottom: '20px',
           gap: '24px'
         }}
-        className="print-safe"
+        className="prescription-header print-safe"
       >
         <div style={{ textAlign: 'left', flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -380,7 +380,7 @@ const PrescriptionTemplate = ({ prescription, elementId = 'printable-prescriptio
           fontWeight: 600,
           marginTop: '24px'
         }}
-        className="print-safe"
+        className="prescription-signature print-safe"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left' }}>

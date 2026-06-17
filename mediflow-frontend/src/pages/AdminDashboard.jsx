@@ -174,10 +174,10 @@ const AdminDashboard = ({ stats, refreshStats }) => {
   return (
     <div className="space-y-8">
       {/* Tabs */}
-      <div className="flex border-b border-slate-200">
+      <div className="flex border-b border-slate-200 overflow-x-auto whitespace-nowrap scrollbar-none">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors shrink-0 ${
             activeTab === 'overview'
               ? 'border-emerald-500 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -187,7 +187,7 @@ const AdminDashboard = ({ stats, refreshStats }) => {
         </button>
         <button
           onClick={() => setActiveTab('security')}
-          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors ${
+          className={`py-3 px-6 text-sm font-bold border-b-2 cursor-pointer transition-colors shrink-0 ${
             activeTab === 'security'
               ? 'border-emerald-500 text-emerald-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'

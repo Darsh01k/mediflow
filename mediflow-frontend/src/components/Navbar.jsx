@@ -153,7 +153,7 @@ const Navbar = ({ title, onToggleSidebar }) => {
 
             {/* Dropdown Card */}
             {isOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200/80 rounded-2xl shadow-xl z-30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 bg-white border border-slate-200/80 rounded-2xl shadow-xl z-30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800">Notifications Feed</span>
                   {unreadCount > 0 && (
