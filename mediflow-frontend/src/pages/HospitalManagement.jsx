@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import API from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { 
@@ -40,6 +40,8 @@ const HospitalManagement = () => {
   const [searchType, setSearchType] = useState('');
   const [searchEmergency, setSearchEmergency] = useState('');
 
+  const fetchId = useRef(0);
+
   const [selectedHospital, setSelectedHospital] = useState(null);
   const [viewModal, setViewModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
@@ -53,15 +55,18 @@ const HospitalManagement = () => {
   });
 
   const fetchHospitals = async (params = {}) => {
+    const id = ++fetchId.current;
     try {
       setLoading(true);
       const res = await API.get('/hospitals/search', { params });
-      setHospitals(res.data);
+      if (id === fetchId.current) setHospitals(res.data);
     } catch (err) {
-      setError('Failed to load hospitals.');
-      toast.error('Failed to load hospitals');
+      if (id === fetchId.current) {
+        setError('Failed to load hospitals.');
+        toast.error('Failed to load hospitals');
+      }
     } finally {
-      setLoading(false);
+      if (id === fetchId.current) setLoading(false);
     }
   };
 
