@@ -20,6 +20,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import org.springframework.http.HttpMethod;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.web.filter.OncePerRequestFilter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -72,11 +73,23 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(allowedOrigins);
+
+        List<String> origins = new ArrayList<>();
+        if (allowedOrigins != null) {
+            origins.addAll(allowedOrigins);
+        }
+        origins.add("https://mediflow-care.vercel.app");
+        origins.add("https://mediflow-ten-tawny.vercel.app");
+        origins.add("http://localhost:5173");
+        origins.add("http://localhost:3000");
+
+        configuration.setAllowedOrigins(origins.stream().distinct().toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Cache-Control", "Origin", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
+
+        System.out.println("CORS Allowed Origins: " + origins);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
