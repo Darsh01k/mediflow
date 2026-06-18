@@ -54,12 +54,24 @@ const HospitalManagement = () => {
     numberOfBeds: '', emergencyServicesAvailable: false, website: ''
   });
 
-  const fetchHospitals = async (params = {}) => {
+  const [allHospitals, setAllHospitals] = useState([]);
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [searchName, searchCity, searchType, searchEmergency]);
+
+  const fetchAll = async () => {
     const id = ++fetchId.current;
     try {
       setLoading(true);
-      const res = await API.get('/hospitals/search', { params });
-      if (id === fetchId.current) setHospitals(res.data);
+      const res = await API.get('/hospitals');
+      if (id === fetchId.current) {
+        setAllHospitals(res.data);
+      }
     } catch (err) {
       if (id === fetchId.current) {
         setError('Failed to load hospitals.');
@@ -70,25 +82,20 @@ const HospitalManagement = () => {
     }
   };
 
-  useEffect(() => {
-    const params = {};
-    if (searchName.trim()) params.name = searchName.trim();
-    if (searchCity.trim()) params.city = searchCity.trim();
-    if (searchType) params.hospitalType = searchType;
-    if (searchEmergency === 'yes') params.emergencyServicesAvailable = true;
-    else if (searchEmergency === 'no') params.emergencyServicesAvailable = false;
-    fetchHospitals(params);
-  }, [searchName, searchCity, searchType, searchEmergency]);
+  const applyFilters = () => {
+    setHospitals(allHospitals.filter(h => {
+      const matchName = !searchName.trim() || h.name?.toLowerCase().includes(searchName.trim().toLowerCase());
+      const matchCity = !searchCity.trim() || h.city?.toLowerCase().includes(searchCity.trim().toLowerCase());
+      const matchType = !searchType || h.hospitalType === searchType;
+      const matchEmergency = !searchEmergency ||
+        (searchEmergency === 'yes' ? h.emergencyServicesAvailable : !h.emergencyServicesAvailable);
+      return matchName && matchCity && matchType && matchEmergency;
+    }));
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    const params = {};
-    if (searchName.trim()) params.name = searchName.trim();
-    if (searchCity.trim()) params.city = searchCity.trim();
-    if (searchType) params.hospitalType = searchType;
-    if (searchEmergency === 'yes') params.emergencyServicesAvailable = true;
-    else if (searchEmergency === 'no') params.emergencyServicesAvailable = false;
-    fetchHospitals(params);
+    applyFilters();
   };
 
   const clearSearch = () => {
