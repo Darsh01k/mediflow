@@ -133,50 +133,53 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Nav Links */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          {links.map((link) => {
-            const Icon = link.icon;
-            const isEmergency = link.path === '/emergency';
-            return (
-              <NavLink
-                key={link.path}
-                to={link.path}
-                end
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 gap-3 group ${
-                    isActive
-                      ? isEmergency
-                        ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md shadow-red-950/20'
-                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-950/20'
-                      : isEmergency
-                        ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300 border border-red-500/20 font-bold'
-                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                  }`
-                }
-              >
-                <Icon className={`w-5 h-5 flex-shrink-0 group-hover:scale-105 transition-transform ${
-                  isEmergency && !isOpen ? 'text-red-450' : ''
-                }`} />
-                <span>{link.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
+        {/* Combined nav + logout */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Nav Links */}
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            {links.map((link) => {
+              const Icon = link.icon;
+              const isEmergency = link.path === '/emergency';
+              return (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  end
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 gap-3 group ${
+                      isActive
+                        ? isEmergency
+                          ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md shadow-red-950/20'
+                          : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-950/20'
+                        : isEmergency
+                          ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300 border border-red-500/20 font-bold'
+                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                    }`
+                  }
+                >
+                  <Icon className={`w-5 h-5 flex-shrink-0 group-hover:scale-105 transition-transform ${
+                    isEmergency && !isOpen ? 'text-red-450' : ''
+                  }`} />
+                  <span>{link.label}</span>
+                </NavLink>
+              );
+            })}
+          </nav>
 
-        {/* Logout Button */}
-        <div className="p-4 border-t border-slate-800">
-          <button
-            onClick={() => {
-              onClose();
-              logout();
-            }}
-            className="w-full flex items-center px-4 py-3 text-sm font-medium text-rose-400 rounded-xl hover:bg-rose-500/10 transition-colors gap-3 border border-transparent hover:border-rose-500/20"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
-          </button>
+          {/* Logout Button */}
+          <div className="p-4 border-t border-slate-800 shrink-0">
+            <button
+              onClick={() => {
+                onClose();
+                logout();
+              }}
+              className="w-full flex items-center px-4 py-3 text-sm font-medium text-rose-400 rounded-xl hover:bg-rose-500/10 transition-colors gap-3 border border-transparent hover:border-rose-500/20"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
       </div>
     </>
