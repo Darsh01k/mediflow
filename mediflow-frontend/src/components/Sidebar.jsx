@@ -98,11 +98,11 @@ const Sidebar = ({ isOpen, onClose }) => {
         />
       )}
 
-      <div className={`print:hidden w-64 bg-slate-900 text-slate-100 flex flex-col h-screen fixed left-0 top-0 z-50 shadow-xl border-r border-slate-800 transition-transform duration-350 lg:translate-x-0 ${
+      <div className={`print:hidden w-64 bg-slate-900 text-slate-100 flex flex-col h-screen fixed left-0 top-0 z-50 shadow-xl border-r border-slate-800 transition-transform duration-350 lg:translate-x-0 overflow-y-auto ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800 gap-2">
+        <div className="sticky top-0 z-10 h-16 flex items-center justify-between px-6 border-b border-slate-800 bg-slate-900 shrink-0">
           <div className="flex items-center gap-2">
             <HeartPulse className="w-8 h-8 text-emerald-400 animate-pulse" />
             <span className="text-xl font-bold tracking-tight text-white bg-gradient-to-r from-emerald-400 to-indigo-400 bg-clip-text text-transparent">
@@ -118,7 +118,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* User Info with Premium Avatar Display */}
-        <div className="p-6 border-b border-slate-800 flex items-center gap-3">
+        <div className="p-6 border-b border-slate-800 flex items-center gap-3 shrink-0">
           <HealthAvatar avatarId={user?.avatarId || 'avatar_1'} className="w-12 h-12 rounded-xl border border-slate-700/50" />
           <div className="min-w-0 flex-1 space-y-0.5">
             <h4 className="text-sm font-bold text-white truncate leading-tight" title={fullName}>
@@ -133,53 +133,50 @@ const Sidebar = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Combined nav + logout */}
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Nav Links */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            {links.map((link) => {
-              const Icon = link.icon;
-              const isEmergency = link.path === '/emergency';
-              return (
-                <NavLink
-                  key={link.path}
-                  to={link.path}
-                  end
-                  onClick={onClose}
-                  className={({ isActive }) =>
-                    `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 gap-3 group ${
-                      isActive
-                        ? isEmergency
-                          ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md shadow-red-950/20'
-                          : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-950/20'
-                        : isEmergency
-                          ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300 border border-red-500/20 font-bold'
-                          : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
-                    }`
-                  }
-                >
-                  <Icon className={`w-5 h-5 flex-shrink-0 group-hover:scale-105 transition-transform ${
-                    isEmergency && !isOpen ? 'text-red-450' : ''
-                  }`} />
-                  <span>{link.label}</span>
-                </NavLink>
-              );
-            })}
-          </nav>
+        {/* Nav Links */}
+        <nav className="px-4 py-6 space-y-1">
+          {links.map((link) => {
+            const Icon = link.icon;
+            const isEmergency = link.path === '/emergency';
+            return (
+              <NavLink
+                key={link.path}
+                to={link.path}
+                end
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 gap-3 group ${
+                    isActive
+                      ? isEmergency
+                        ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md shadow-red-950/20'
+                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-950/20'
+                      : isEmergency
+                        ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300 border border-red-500/20 font-bold'
+                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                  }`
+                }
+              >
+                <Icon className={`w-5 h-5 flex-shrink-0 group-hover:scale-105 transition-transform ${
+                  isEmergency && !isOpen ? 'text-red-450' : ''
+                }`} />
+                <span>{link.label}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
 
-          {/* Logout Button */}
-          <div className="p-4 border-t border-slate-800 shrink-0">
-            <button
-              onClick={() => {
-                onClose();
-                logout();
-              }}
-              className="w-full flex items-center px-4 py-3 text-sm font-medium text-rose-400 rounded-xl hover:bg-rose-500/10 transition-colors gap-3 border border-transparent hover:border-rose-500/20"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Sign Out</span>
-            </button>
-          </div>
+        {/* Logout Button */}
+        <div className="sticky bottom-0 p-4 border-t border-slate-800 bg-slate-900 shrink-0">
+          <button
+            onClick={() => {
+              onClose();
+              logout();
+            }}
+            className="w-full flex items-center px-4 py-3 text-sm font-medium text-rose-400 rounded-xl hover:bg-rose-500/10 transition-colors gap-3 border border-transparent hover:border-rose-500/20"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </div>
     </>
