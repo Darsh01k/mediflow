@@ -122,7 +122,7 @@ const Navbar = ({ title, onToggleSidebar }) => {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h1 className="text-base md:text-xl font-bold text-slate-800 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent truncate max-w-[150px] sm:max-w-none">
+        <h1 className="text-base md:text-xl font-bold text-slate-800 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent truncate max-w-[180px] sm:max-w-none">
           {title || 'MediFlow Platform'}
         </h1>
       </div>
@@ -153,7 +153,7 @@ const Navbar = ({ title, onToggleSidebar }) => {
 
             {/* Dropdown Card */}
             {isOpen && (
-              <div className="absolute right-0 mt-2 w-[80vw] sm:w-80 bg-white border border-slate-200/80 rounded-2xl shadow-xl z-30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-16 sm:top-full sm:mt-2 sm:w-80 bg-white border border-slate-200/80 rounded-2xl shadow-xl z-30 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800">Notifications Feed</span>
                   {unreadCount > 0 && (
@@ -212,18 +212,16 @@ const Navbar = ({ title, onToggleSidebar }) => {
         )}
 
         {/* User Card */}
-        <div className="flex items-center gap-2 md:gap-3 pl-4 md:pl-6 border-l border-slate-200">
-          <div className="flex flex-col text-right">
-            <span className="text-xs md:text-sm font-bold text-slate-800 truncate max-w-[80px] sm:max-w-none">
+        <div className="flex items-center gap-1 sm:gap-3 pl-2 sm:pl-6 border-l border-slate-200">
+          <div className="flex-col text-right hidden sm:flex">
+            <span className="text-sm font-bold text-slate-800 truncate max-w-[120px]">
               {navFullName}
             </span>
-            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
               {user?.role?.replace('_', ' ')} ID: #{user?.profileId || user?.userId}
             </span>
           </div>
-
-          {/* Render selected healthcare avatar */}
-          <HealthAvatar avatarId={user?.avatarId || 'avatar_1'} className="w-8 h-8 md:w-9 md:h-9" />
+          <HealthAvatar avatarId={user?.avatarId || 'avatar_1'} className="w-7 h-7 sm:w-9 sm:h-9" />
         </div>
       </div>
     </header>
