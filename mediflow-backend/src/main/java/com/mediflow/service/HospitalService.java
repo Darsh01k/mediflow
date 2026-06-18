@@ -101,16 +101,25 @@ public class HospitalService {
         return dto;
     }
 
-    public List<HospitalDto> searchHospitals(String name, String city, String state, String specialty, Double lat, Double lng) {
-        logger.info("Searching hospitals with name: {}, city: {}, state: {}, specialty: {}, lat: {}, lng: {}", 
-                name, city, state, specialty, lat, lng);
+    public List<HospitalDto> searchHospitals(String name, String city, String state, String hospitalType, String specialty, Boolean emergencyServicesAvailable, Double lat, Double lng) {
+        logger.info("Searching hospitals with name: {}, city: {}, state: {}, hospitalType: {}, specialty: {}, emergency: {}, lat: {}, lng: {}", 
+                name, city, state, hospitalType, specialty, emergencyServicesAvailable, lat, lng);
 
         String nameParam = (name == null || name.trim().isEmpty()) ? null : "%" + name.trim().toLowerCase() + "%";
         String cityParam = (city == null || city.trim().isEmpty()) ? null : "%" + city.trim().toLowerCase() + "%";
         String stateParam = (state == null || state.trim().isEmpty()) ? null : "%" + state.trim().toLowerCase() + "%";
+        String typeParam = (hospitalType == null || hospitalType.trim().isEmpty()) ? null : "%" + hospitalType.trim().toLowerCase() + "%";
         String specParam = (specialty == null || specialty.trim().isEmpty()) ? null : "%" + specialty.trim().toLowerCase() + "%";
 
-        List<Hospital> hospitals = hospitalRepository.searchHospitals(nameParam, cityParam, stateParam, specParam);
+        List<Hospital> hospitals = hospitalRepository.searchHospitals(nameParam, cityParam, stateParam, typeParam, specParam);
+
+        if (emergencyServicesAvailable != null) {
+            hospitals = hospitals.stream()
+                    .filter(h -> Boolean.TRUE.equals(emergencyServicesAvailable) ? 
+                            Boolean.TRUE.equals(h.getEmergencyServicesAvailable()) :
+                            !Boolean.TRUE.equals(h.getEmergencyServicesAvailable()))
+                    .collect(Collectors.toList());
+        }
         
         Double resolvedLat = lat;
         Double resolvedLng = lng;

@@ -58,15 +58,11 @@ const HospitalManagement = () => {
       const params = {};
       if (searchName.trim()) params.name = searchName.trim();
       if (searchCity.trim()) params.city = searchCity.trim();
-      if (searchType) params.specialty = searchType;
-      const res = await API.get('/hospitals', { params });
-      let data = res.data;
-      if (searchEmergency === 'yes') {
-        data = data.filter(h => h.emergencyServicesAvailable);
-      } else if (searchEmergency === 'no') {
-        data = data.filter(h => !h.emergencyServicesAvailable);
-      }
-      setHospitals(data);
+      if (searchType) params.hospitalType = searchType;
+      if (searchEmergency === 'yes') params.emergencyServicesAvailable = true;
+      else if (searchEmergency === 'no') params.emergencyServicesAvailable = false;
+      const res = await API.get('/hospitals/search', { params });
+      setHospitals(res.data);
     } catch (err) {
       setError('Failed to load hospitals.');
       toast.error('Failed to load hospitals');

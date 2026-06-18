@@ -61,10 +61,12 @@ public class HospitalController {
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "city", required = false) String city,
             @RequestParam(value = "state", required = false) String state,
+            @RequestParam(value = "hospitalType", required = false) String hospitalType,
             @RequestParam(value = "specialty", required = false) String specialty,
+            @RequestParam(value = "emergencyServicesAvailable", required = false) Boolean emergencyServicesAvailable,
             @RequestParam(value = "lat", required = false) Double lat,
             @RequestParam(value = "lng", required = false) Double lng) {
-        List<HospitalDto> hospitals = hospitalService.searchHospitals(name, city, state, specialty, lat, lng);
+        List<HospitalDto> hospitals = hospitalService.searchHospitals(name, city, state, hospitalType, specialty, emergencyServicesAvailable, lat, lng);
         return ResponseEntity.ok(hospitals);
     }
 

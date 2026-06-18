@@ -15,11 +15,13 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
            "WHERE (:name IS NULL OR LOWER(h.name) LIKE :name) AND " +
            "(:city IS NULL OR LOWER(h.city) LIKE :city) AND " +
            "(:state IS NULL OR LOWER(h.state) LIKE :state) AND " +
+           "(:hospitalType IS NULL OR LOWER(h.hospitalType) LIKE :hospitalType) AND " +
            "(:specialty IS NULL OR (d.status = com.mediflow.entity.DoctorStatus.APPROVED AND LOWER(d.specialization) LIKE :specialty))")
     List<Hospital> searchHospitals(
         @Param("name") String name,
         @Param("city") String city,
         @Param("state") String state,
+        @Param("hospitalType") String hospitalType,
         @Param("specialty") String specialty
     );
 }
