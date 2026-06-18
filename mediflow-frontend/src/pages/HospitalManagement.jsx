@@ -76,9 +76,10 @@ const HospitalManagement = () => {
   }, []);
 
   useEffect(() => {
-    if (!searchName && !searchCity && !searchType && !searchEmergency) {
+    const timer = setTimeout(() => {
       fetchHospitals();
-    }
+    }, 300);
+    return () => clearTimeout(timer);
   }, [searchName, searchCity, searchType, searchEmergency]);
 
   const handleSearch = (e) => {
