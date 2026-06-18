@@ -132,7 +132,7 @@ const Register = () => {
   const [hospitalDesc, setHospitalDesc] = useState('');
 
   // Hospital operational details
-  const [hospitalType, setHospitalType] = useState('General Hospital');
+  const [hospitalType, setHospitalType] = useState('');
   const [hospitalFacilities, setHospitalFacilities] = useState('');
   const [hospitalNumberOfBeds, setHospitalNumberOfBeds] = useState('');
   const [hospitalEmergencyServicesAvailable, setHospitalEmergencyServicesAvailable] = useState(false);
@@ -942,10 +942,13 @@ const Register = () => {
                       onChange={(e) => setHospitalType(e.target.value)}
                       className="w-full px-3 py-2.5 border border-slate-200 bg-white rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15"
                     >
-                      <option>General Hospital</option>
-                      <option>Multi-Specialty Hospital</option>
-                      <option>Clinic</option>
-                      <option>Emergency Care</option>
+                      <option value="">Select Hospital Type</option>
+                      <option value="Government">Government</option>
+                      <option value="Private">Private</option>
+                      <option value="Teaching">Teaching</option>
+                      <option value="Multi-Specialty">Multi-Specialty</option>
+                      <option value="Clinic">Clinic</option>
+                      <option value="Nursing Home">Nursing Home</option>
                     </select>
                   </div>
 

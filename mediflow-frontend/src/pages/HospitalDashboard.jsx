@@ -68,7 +68,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
   const [hospLicense, setHospLicense] = useState('');
   const [hospDesc, setHospDesc] = useState('');
   const [hospLogo, setHospLogo] = useState('');
-  const [hospType, setHospType] = useState('General Hospital');
+  const [hospType, setHospType] = useState('');
   const [hospFacilities, setHospFacilities] = useState('');
   const [hospBeds, setHospBeds] = useState('');
   const [hospEmergency, setHospEmergency] = useState(false);
@@ -93,7 +93,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
         setHospLicense(res.data.licenseNumber || '');
         setHospDesc(res.data.description || '');
         setHospLogo(res.data.logoAvatar || '');
-        setHospType(res.data.hospitalType || 'General Hospital');
+        setHospType(res.data.hospitalType || '');
         setHospFacilities(res.data.facilities || '');
         setHospBeds(res.data.numberOfBeds || '');
         setHospEmergency(res.data.emergencyServicesAvailable || false);
@@ -752,10 +752,13 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                               onChange={(e) => setHospType(e.target.value)}
                               className="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2.5 rounded-xl focus:outline-none focus:border-emerald-500/50"
                             >
-                              <option>General Hospital</option>
-                              <option>Multi-Specialty Hospital</option>
-                              <option>Clinic</option>
-                              <option>Emergency Care</option>
+                              <option value="">Select Hospital Type</option>
+                              <option value="Government">Government</option>
+                              <option value="Private">Private</option>
+                              <option value="Teaching">Teaching</option>
+                              <option value="Multi-Specialty">Multi-Specialty</option>
+                              <option value="Clinic">Clinic</option>
+                              <option value="Nursing Home">Nursing Home</option>
                             </select>
                           </div>
 
