@@ -34,4 +34,4 @@ mediflow:
     # Expiration time: 24 hours (86400000 milliseconds)
     expiration-ms: 86400000
   cors:
-    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,https://*.vercel.app,https://mediflow.vercel.app}
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,https://*.vercel.app,https://mediflow-care.vercel.app,https://mediflow.vercel.app}
