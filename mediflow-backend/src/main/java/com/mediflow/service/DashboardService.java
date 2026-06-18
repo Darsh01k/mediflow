@@ -36,6 +36,9 @@ public class DashboardService {
     @Autowired
     private PrescriptionRepository prescriptionRepository;
 
+    @Autowired
+    private HospitalRepository hospitalRepository;
+
     public DashboardStatsDto getDashboardStats(Long userId, Role role) {
         long totalPatients = 0;
         long totalDoctors = 0;
@@ -188,7 +191,7 @@ public class DashboardService {
             throw new BadRequestException("Unsupported role for statistics");
         }
 
-        return new DashboardStatsDto(
+        DashboardStatsDto stats = new DashboardStatsDto(
                 totalPatients,
                 totalDoctors,
                 totalAppointments,
@@ -200,5 +203,9 @@ public class DashboardService {
                 recentAppointments.stream().map(DtoMapper::toDto).collect(Collectors.toList()),
                 recentRecords.stream().map(DtoMapper::toDto).collect(Collectors.toList())
         );
+        if (role == Role.PLATFORM_ADMIN) {
+            stats.setTotalHospitals(hospitalRepository.count());
+        }
+        return stats;
     }
 }

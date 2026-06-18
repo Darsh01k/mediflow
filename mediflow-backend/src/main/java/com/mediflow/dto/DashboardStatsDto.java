@@ -11,6 +11,7 @@ public class DashboardStatsDto {
     private long cancelledAppointments;
     private long totalPrescriptions;
     private long todayAppointments;
+    private long totalHospitals;
     private List<AppointmentDto> recentAppointments;
     private List<MedicalRecordDto> recentRecords;
 
@@ -110,6 +111,14 @@ public class DashboardStatsDto {
 
     public void setRecentAppointments(List<AppointmentDto> recentAppointments) {
         this.recentAppointments = recentAppointments;
+    }
+
+    public long getTotalHospitals() {
+        return totalHospitals;
+    }
+
+    public void setTotalHospitals(long totalHospitals) {
+        this.totalHospitals = totalHospitals;
     }
 
     public List<MedicalRecordDto> getRecentRecords() {

@@ -74,6 +74,20 @@ public class HospitalController {
         return ResponseEntity.ok(hospital);
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
+    public ResponseEntity<HospitalDto> updateHospital(@PathVariable Long id, @RequestBody HospitalDto hospitalDto) {
+        HospitalDto updatedHospital = hospitalService.updateHospital(id, hospitalDto);
+        return ResponseEntity.ok(updatedHospital);
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('PLATFORM_ADMIN')")
+    public ResponseEntity<Void> deleteHospital(@PathVariable Long id) {
+        hospitalService.deleteHospital(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/my-hospital")
     @PreAuthorize("hasRole('HOSPITAL_ADMIN')")
     public ResponseEntity<HospitalDto> getMyHospital() {

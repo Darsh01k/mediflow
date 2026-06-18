@@ -15,7 +15,8 @@ import {
   Building,
   Navigation,
   Clock,
-  AlertOctagon
+  AlertOctagon,
+  Hospital
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -44,6 +45,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       case 'ADMIN':
         return [
           { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+          { path: '/hospitals', label: 'Hospital Management', icon: Hospital },
           { path: '/doctors', label: 'Doctor Management', icon: Stethoscope },
           { path: '/patients', label: 'Patient Management', icon: Users },
           { path: '/appointments', label: 'All Appointments', icon: Calendar },

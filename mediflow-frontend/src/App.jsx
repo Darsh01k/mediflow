@@ -17,6 +17,7 @@ import MyMedicalRecords from './pages/MyMedicalRecords';
 // New upgraded pages
 import DoctorSearch from './pages/DoctorSearch';
 import HospitalSearch from './pages/HospitalSearch';
+import HospitalManagement from './pages/HospitalManagement';
 import NearbyHospitals from './pages/NearbyHospitals';
 import EmergencyHelp from './pages/EmergencyHelp';
 import Prescriptions from './pages/Prescriptions';
@@ -41,6 +42,12 @@ function App() {
             }>
               <Route index element={<Dashboard />} />
               
+              <Route path="hospitals" element={
+                <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'ADMIN']}>
+                  <HospitalManagement />
+                </ProtectedRoute>
+              } />
+
               <Route path="doctors" element={
                 <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'ADMIN', 'HOSPITAL_ADMIN']}>
                   <DoctorManagement />

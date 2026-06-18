@@ -234,6 +234,18 @@ public class HospitalService {
         return DtoMapper.toDto(updatedDoctor);
     }
 
+    @Transactional
+    public void deleteHospital(Long id) {
+        logger.info("Deleting hospital with ID: {}", id);
+        Hospital hospital = hospitalRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.error("Delete failed: Hospital not found with ID: {}", id);
+                    return new ResourceNotFoundException("Hospital not found with id: " + id);
+                });
+        hospitalRepository.delete(hospital);
+        logger.info("Hospital ID: {} successfully deleted", id);
+    }
+
     public List<PatientDto> getPatientsByHospital(Long hospitalId) {
         logger.info("Fetching treated patients list for hospital ID: {}", hospitalId);
         List<Appointment> appointments = appointmentRepository.findByDoctorHospitalId(hospitalId);

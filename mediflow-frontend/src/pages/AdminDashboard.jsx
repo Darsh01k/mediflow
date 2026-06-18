@@ -14,7 +14,8 @@ import {
   User,
   Lock,
   DollarSign,
-  CreditCard
+  CreditCard,
+  Building
 } from 'lucide-react';
 import API from '../services/api';
 import { formatINR } from '../utils/currency';
@@ -200,7 +201,19 @@ const AdminDashboard = ({ stats, refreshStats }) => {
       {activeTab === 'overview' && (
         <>
           {/* Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-650 shrink-0">
+              <Building className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Hospitals</p>
+              <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stats.totalHospitals}</h3>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="hover:shadow-md transition-shadow">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-650 shrink-0">
