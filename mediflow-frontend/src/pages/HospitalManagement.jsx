@@ -62,7 +62,10 @@ const HospitalManagement = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [searchName, searchCity, searchType, searchEmergency]);
+  }, [allHospitals, searchName, searchCity, searchType, searchEmergency]);
+
+  const sortByName = (list) =>
+    [...list].sort((a, b) => (a.name || '').localeCompare(b.name));
 
   const fetchAll = async () => {
     const id = ++fetchId.current;
@@ -83,14 +86,14 @@ const HospitalManagement = () => {
   };
 
   const applyFilters = () => {
-    setHospitals(allHospitals.filter(h => {
+    setHospitals(sortByName(allHospitals.filter(h => {
       const matchName = !searchName.trim() || h.name?.toLowerCase().includes(searchName.trim().toLowerCase());
       const matchCity = !searchCity.trim() || h.city?.toLowerCase().includes(searchCity.trim().toLowerCase());
       const matchType = !searchType || h.hospitalType === searchType;
       const matchEmergency = !searchEmergency ||
         (searchEmergency === 'yes' ? h.emergencyServicesAvailable : !h.emergencyServicesAvailable);
       return matchName && matchCity && matchType && matchEmergency;
-    }));
+    })));
   };
 
   const handleSearch = (e) => {
