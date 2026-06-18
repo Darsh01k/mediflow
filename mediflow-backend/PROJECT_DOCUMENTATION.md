@@ -150,7 +150,7 @@ The platform eliminates phone-tag for appointment scheduling, gives patients lif
 - **Medical History** — Complete timeline of past visits, diagnoses, clinical notes, and prescription history.
 - **Digital Prescriptions** — View current and past prescriptions with medication names, dosages, and instructions.
 - **Doctor Discovery** — Search by name, specialization, or hospital affiliation with detailed profiles.
-- **Hospital Discovery** — Browse hospitals with location information and available specialties.
+- **Hospital Discovery** — Browse hospitals with location information, available specialties, type classification, and emergency service availability.
 - **Dashboard Overview** — At-a-glance summary of upcoming appointments, recent records, and notifications.
 
 ### 🩺 Doctor Features
@@ -164,12 +164,14 @@ The platform eliminates phone-tag for appointment scheduling, gives patients lif
 
 - **Doctor Management** — Add, update, or remove doctor profiles; assign specializations and manage schedules.
 - **Patient Management** — View and manage patient registrations within the hospital network.
-- **Hospital Profile** — Update hospital details, contact information, facilities, and operational hours.
-- **Dashboard Analytics** — Key metrics on appointments, patient volume, and doctor headcount.
+- **Hospital Profile** — Update hospital details, type, facilities, contact information, and operational hours.
+- **Dashboard Analytics** — Key metrics on appointments, patient volume, doctor headcount, and total hospitals.
 
 ### ⚙️ Platform Administration
 
 - **User Administration** — Manage user accounts across roles and oversee platform operations.
+- **Hospital Management** — View, search, and filter all hospitals by name, city, type (Government, Private, Teaching, Multi-Specialty, Clinic, Nursing Home), and emergency service availability. Edit hospital details and delete hospital records.
+- **Doctor & Patient Directory** — Browse, search, and manage all doctors and patients registered across the platform.
 - **System Monitoring** — Track platform usage, performance metrics, and operational health.
 
 ---
@@ -182,8 +184,8 @@ The platform eliminates phone-tag for appointment scheduling, gives patients lif
 │                                                              │
 │   ┌──────────────────────────────────────────────────────┐   │
 │   │              PRESENTATION LAYER                      │   │
-│   │   React 18 · TypeScript · Tailwind CSS · Vite        │   │
-│   │   React Router · Axios · ShadCN/UI · Framer Motion  │   │
+│   │   React 18 · JavaScript (ES6+) · Tailwind CSS · Vite   │   │
+│   │   React Router · Axios · Custom UI Components          │   │
 │   └──────────────────────────┬───────────────────────────┘   │
 │                              │                                │
 │   ┌──────────────────────────▼───────────────────────────┐   │
@@ -217,13 +219,12 @@ The platform eliminates phone-tag for appointment scheduling, gives patients lif
 | Technology | Purpose |
 |------------|---------|
 | **React 18** | Component-based UI framework |
-| **TypeScript** | Type-safe development |
+| **JavaScript (ES6+)** | Dynamic scripting language |
 | **Tailwind CSS** | Utility-first responsive styling |
 | **Vite** | Fast development server and build tooling |
 | **React Router** | Client-side routing and navigation |
 | **Axios** | HTTP client for API communication |
-| **ShadCN/UI** | Accessible, reusable component library |
-| **Framer Motion** | Animation and transition library |
+| **Custom UI Components** | Tailwind-based reusable component library |
 
 ### Backend
 
@@ -273,7 +274,7 @@ The platform eliminates phone-tag for appointment scheduling, gives patients lif
 │   │                 REACT FRONTEND                         │    │
 │   │   ┌──────────┐  ┌──────────┐  ┌──────────────────┐    │    │
 │   │   │   Auth   │  │  Pages  │  │   Components     │    │    │
-│   │   │  Module  │  │(Dashboard│  │   (ShadCN/UI,    │    │    │
+│   │   │  Module  │  │(Dashboard│  │   (Custom UI,     │    │    │
 │   │   │(JWT/     │  │Records,  │  │    Charts,       │    │    │
 │   │   │ OAuth2)  │  │Appt...)  │  │    Forms)        │    │    │
 │   │   └────┬─────┘  └────┬─────┘  └────────┬─────────┘    │    │
@@ -386,6 +387,18 @@ Desktop (1024px+)           Full multi-column layouts, persistent sidebar,
 ```
 
 MediFlow is built with a mobile-first responsive approach using Tailwind CSS breakpoints. All core workflows — login, registration, appointment booking, record viewing, and prescription access — are fully functional across desktop, tablet, and mobile viewports.
+
+### Mobile Optimizations
+
+| Component | Behavior |
+|-----------|----------|
+| **Sidebar** | Slides in as overlay with backdrop; brand header and logout button are sticky at top/bottom; nav links scroll independently |
+| **Tables** | Horizontally scrollable with minimum column widths; columns remain readable on any screen size |
+| **Navbar** | Compact mobile view: hides role/ID text, smaller avatar, page title truncates gracefully |
+| **Notification Dropdown** | Fixed-positioned within screen bounds on mobile (not absolute), ensuring it never goes off-screen |
+| **Toast Notifications** | Span full width with safe padding on each side, positioned within viewport |
+| **Filter Controls** | Dropdowns and inputs stretch to full width on mobile, stack vertically |
+| **Stat Cards** | Reflow to single column on narrow screens; chart containers scale responsively |
 
 ---
 
