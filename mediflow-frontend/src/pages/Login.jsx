@@ -108,7 +108,7 @@ const Login = () => {
           </div>
 
           {/* Floating trust badges */}
-          <div className="grid grid-cols-3 gap-4 pt-2">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-2">
             <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10 flex flex-col items-center justify-center text-center gap-1.5 shadow-sm shadow-emerald-500/5 hover:-translate-y-1 transition-transform duration-300">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
                 <ShieldCheck className="w-4 h-4" />

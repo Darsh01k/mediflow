@@ -210,7 +210,7 @@ const HospitalManagement = () => {
               icon={Search}
             />
           </div>
-          <div className="w-40">
+          <div className="w-full sm:w-40">
             <Input
               placeholder="City"
               value={searchCity}
@@ -218,7 +218,7 @@ const HospitalManagement = () => {
               icon={MapPin}
             />
           </div>
-          <div className="w-40">
+          <div className="w-full sm:w-40">
             <Select
               value={searchType}
               onChange={(e) => setSearchType(e.target.value)}
@@ -232,7 +232,7 @@ const HospitalManagement = () => {
               <option value="Multi-Specialty">Multi-Specialty</option>
             </Select>
           </div>
-          <div className="w-40">
+          <div className="w-full sm:w-40">
             <Select
               value={searchEmergency}
               onChange={(e) => setSearchEmergency(e.target.value)}
@@ -260,7 +260,7 @@ const HospitalManagement = () => {
             icon={Hospital}
           />
         ) : (
-          <Table>
+          <Table className="min-w-[900px]">
             <THead>
               <TR>
                 <TH>Hospital Name</TH>

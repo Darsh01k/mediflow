@@ -150,7 +150,7 @@ const Appointments = () => {
             }
           />
         ) : (
-          <Table>
+          <Table className="min-w-[700px]">
             <THead>
               <TR>
                 <TH>Practitioner / Client</TH>

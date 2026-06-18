@@ -1258,7 +1258,7 @@ const Register = () => {
             
             {/* Form Role Selector (Step 1 only) */}
             {step === 1 && (
-              <div className="grid grid-cols-3 bg-slate-100 p-1.5 rounded-2xl mb-6 border border-slate-200/60 shadow-inner">
+              <div className="grid grid-cols-3 gap-1 sm:gap-1.5 bg-slate-100 p-1.5 rounded-2xl mb-6 border border-slate-200/60 shadow-inner">
                 <button
                   type="button"
                   onClick={() => { setRole('PATIENT'); setAvatarId('patient_1'); setStep(1); }}

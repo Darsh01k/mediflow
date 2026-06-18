@@ -284,7 +284,7 @@ const DoctorManagement = () => {
             icon={Stethoscope}
           />
         ) : (
-          <Table>
+          <Table className="min-w-[600px]">
             <THead>
               <TR>
                 <TH>Doctor</TH>

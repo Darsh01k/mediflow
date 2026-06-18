@@ -95,7 +95,7 @@ const PatientManagement = () => {
             icon={Users}
           />
         ) : (
-          <Table>
+          <Table className="min-w-[800px]">
             <THead>
               <TR>
                 <TH>Patient Name</TH>

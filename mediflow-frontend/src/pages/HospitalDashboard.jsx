@@ -399,7 +399,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                   <CardDescription>Breakdown of patient booking statuses in this hospital</CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center p-6">
-                  <div className="w-64 h-64">
+                  <div className="w-full max-w-64 h-64">
                     <Doughnut data={doughnutData} options={{ responsive: true, maintainAspectRatio: false }} />
                   </div>
                 </CardContent>
@@ -440,7 +440,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                   icon={Stethoscope}
                 />
               ) : (
-                <Table>
+                <Table className="min-w-[700px]">
                   <THead>
                     <TR>
                       <TH>Practitioner</TH>
@@ -554,7 +554,7 @@ const HospitalDashboard = ({ stats, refreshStats }) => {
                   icon={Users}
                 />
               ) : (
-                <Table>
+                <Table className="min-w-[600px]">
                   <THead>
                     <TR>
                       <TH>Patient</TH>

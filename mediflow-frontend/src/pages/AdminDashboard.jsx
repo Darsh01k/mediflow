@@ -271,7 +271,7 @@ const AdminDashboard = ({ stats, refreshStats }) => {
             <CardDescription>Visual breakdown of current visit statuses</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center p-6">
-            <div className="w-64 h-64">
+            <div className="w-full max-w-64 h-64">
               <Doughnut data={doughnutData} options={{ responsive: true, maintainAspectRatio: false }} />
             </div>
           </CardContent>
@@ -370,7 +370,7 @@ const AdminDashboard = ({ stats, refreshStats }) => {
               </form>
             )}
 
-            <Table>
+            <Table className="min-w-[500px]">
               <THead>
                 <TR>
                   <TH>Doctor</TH>
@@ -409,7 +409,7 @@ const AdminDashboard = ({ stats, refreshStats }) => {
             <CardDescription>Overview of registered patient accounts</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <Table>
+            <Table className="min-w-[500px]">
               <THead>
                 <TR>
                   <TH>Patient</TH>

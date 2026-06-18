@@ -438,7 +438,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                   icon={Calendar}
                 />
               ) : (
-                <Table>
+                <Table className="min-w-[600px]">
                   <THead>
                     <TR>
                       <TH>Patient</TH>
@@ -615,7 +615,7 @@ const DoctorDashboard = ({ stats, refreshStats }) => {
                   icon={Users}
                 />
               ) : (
-                <Table>
+                <Table className="min-w-[500px]">
                   <THead>
                     <TR>
                       <TH>Patient</TH>
