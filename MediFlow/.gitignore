@@ -28,6 +28,9 @@ pnpm-debug.log*
 .env.production.local
 *.local
 
+# Log files
+*.log
+
 # Database temporary files
 *.db
 *.sqlite
