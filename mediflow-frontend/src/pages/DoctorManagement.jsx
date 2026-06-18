@@ -47,7 +47,9 @@ const DoctorManagement = () => {
     try {
       setLoading(true);
       const response = await API.get('/doctors');
-      setDoctors(response.data);
+      setDoctors(response.data.sort((a, b) =>
+        `${a.user?.firstName} ${a.user?.lastName}`.localeCompare(`${b.user?.firstName} ${b.user?.lastName}`)
+      ));
     } catch (err) {
       setError('Failed to load doctors list.');
       toast.error('Failed to load doctors list');

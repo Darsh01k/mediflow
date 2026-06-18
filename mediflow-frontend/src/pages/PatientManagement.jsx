@@ -22,7 +22,9 @@ const PatientManagement = () => {
     try {
       setLoading(true);
       const response = await API.get('/patients');
-      setPatients(response.data);
+      setPatients(response.data.sort((a, b) =>
+        `${a.user?.firstName} ${a.user?.lastName}`.localeCompare(`${b.user?.firstName} ${b.user?.lastName}`)
+      ));
     } catch (err) {
       setError('Failed to load patient records.');
       toast.error('Failed to load patient records');
