@@ -3,7 +3,7 @@ services:
     name: mediflow-backend
     env: docker
     dockerfilePath: Dockerfile
-    dockerContext: mediflow-backend
+    dockerContext: .
     plan: free
     envVars:
       - key: SPRING_DATASOURCE_URL
