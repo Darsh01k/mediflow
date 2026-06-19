@@ -38,7 +38,7 @@ mediflow:
   rate-limiting:
     auth:
       max-requests: 5
-      window-minutes: 15
+      window-minutes: 1
     general:
       max-requests: 60
       window-minutes: 1

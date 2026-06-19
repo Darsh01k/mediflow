@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  passwordHash String
+  dailyUsage   Int      @default(0)
+  lastUsageDate DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reports           Report[]
+  referenceDocuments ReferenceDocument[]
+}
+
+model Report {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  topic         String
+  content       String   @default("")
+  reportType    ReportType @default(TOPIC_BASED)
+  language      String   @default("English")
+  tone          String   @default("formal")
+  academicLevel String   @default("college")
+  length        String   @default("medium")
+  status        ReportStatus @default(DRAFT)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sections      ReportSection[]
+  exportHistory ExportHistory[]
+}
+
+model ReportSection {
+  id        String   @id @default(cuid())
+  reportId  String
+  heading   String
+  content   String   @default("")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+model ReferenceDocument {
+  id                  String   @id @default(cuid())
+  userId              String
+  fileName            String
+  fileType            String
+  extractedText       String   @default("")
+  detectedStructureJson String @default("")
+  createdAt           DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExportHistory {
+  id         String     @id @default(cuid())
+  reportId   String
+  exportType ExportType
+  createdAt  DateTime   @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+enum ReportType {
+  TOPIC_BASED
+  SAME_TOPIC_REWRITE
+  DIFFERENT_TOPIC_REFERENCE_FORMAT
+}
+
+enum ReportStatus {
+  DRAFT
+  GENERATED
+  EXPORTED
+}
+
+enum ExportType {
+  PDF
+  DOCX
+}

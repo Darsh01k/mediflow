@@ -54,6 +54,9 @@ public class RateLimitingInterceptor implements HandlerInterceptor {
                 long oldest = timestamps.peekFirst();
                 long retryAfterMs = windowMs - (now - oldest);
                 int retryAfterSec = Math.max(1, (int) (retryAfterMs / 1000));
+                if (retryAfterSec > 30) {
+                    retryAfterSec = 30;
+                }
 
                 logger.warn("Rate limit exceeded for {} from IP {}", path, clientIp);
 
