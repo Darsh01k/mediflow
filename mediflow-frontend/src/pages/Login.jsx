@@ -14,6 +14,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   
   const { login } = useAuth();
   const toast = useToast();
@@ -32,6 +33,12 @@ const Login = () => {
     }
   }, [toast]);
 
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !password) {
@@ -41,6 +48,7 @@ const Login = () => {
 
     try {
       setError('');
+      setCountdown(0);
       setLoading(true);
       const user = await login(username, password);
       let greeting = '';
@@ -60,8 +68,14 @@ const Login = () => {
       toast.success(`Welcome Back, ${greeting}`);
       navigate('/');
     } catch (err) {
-      setError(err);
-      toast.error(err);
+      if (err?.isRateLimit) {
+        setError(err.message);
+        setCountdown(err.retryAfter);
+        toast.error(err.message);
+      } else {
+        setError(err);
+        toast.error(err);
+      }
     } finally {
       setLoading(false);
     }
@@ -193,7 +207,14 @@ const Login = () => {
             {/* Error Alert */}
             {error && (
               <Alert variant="danger" className="mb-6 rounded-xl">
-                {error}
+                <div className="flex items-center justify-between">
+                  <span>{error}</span>
+                  {countdown > 0 && (
+                    <span className="ml-3 font-mono text-sm font-bold tabular-nums">
+                      {countdown}s
+                    </span>
+                  )}
+                </div>
               </Alert>
             )}
 
@@ -253,9 +274,10 @@ const Login = () => {
               <Button
                 type="submit"
                 loading={loading}
-                className="w-full mt-2 rounded-xl from-emerald-500 to-primary-600 hover:from-emerald-400 hover:to-primary-500 hover:scale-[1.01] text-white font-bold text-sm tracking-wide shadow-md shadow-primary-500/10 hover:shadow-lg hover:shadow-primary-500/20 hover:-translate-y-0.5 transition-all duration-200 py-3"
+                disabled={countdown > 0}
+                className={`w-full mt-2 rounded-xl from-emerald-500 to-primary-600 hover:from-emerald-400 hover:to-primary-500 hover:scale-[1.01] text-white font-bold text-sm tracking-wide shadow-md shadow-primary-500/10 hover:shadow-lg hover:shadow-primary-500/20 hover:-translate-y-0.5 transition-all duration-200 py-3 ${countdown > 0 ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
-                Sign In
+                {countdown > 0 ? `Wait ${countdown}s` : 'Sign In'}
               </Button>
 
             </form>

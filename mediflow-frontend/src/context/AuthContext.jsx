@@ -54,6 +54,10 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       return userData;
     } catch (error) {
+      if (error.response?.status === 429) {
+        const retryAfter = error.response.data?.retryAfter || 30;
+        throw { message: error.response.data?.message || 'Too many requests', retryAfter, isRateLimit: true };
+      }
       throw error.response?.data?.message || 'Login failed. Please check your credentials.';
     }
   };
