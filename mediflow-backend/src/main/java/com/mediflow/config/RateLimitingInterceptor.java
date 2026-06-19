@@ -19,7 +19,7 @@ public class RateLimitingInterceptor implements HandlerInterceptor {
 
     private final Map<String, Deque<Long>> requestLogs = new ConcurrentHashMap<>();
 
-    private static final long AUTH_WINDOW_MS = 15 * 60 * 1000;
+    private static final long AUTH_WINDOW_MS = 30 * 1000;
     private static final int AUTH_MAX_REQUESTS = 5;
 
     private static final long GENERAL_WINDOW_MS = 60 * 1000;
@@ -54,9 +54,6 @@ public class RateLimitingInterceptor implements HandlerInterceptor {
                 long oldest = timestamps.peekFirst();
                 long retryAfterMs = windowMs - (now - oldest);
                 int retryAfterSec = Math.max(1, (int) (retryAfterMs / 1000));
-                if (retryAfterSec > 30) {
-                    retryAfterSec = 30;
-                }
 
                 logger.warn("Rate limit exceeded for {} from IP {}", path, clientIp);
 
