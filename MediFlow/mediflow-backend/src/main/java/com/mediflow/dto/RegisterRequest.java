@@ -4,6 +4,7 @@ import com.mediflow.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -21,48 +22,97 @@ public class RegisterRequest {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
+    @Size(max = 100, message = "Email must not exceed 100 characters")
     private String email;
 
     @NotNull(message = "Role is required")
     private Role role;
 
     @NotBlank(message = "First name is required")
+    @Size(max = 100, message = "First name must not exceed 100 characters")
     private String firstName;
 
     @NotBlank(message = "Last name is required")
+    @Size(max = 100, message = "Last name must not exceed 100 characters")
     private String lastName;
 
     private LocalDate dateOfBirth;
+
+    @Size(max = 20, message = "Gender must not exceed 20 characters")
     private String gender;
+
+    @Pattern(regexp = "^[+]?[0-9\\s()-]{7,20}$", message = "Phone number is invalid")
     private String phone;
+
+    @Size(max = 500, message = "Address must not exceed 500 characters")
     private String address;
+
+    @Size(max = 100, message = "Emergency contact must not exceed 100 characters")
     private String emergencyContact;
+
+    @Size(max = 10, message = "Blood type must not exceed 10 characters")
     private String bloodType;
 
     // Doctor profile registration fields
+    @Size(max = 100, message = "Specialization must not exceed 100 characters")
     private String specialization;
+
+    @Size(max = 50, message = "License number must not exceed 50 characters")
     private String licenseNumber;
+
     private BigDecimal consultationFee;
+
+    @Size(max = 2000, message = "Bio must not exceed 2000 characters")
     private String bio;
+
     private Long hospitalId;
+
+    @Size(max = 200, message = "Qualification must not exceed 200 characters")
     private String qualification;
+
     private Integer experience;
+
+    @Size(max = 200, message = "Languages must not exceed 200 characters")
     private String languages;
+
+    @Size(max = 50, message = "Avatar ID must not exceed 50 characters")
     private String avatarId;
+
+    @Size(max = 500, message = "Availability must not exceed 500 characters")
     private String availability;
 
     // Hospital Admin registration fields (to create a Hospital upon registration)
+    @Size(max = 200, message = "Hospital name must not exceed 200 characters")
     private String hospitalName;
+
+    @Size(max = 100, message = "Hospital email must not exceed 100 characters")
     private String hospitalEmail;
+
+    @Size(max = 20, message = "Hospital phone must not exceed 20 characters")
     private String hospitalPhone;
+
+    @Size(max = 500, message = "Hospital address must not exceed 500 characters")
     private String hospitalAddress;
+
+    @Size(max = 100, message = "Hospital city must not exceed 100 characters")
     private String hospitalCity;
+
+    @Size(max = 100, message = "Hospital state must not exceed 100 characters")
     private String hospitalState;
+
+    @Pattern(regexp = "^[0-9]{5,6}$", message = "Pincode must be 5 or 6 digits")
     private String hospitalPincode;
+
     private Double hospitalLatitude;
     private Double hospitalLongitude;
+
+    @Size(max = 50, message = "Hospital license number must not exceed 50 characters")
     private String hospitalLicenseNumber;
+
+    @Size(max = 2000, message = "Hospital description must not exceed 2000 characters")
     private String hospitalDescription;
+
+    @Size(max = 50, message = "Hospital logo avatar must not exceed 50 characters")
     private String hospitalLogoAvatar;
 
     public RegisterRequest() {}

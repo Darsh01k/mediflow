@@ -3,6 +3,7 @@ package com.mediflow.dto;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 
@@ -19,8 +20,10 @@ public class AppointmentRequestDto {
     private LocalDateTime appointmentDate;
 
     @NotBlank(message = "Reason for appointment is required")
+    @Size(max = 1000, message = "Reason must not exceed 1000 characters")
     private String reason;
 
+    @Size(max = 2000, message = "Notes must not exceed 2000 characters")
     private String notes;
 
     public AppointmentRequestDto() {}

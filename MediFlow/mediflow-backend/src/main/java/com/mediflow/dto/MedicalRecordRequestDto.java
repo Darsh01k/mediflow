@@ -2,6 +2,7 @@ package com.mediflow.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public class MedicalRecordRequestDto {
 
@@ -12,15 +13,23 @@ public class MedicalRecordRequestDto {
     private Long doctorId;
 
     @NotBlank(message = "Diagnosis is required")
+    @Size(max = 5000, message = "Diagnosis must not exceed 5000 characters")
     private String diagnosis;
 
     @NotBlank(message = "Prescription is required")
+    @Size(max = 5000, message = "Prescription must not exceed 5000 characters")
     private String prescription;
 
+    @Size(max = 5000, message = "Treatment notes must not exceed 5000 characters")
     private String treatmentNotes;
 
+    @Size(max = 10000, message = "Medicines JSON must not exceed 10000 characters")
     private String medicinesJson;
+
+    @Size(max = 2000, message = "Dosage must not exceed 2000 characters")
     private String dosage;
+
+    @Size(max = 2000, message = "Instructions must not exceed 2000 characters")
     private String instructions;
 
     public MedicalRecordRequestDto() {}

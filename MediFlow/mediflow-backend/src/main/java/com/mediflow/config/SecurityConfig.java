@@ -22,14 +22,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpMethod;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.web.filter.OncePerRequestFilter;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import java.io.IOException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,11 +31,16 @@ import org.slf4j.LoggerFactory;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
 
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
+
+    @Autowired(required = false)
+    private RateLimitingFilter rateLimitingFilter;
 
     @Value("${mediflow.cors.allowed-origins}")
     private List<String> allowedOrigins;
@@ -75,21 +73,23 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         List<String> origins = new ArrayList<>();
-        if (allowedOrigins != null) {
-            origins.addAll(allowedOrigins);
+
+        String defaultOrigins = "http://localhost:5173,http://localhost:3000,https://*.vercel.app,https://mediflow-care.vercel.app,https://mediflow.vercel.app";
+        String envOrigins = allowedOrigins != null ? String.join(",", allowedOrigins) : defaultOrigins;
+        for (String origin : envOrigins.split(",")) {
+            origin = origin.trim();
+            if (!origin.isEmpty()) {
+                origins.add(origin);
+            }
         }
-        origins.add("https://mediflow-care.vercel.app");
-        origins.add("https://mediflow-ten-tawny.vercel.app");
-        origins.add("http://localhost:5173");
-        origins.add("http://localhost:3000");
 
         configuration.setAllowedOrigins(origins.stream().distinct().toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Cache-Control", "Origin", "X-Requested-With"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setExposedHeaders(List.of("Authorization", "X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After"));
         configuration.setAllowCredentials(true);
 
-        System.out.println("CORS Allowed Origins: " + origins);
+        logger.info("CORS Allowed Origins: {}", origins);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -113,23 +113,11 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2.permitAll());
 
         http.authenticationProvider(authenticationProvider());
+        if (rateLimitingFilter != null) {
+            http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
+        }
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
-        http.addFilterAfter(new SecurityDebugFilter(), AuthTokenFilter.class);
 
         return http.build();
-    }
-
-    public static class SecurityDebugFilter extends OncePerRequestFilter {
-        private static final Logger logger = LoggerFactory.getLogger(SecurityDebugFilter.class);
-
-        @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-                throws ServletException, IOException {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            logger.info("[SecurityConfig Debug] Matched Endpoint: {} {}, Authentication State: {}",
-                    request.getMethod(), request.getRequestURI(),
-                    (auth != null ? auth.getName() + " (Authenticated=" + auth.isAuthenticated() + ", Authorities=" + auth.getAuthorities() + ")" : "Anonymous"));
-            filterChain.doFilter(request, response);
-        }
     }
 }

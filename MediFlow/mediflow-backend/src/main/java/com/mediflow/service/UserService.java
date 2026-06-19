@@ -14,6 +14,7 @@ import com.mediflow.repository.PatientRepository;
 import com.mediflow.repository.UserRepository;
 import com.mediflow.utils.DtoMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -458,6 +459,7 @@ public class UserService {
 
     private GoogleUser verifyGoogleIdToken(String idToken) {
         if ("mock-google-token".equals(idToken) || idToken.startsWith("mock-")) {
+            logger.warn("Mock Google token used in non-dev environment — this should only happen in development");
             String mockEmail = idToken.replace("mock-", "") + "@google.com";
             if ("mock-google-token".equals(idToken)) {
                 mockEmail = "mockuser@google.com";

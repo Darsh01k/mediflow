@@ -1,6 +1,7 @@
 package com.mediflow.controller;
 
 import com.mediflow.dto.AuthResponse;
+import com.mediflow.dto.GoogleAuthRequest;
 import com.mediflow.dto.LoginRequest;
 import com.mediflow.dto.RegisterRequest;
 import com.mediflow.dto.UserDto;
@@ -31,12 +32,8 @@ public class AuthController {
     }
 
     @PostMapping("/google")
-    public ResponseEntity<AuthResponse> google(@RequestBody java.util.Map<String, String> request) {
-        String idToken = request.get("idToken");
-        if (idToken == null || idToken.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        AuthResponse response = userService.authenticateGoogle(idToken);
+    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleAuthRequest request) {
+        AuthResponse response = userService.authenticateGoogle(request.getIdToken());
         return ResponseEntity.ok(response);
     }
 }

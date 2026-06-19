@@ -1,6 +1,7 @@
 package com.mediflow.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public class PrescriptionRequestDto {
@@ -17,9 +18,16 @@ public class PrescriptionRequestDto {
     @NotNull(message = "Prescription date is required")
     private LocalDate prescriptionDate;
 
+    @Size(max = 10000, message = "Medicines JSON must not exceed 10000 characters")
     private String medicinesJson;
+
+    @Size(max = 2000, message = "Dosage must not exceed 2000 characters")
     private String dosage;
+
+    @Size(max = 2000, message = "Instructions must not exceed 2000 characters")
     private String instructions;
+
+    @Size(max = 2000, message = "Notes must not exceed 2000 characters")
     private String notes;
 
     public PrescriptionRequestDto() {}

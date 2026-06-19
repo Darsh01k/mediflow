@@ -2,8 +2,10 @@ package com.mediflow.controller;
 
 import com.mediflow.config.JwtUtils;
 import com.mediflow.config.UserDetailsImpl;
+import com.mediflow.dto.ChangePasswordRequest;
 import com.mediflow.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,22 +42,15 @@ public class UserController {
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         try {
             Long userId = getCurrentUserId();
-            String currentPassword = request.get("currentPassword");
-            String newPassword = request.get("newPassword");
-            String confirmPassword = request.get("confirmPassword");
 
-            if (currentPassword == null || newPassword == null || confirmPassword == null) {
-                return ResponseEntity.badRequest().body(Map.of("message", "All password fields are required."));
-            }
-
-            if (!newPassword.equals(confirmPassword)) {
+            if (!request.getNewPassword().equals(request.getConfirmPassword())) {
                 return ResponseEntity.badRequest().body(Map.of("message", "New passwords do not match."));
             }
 
-            userService.changePassword(userId, currentPassword, newPassword);
+            userService.changePassword(userId, request.getCurrentPassword(), request.getNewPassword());
             return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
         } catch (com.mediflow.exception.BadRequestException e) {
             logger.warn("Password change validation failed: {}", e.getMessage());
