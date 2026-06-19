@@ -39,9 +39,6 @@ public class SecurityConfig {
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
 
-    @Autowired(required = false)
-    private RateLimitingFilter rateLimitingFilter;
-
     @Value("${mediflow.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
@@ -113,9 +110,6 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2.permitAll());
 
         http.authenticationProvider(authenticationProvider());
-        if (rateLimitingFilter != null) {
-            http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
-        }
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

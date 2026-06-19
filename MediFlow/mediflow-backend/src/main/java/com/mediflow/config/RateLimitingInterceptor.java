@@ -1,28 +1,21 @@
 package com.mediflow.config;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Profile;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerInterceptor;
 
-import java.io.IOException;
 import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-@Profile("!test")
 @Component
-@Order(1)
-public class RateLimitingFilter extends OncePerRequestFilter {
+public class RateLimitingInterceptor implements HandlerInterceptor {
 
-    private static final Logger logger = LoggerFactory.getLogger(RateLimitingFilter.class);
+    private static final Logger logger = LoggerFactory.getLogger(RateLimitingInterceptor.class);
 
     private final Map<String, Deque<Long>> requestLogs = new ConcurrentHashMap<>();
 
@@ -33,14 +26,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private static final int GENERAL_MAX_REQUESTS = 60;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws ServletException, IOException {
-
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String path = request.getRequestURI();
 
         if (!path.startsWith("/api/")) {
-            chain.doFilter(request, response);
-            return;
+            return true;
         }
 
         String clientIp = getClientIp(request);
@@ -76,7 +66,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                         "{\"message\":\"Too many requests. Please try again in " + retryAfterSec + " seconds.\",\"retryAfter\":"
                                 + retryAfterSec + "}"
                 );
-                return;
+                return false;
             }
 
             timestamps.addLast(now);
@@ -86,7 +76,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             response.setHeader("X-RateLimit-Remaining", String.valueOf(Math.max(0, remaining)));
         }
 
-        chain.doFilter(request, response);
+        return true;
     }
 
     private String getClientIp(HttpServletRequest request) {
