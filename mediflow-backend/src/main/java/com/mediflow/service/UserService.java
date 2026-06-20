@@ -346,8 +346,9 @@ public class UserService {
 
         logger.info("Saving new password for user ID {}", userId);
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
-        logger.info("Password updated successfully inside profile settings for user: {}", user.getUsername());
+        logger.info("Password updated successfully for user: {} (tokenVersion incremented to {})", user.getUsername(), user.getTokenVersion());
     }
 
     @Transactional
@@ -509,6 +510,18 @@ public class UserService {
             this.lastName = lastName;
             this.picture = picture;
         }
+    }
+
+    @Transactional
+    public void logout(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    logger.error("Logout failed: User not found with ID {}", userId);
+                    return new BadRequestException("User not found.");
+                });
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        userRepository.save(user);
+        logger.info("User {} logged out — tokenVersion incremented to {}", user.getUsername(), user.getTokenVersion());
     }
 
     private void validatePasswordStrength(String password) {

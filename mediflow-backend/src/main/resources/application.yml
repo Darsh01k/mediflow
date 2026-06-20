@@ -32,7 +32,7 @@ spring:
 mediflow:
   jwt:
     secret: ${JWT_SECRET:bWVkaWZsb3ctc2VjcmV0LWtleS1mb3Itand0LXRva2VuLWdlbmVyYXRpb24tc2VjdXJlLTI1Ni1iaXQ=}
-    expiration-ms: 86400000
+    expiration-ms: 3600000
   cors:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,https://*.vercel.app,https://mediflow-care.vercel.app,https://mediflow.vercel.app}
   rate-limiting:

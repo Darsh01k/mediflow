@@ -34,6 +34,9 @@ public class User {
     @JoinColumn(name = "hospital_id")
     private Hospital hospital;
 
+    @Column(name = "token_version", nullable = false)
+    private Integer tokenVersion = 0;
+
     @Column(name = "first_name", nullable = false, length = 50)
     private String firstName;
 
@@ -133,6 +136,14 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Integer getTokenVersion() {
+        return tokenVersion;
+    }
+
+    public void setTokenVersion(Integer tokenVersion) {
+        this.tokenVersion = tokenVersion;
     }
 
     public String getAvatarId() {

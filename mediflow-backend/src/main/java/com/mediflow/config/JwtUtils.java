@@ -23,7 +23,7 @@ public class JwtUtils {
     private int jwtExpirationMs;
 
     private SecretKey key() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(java.util.Base64.getDecoder().decode(jwtSecret));
     }
 
     public String generateJwtToken(Authentication authentication) {
@@ -36,6 +36,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .subject(userPrincipal.getUsername())
                 .claim("sessionToken", sessionToken)
+                .claim("tokVer", userPrincipal.getTokenVersion())
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key())
@@ -49,6 +50,19 @@ public class JwtUtils {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    public Integer getTokenVersionFromJwtToken(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(key())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("tokVer", Integer.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public String getSessionTokenFromJwtToken(String token) {

@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -39,7 +38,16 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 if (jwtUtils.validateJwtToken(jwt)) {
                     String username = jwtUtils.getUserNameFromJwtToken(jwt);
                     
-                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    UserDetailsImpl userDetails = (UserDetailsImpl) userDetailsService.loadUserByUsername(username);
+
+                    Integer tokenVer = jwtUtils.getTokenVersionFromJwtToken(jwt);
+                    if (tokenVer == null || !tokenVer.equals(userDetails.getTokenVersion())) {
+                        logger.warn("[AuthTokenFilter] Token version mismatch for user: {} (JWT: {}, DB: {})", username, tokenVer, userDetails.getTokenVersion());
+                        SecurityContextHolder.clearContext();
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
