@@ -34,7 +34,7 @@ public class User {
     @JoinColumn(name = "hospital_id")
     private Hospital hospital;
 
-    @Column(name = "token_version", nullable = false)
+    @Column(name = "token_version", columnDefinition = "integer default 0 not null")
     private Integer tokenVersion = 0;
 
     @Column(name = "first_name", nullable = false, length = 50)

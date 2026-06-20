@@ -115,6 +115,18 @@ public class DatabaseMigrationService implements CommandLineRunner {
         } catch (Exception e) {
             logger.error("Failed to seed coordinates for hospitals: {}", e.getMessage());
         }
+
+        try {
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version integer DEFAULT 0");
+            int updated = jdbcTemplate.update("UPDATE users SET token_version = 0 WHERE token_version IS NULL");
+            if (updated > 0) {
+                logger.info("Set token_version=0 for {} existing users.", updated);
+            }
+            jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN token_version SET NOT NULL");
+            logger.info("Checked/Added column 'token_version' to 'users' table.");
+        } catch (Exception e) {
+            logger.warn("Failed to check/add column 'token_version': {}", e.getMessage());
+        }
     }
 }
 
